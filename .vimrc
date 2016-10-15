@@ -22,7 +22,7 @@ Plugin 'L9'
 " Git plugin not hosted on GitHub
 Plugin 'git://git.wincent.com/command-t.git'
 " git repos on your local machine (i.e. when working on your own plugin)
-Plugin 'file:///home/gmarik/path/to/plugin'
+" Plugin 'file:///home/gmarik/path/to/plugin'
 " The sparkup vim script is in a subdirectory of this repo called vim.
 " Pass the path to set the runtimepath properly.
 Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
@@ -33,24 +33,23 @@ Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
 " *=================================================================*
 " *                        Personal Plugins                         *
 " *=================================================================*
+
 " colorscheme management
 Plugin 'flazz/vim-colorschemes', {'name':'vim-colorschemes'}
 
-" maui colorscheme
-"Plugin 'zsoltf/vim-maui', {'name':'maui'}
-
-" JS syntax
-Plugin 'pangloss/vim-javascript', {'name': 'vim-javascript'}
-
 " JSON syntax
 Plugin 'elzr/vim-json', {'name': 'vim-json'}
+
+" fish syntax
+Plugin 'dag/vim-fish', {'name': 'vim-fish'}
 
 " typescript syntax
 Plugin 'leafgarland/typescript-vim', {'name': 'typescript-vim'}
 " typescript Typings syntax
 Plugin 'mhartington/vim-typings', {'name': 'vim-typings'}
 " typescript omniplugin shiz
-" Plugin 'Quramy/tsuquyomi', {'name': 'tsuquyami'}
+Plugin 'Quramy/tsuquyomi', {'name': 'tsuquyami'}
+
 
 " *==========================End Plugins============================*
 
@@ -77,7 +76,7 @@ filetype plugin indent on    " required
 filetype plugin indent on
 
 " color scheme
-colorscheme molokai 
+colorscheme heroku 
 
 " show existing tab with 2 spaces width
 set tabstop=2
