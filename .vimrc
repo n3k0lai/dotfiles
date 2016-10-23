@@ -38,10 +38,10 @@ Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
 Plugin 'flazz/vim-colorschemes', {'name':'vim-colorschemes'}
 
 " JSON syntax
-Plugin 'elzr/vim-json', {'name': 'vim-json'}
+Plugin 'elzr/vim-json', {'name': 'json'}
 
 " fish syntax
-Plugin 'dag/vim-fish', {'name': 'vim-fish'}
+Plugin 'dag/vim-fish', {'name': 'fish'}
 
 " typescript syntax
 Plugin 'leafgarland/typescript-vim', {'name': 'typescript-vim'}
@@ -49,6 +49,9 @@ Plugin 'leafgarland/typescript-vim', {'name': 'typescript-vim'}
 Plugin 'mhartington/vim-typings', {'name': 'vim-typings'}
 " typescript omniplugin shiz
 Plugin 'Quramy/tsuquyomi', {'name': 'tsuquyami'}
+
+" for editing view stuff
+Plugin 'kovetskiy/sxhkd-vim', {'name': 'sxhkd'}
 
 
 " *==========================End Plugins============================*
