@@ -1,0 +1,10 @@
+*/tmp/*
+*.so
+*.swp
+*.zip
+*/.tmp/*
+*/.sass-cache/*
+*/node_modules/*
+*.keep
+*.DS_Store
+*/.git/*

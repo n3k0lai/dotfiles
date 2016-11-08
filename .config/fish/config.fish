@@ -15,6 +15,12 @@ function su
   /bin/su --shell=/usr/bin/fish $argv
 end
 
+# command to quick-update vundle 
+function updatevim
+  set -lx SHELL (which sh)
+  vim +BundleInstall! +BundleClean +qall
+end
+
 # path variables
 set -xU EDITOR vim
 set -xU GOPATH $HOME/.local/share/go $PATH 
