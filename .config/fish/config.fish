@@ -14,3 +14,7 @@ end
 function su
   /bin/su --shell=/usr/bin/fish $argv
 end
+
+# path variables
+set -xU EDITOR vim
+set -xU GOPATH $HOME/.local/share/go $PATH 
