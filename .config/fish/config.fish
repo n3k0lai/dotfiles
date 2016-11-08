@@ -10,9 +10,14 @@ function fish_prompt
   echo -n "> ";
 end
 
-#make sure su uses fish
+# make sure su uses fish
 function su
   /bin/su --shell=/usr/bin/fish $argv
+end
+
+# make sure ag uses .agignore
+function ag
+  /bin/ag --path-to-ignore $HOME/.agignore
 end
 
 # command to quick-update vundle 
