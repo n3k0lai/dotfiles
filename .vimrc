@@ -4,6 +4,10 @@ set shell=bash
 set nocompatible              " be iMproved, required
 filetype off                  " required
 
+" force unicode support
+scriptencoding utf-8
+set encoding=utf-8
+
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
@@ -21,6 +25,9 @@ Plugin 'flazz/vim-colorschemes'
 " ctrl-p tool
 Plugin 'kien/ctrlp.vim'
 
+" dank emojis
+Plugin 'chrisbra/unicode.vim'
+
 " JSON syntax
 Plugin 'elzr/vim-json'
 
@@ -33,6 +40,8 @@ Plugin 'leafgarland/typescript-vim'
 Plugin 'mhartington/vim-typings'
 " typescript omniplugin shiz
 Plugin 'Quramy/tsuquyomi'
+" needed for tsuquyomi
+Plugin 'Shougo/vimproc', {'rtp': ['autoload/*,lib/*,plugin/*']}
 
 " for editing view stuff
 Plugin 'kovetskiy/sxhkd-vim'
