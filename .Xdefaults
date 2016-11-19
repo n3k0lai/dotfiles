@@ -42,35 +42,35 @@ URxvt.cursorUnderline:      false
 URxvt.pointerBlank:         true
 
 ! my aqua colorscheme
-! http://terminal.sexy/#Fhcc__zgGxwiKCozSTpMNDZCUFNlaW2FqqmYpqzS6-i60s6tkGff_vz__P__Ge3HHu_yD-H3
+! http://terminal.sexy/#IyQs4d7GSEhAjIt9VEphaW2FhYupoafMqqmYwMfz6-i6xcGikGff9N3_x___Ge3HHu_yD-H3
 
 ! special
-URxvt.foreground:   #fffce0
-URxvt.background:   #16171c
-URxvt.cursorColor:  #fffce0
+URxvt.foreground:   #e1dec6
+URxvt.background:   #23242c
+URxvt.cursorColor:  #e1dec6
 
 ! black
-URxvt.color0:       #1b1c22
+URxvt.color0:       #484840
 URxvt.color8:       #ebe8ba
 
 ! red
-URxvt.color1:       #282a33
-URxvt.color9:       #d2cead
+URxvt.color1:       #8c8b7d
+URxvt.color9:       #c5c1a2
 
 ! green
-URxvt.color2:       #493a4c
+URxvt.color2:       #544a61
 URxvt.color10:      #9067df
 
 ! yellow
-URxvt.color3:       #343642
-URxvt.color11:      #fefcff
+URxvt.color3:       #696d85
+URxvt.color11:      #f4ddff
 
 ! blue
-URxvt.color4:       #505365
-URxvt.color12:      #fcffff
+URxvt.color4:       #858ba9
+URxvt.color12:      #c7ffff
 
 ! magenta
-URxvt.color5:       #696d85
+URxvt.color5:       #a1a7cc
 URxvt.color13:      #19edc7
 
 ! cyan
@@ -78,5 +78,6 @@ URxvt.color6:       #aaa998
 URxvt.color14:      #1eeff2
 
 ! white
-URxvt.color7:       #a6acd2
+URxvt.color7:       #c0c7f3
 URxvt.color15:      #0fe1f7
+
