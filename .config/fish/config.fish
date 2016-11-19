@@ -4,9 +4,9 @@ set fish_greeting (fortune);
 # Prompt aesthetics
 function fish_prompt
   echo -n (prompt_pwd);
-  set_color 6dba09;
+  set_color brgreen;
   echo -n " ~";
-  set_color a292ff;
+  set_color brcyan;
   echo -n "> ";
 end
 
