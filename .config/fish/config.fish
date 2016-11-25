@@ -1,6 +1,6 @@
 # Force 256 color
-set -x TERM ansi 
-# set -x TERM rxvt-unicode-256color
+# set -x TERM ansi 
+# set -x TERM rxvt-256color
 
 # Terminal greeting
 set fish_greeting (fortune);
