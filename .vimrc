@@ -9,47 +9,48 @@ scriptencoding utf-8
 set encoding=utf-8
 
 " set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+set rtp+=~/.vim/bundle/dein.vim
 
-" let Vundle manage Vundle, required
-Plugin 'VundleVim/Vundle.vim'
+call dein#begin('~/.vim/bundle')
+
+" let Dein manage Dein
+call dein#add('Shougo/dein.vim')
 
 " *=================================================================*
 " *                        Personal Plugins                         *
 " *=================================================================*
 
 " colorscheme management
-Plugin 'flazz/vim-colorschemes'
+call dein#add('flazz/vim-colorschemes')
 
 " ctrl-p tool
-Plugin 'kien/ctrlp.vim'
+call dein#add('kien/ctrlp.vim')
 
 " dank emojis
-Plugin 'chrisbra/unicode.vim'
+call dein#add('chrisbra/unicode.vim')
 
 " JSON syntax
-Plugin 'elzr/vim-json'
+call dein#add('elzr/vim-json')
 
 " fish syntax
-Plugin 'dag/vim-fish'
+call dein#add('dag/vim-fish')
 
 " typescript syntax
-Plugin 'leafgarland/typescript-vim'
+call dein#add('leafgarland/typescript-vim')
 " typescript Typings syntax
-Plugin 'mhartington/vim-typings'
-" typescript omniplugin shiz
-Plugin 'Quramy/tsuquyomi'
+call dein#add('mhartington/vim-typings')
 " needed for tsuquyomi
-Plugin 'Shougo/vimproc', {'rtp': ['autoload/*,lib/*,plugin/*']}
+call dein#add('Shougo/vimproc', {'build': 'make'})
+" typescript omniplugin shiz
+call dein#add('Quramy/tsuquyomi')
 
 " for editing view stuff
-Plugin 'kovetskiy/sxhkd-vim'
+call dein#add('kovetskiy/sxhkd-vim')
 
 
 " *==========================End Plugins============================*
 
-call vundle#end()            " required
+call dein#end()            " required
 filetype plugin indent on    " required
 
 " *=================================================================*
@@ -57,7 +58,7 @@ filetype plugin indent on    " required
 " *=================================================================*
 
 " color scheme
-colorscheme heroku 
+" colorscheme heroku 
 
 " show existing tab with 2 spaces width
 set tabstop=2
