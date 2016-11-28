@@ -1,8 +1,8 @@
 # Aquaman Dotfiles
 These are my hydro-themed dotfiles. Filled with crispy memes
 ## To-do
-* swap dtop back to debian??
-* swap to manjaro?
+* swap dtop back to debian?
+* swap to arch
 ### GUI
 * configure compton
 * configure dmenu
@@ -16,13 +16,13 @@ These are my hydro-themed dotfiles. Filled with crispy memes
 * style steam
 
 ### CLI
-* replace Vundle with Dein
 * configure transmission
 * configure ncmpcpp
 * configure fisherman
 * fix tmux.conf
 * encrypt weechat files http://dev.weechat.org/post/2013/08/04/Secured-data
 * set up krill
+* set up RTV
 
 ### Server
 * set letsencrypt to auto update
