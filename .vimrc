@@ -9,12 +9,12 @@ scriptencoding utf-8
 set encoding=utf-8
 
 " set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/dein.vim
+set rtp+=~/.vim/bundle/repos/github.com/Shougo/dein.vim
 
 call dein#begin('~/.vim/bundle')
 
 " let Dein manage Dein
-call dein#add('Shougo/dein.vim')
+call dein#add('~/.vim/bundle/repos/github.com/Shougo/dein.vim')
 
 " *=================================================================*
 " *                        Personal Plugins                         *
