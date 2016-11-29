@@ -1,8 +1,8 @@
 bash: X:                    96
-Xft.antialias:              false
+Xft.antialias:              true
 Xft.rgba:                   rgb
-Xft.hinting:                true
-Xft.hintstyle:              hintslight
+Xft.hinting:                false
+! Xft.hintstyle:              hintslight
 
 !-------------------------------------------------------------------------------
 !! URxvt settings
@@ -15,12 +15,12 @@ URxvt.fading:               0
 URxvt.loginShell:           true
 URxvt.saveLines:            512
 URxvt.internalBorder:       3
-URxvt.lineSpace:            0
+URxvt.lineSpace:            1
 
 ! Fonts
 URxvt.allow_bold:           false
-URxvt*font: xft:Monospace:pixelsize=14
-URxvt*boldFont: xft:Monospace:pixelsize=14
+URxvt*font: xft: Deja Vu Sans Mono:pixelsize=14:spacing=mono
+URxvt*boldFont: xft: Deja Vu Sans Mono:pixelsize=14:spacing=mono
 
 ! Fix font space
 URxvt*letterSpace: -1
@@ -36,10 +36,10 @@ URxvt.urlLauncher:          firefox
 
 ! Cursor
 URxvt.cursorBlink:          true
-URxvt.cursorUnderline:      false
+URxvt.cursorUnderline:      true
 
 ! Pointer
-URxvt.pointerBlank:         true
+URxvt.pointerBlank:         false
 
 ! my aqua colorscheme
 ! http://terminal.sexy/#IyQs4d7GSEhAjIt9VEphaW2FhYupoafMqqmYwMfz6-i6xcGikGff9N3_x___Ge3HHu_yD-H3
