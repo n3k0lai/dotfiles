@@ -3,6 +3,7 @@ These are my hydro-themed dotfiles. Filled with crispy memes
 ## To-do
 * swap dtop back to debian?
 * swap to arch
+
 ### GUI
 * configure compton
 * configure dmenu
@@ -29,4 +30,20 @@ These are my hydro-themed dotfiles. Filled with crispy memes
 * set up openvpn
 * configure nginx for SSL
 * update personal web page
+
+### Home
+* set up rasbpian and deluge
+* get enclosure for 1tb hd
 * set up MPD
+* get two side monitor mounts
+* get 1 monitor 1 laptop mount
+* get lazyboy
+* make standing mounts
+* kitty cat play area
+* greenscreen
+
+## Goals
+* finally kiss desktop environments goodbye
+* ascend to Final Weeb Form™ and attain oppaitime membership
+* find a nice pool and get ripped
+* get yukio mishima tattoo
