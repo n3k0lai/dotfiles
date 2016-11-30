@@ -39,9 +39,9 @@ function fish_prompt
 end
 
 # make sure su uses fish
-function su
+"function su
   /bin/su --shell=/usr/bin/fish $argv
-end
+end"
 
 # make sure ag uses .agignore
 function ag
@@ -54,6 +54,11 @@ function updatevim
   vim +BundleInstall! +BundleClean +qall
 end
 
+# stole this function from bcrypt
+function tmux2
+  set TERM screen-256color-bce
+  tmux
+end
 # path variables
 set -xU EDITOR vim
 set -xU GOPATH $HOME/.local/share/go $PATH 
