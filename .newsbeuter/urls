@@ -1,4 +1,7 @@
-https://diracdeltas.github.io/blog/index.xml security "~bcrypt"
+https://diracdeltas.github.io/blog/index.xml security "~bcrypt" blog
 http://www.zerohedge.com/rss.xml finance "~ZeroHedge"
 https://www.eff.org/rss/updates.xml speech "~E.F.F."
 http://www.antipope.org/charlie/blog-static/atom.xml "~Charlie's Diary" speech
+https://vc.gg/blog/feed/ "~VC - Blog" blog
+http://feeds.xero.nu/rss/blog/newest "~Xeon - Blog" blog
+https://fsociety.info/feed.xml "~Fs0ciety - Blog" blog 
