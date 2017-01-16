@@ -5,6 +5,7 @@ These are my hydro-themed dotfiles. Filled with crispy memes
 * swap to arch
 
 ### GUI
+* configure rofi
 * configure compton
 * configure dmenu
 * configure lemonbar
@@ -15,6 +16,7 @@ These are my hydro-themed dotfiles. Filled with crispy memes
 * style 4chan
 * style ddg
 * style steam
+* set up a tracker http://www.warmplace.ru/soft/sunvox/schismtracker/milkytracker
 
 ### CLI
 * configure transmission
@@ -30,6 +32,13 @@ These are my hydro-themed dotfiles. Filled with crispy memes
 * set up openvpn
 * configure nginx for SSL
 * update personal web page
+* Set up lastfm
+  * ncmpcpp flags: bzip2 curl eventfd ffmpeg fifo flac glib icu id3tag inotify ipv6 mad network ogg opus signalfd tcpd unicode zlib -adplug -alsa -ao -audiofile -cdio -debug -expat -faad -fluidsynth -gme -jack -lame -libav -libmpdclient -libsamplerate -libsoxr -mikmod -mms -modplug  -mpg123 -muasepack -nfs -openal -oss -pipe -pulseaudio -recorder -smba -selinux -sid -sndfile -soundcloud -sqlite -systemd  -twolame -upnp -vorbis -wavpack -wildmidi -zeroconf -zip
+  * alsa flags:  flac ogg opus
+### Skillz
+* set up and deploy a docker swarm
+* Redis?
+* Puppet cert?
 
 ### Home
 * set up rasbpian and deluge

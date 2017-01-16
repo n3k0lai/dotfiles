@@ -23,6 +23,9 @@ call dein#add('Shougo/dein.vim')
 " colorscheme management
 call dein#add('flazz/vim-colorschemes')
 
+" world famous multicursor
+call dein#add('terryma/vim-multiple-cursors')
+
 " ctrl-p tool
 call dein#add('kien/ctrlp.vim')
 
@@ -35,6 +38,9 @@ call dein#add('elzr/vim-json')
 " fish syntax
 call dein#add('dag/vim-fish')
 
+" node gigaplugin
+call dein#add('moll/vim-node')
+
 " typescript syntax
 call dein#add('leafgarland/typescript-vim')
 " typescript Typings syntax
@@ -46,6 +52,9 @@ call dein#add('Quramy/tsuquyomi')
 
 " for editing view stuff
 call dein#add('kovetskiy/sxhkd-vim')
+
+" super tight datetime utility
+call dein#add('tpope/vim-speeddating')
 
 
 " *==========================End Plugins============================*
