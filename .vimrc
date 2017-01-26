@@ -56,6 +56,8 @@ call dein#add('kovetskiy/sxhkd-vim')
 " super tight datetime utility
 call dein#add('tpope/vim-speeddating')
 
+" makes vim pretty :>
+call dein#add('junegunn/goyo.vim')
 
 " *==========================End Plugins============================*
 
