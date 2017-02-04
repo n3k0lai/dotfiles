@@ -29,6 +29,9 @@ call dein#add('terryma/vim-multiple-cursors')
 " ctrl-p tool
 call dein#add('kien/ctrlp.vim')
 
+" source tree explorer
+call dein#add('scrooloose/nerdtree')
+
 " dank emojis
 call dein#add('chrisbra/unicode.vim')
 
@@ -40,6 +43,11 @@ call dein#add('dag/vim-fish')
 
 " node gigaplugin
 call dein#add('moll/vim-node')
+
+" lua omniplugin
+call dein#add('xolox/vim-lua-ftplugin')
+" moonscript syntax
+call dein#add('leafo/moonscript-vim')
 
 " typescript syntax
 call dein#add('leafgarland/typescript-vim')
@@ -102,6 +110,7 @@ nnoremap k gk
 " stops screen redraw from interrupting macros
 set lazyredraw
 
+" ag + ctrlp integration
 if executable("ag")
   set grepprg=ag\ --nogroup\ --nocolor\ --hidden\ --path-to-ignore\ ~/.agignore
   let g:ctrlp_user_command = 'ag %s -l --nocolor --hidden --path-to-ignore ~/.agignore -g ""'
@@ -124,7 +133,7 @@ if executable('matcher')
       return []
     endif
     
-    " a:mmode is currently ignored. In the future, we should probably do something
+    " a:mmode is currently ignored. In the future, we should fix 
     " about that. the matcher behaves like 'full-line'.
     let cmd = 'matcher --limit '.a:limit.' --manifest '.cachefile.' '
     if!(exists('g:ctrlp_dotfiles') && g:ctrlp_dotfiles)
@@ -137,3 +146,11 @@ if executable('matcher')
   
   endfunction
 end
+" command for super-write
+command! -nargs=0 Sw w !sudo tee % > /dev/null
+
+" force autoclose if nerdtree is only open buffer
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" ctrl-\ toggles open nerdtree
+map <C-\> :NERDTreeToggle<CR>
