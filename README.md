@@ -53,6 +53,5 @@ These are my hydro-themed dotfiles. Filled with crispy memes
 
 ## Goals
 * finally kiss desktop environments goodbye
-* ascend to Final Weeb Form™ and attain oppaitime membership
 * find a nice pool and get ripped
 * get yukio mishima tattoo
