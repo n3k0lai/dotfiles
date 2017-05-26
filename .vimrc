@@ -8,8 +8,8 @@ filetype off                  " required
 scriptencoding utf-8
 set encoding=utf-8
 
-" set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/dein.vim
+" set the runtime path to include Dein and initialize
+set rtp+=~/.vim/bundle/repos/github.com/Shougo/dein.vim
 
 call dein#begin('~/.vim/bundle')
 
@@ -32,6 +32,8 @@ call dein#add('kien/ctrlp.vim')
 " source tree explorer
 call dein#add('scrooloose/nerdtree')
 
+" super tight linter
+call dein#add('w0rp/ale')
 " dank emojis
 call dein#add('chrisbra/unicode.vim')
 
@@ -44,10 +46,15 @@ call dein#add('dag/vim-fish')
 " node gigaplugin
 call dein#add('moll/vim-node')
 
+" needed for lua omniplugin
+call dein#add('xolox/vim-misc')
 " lua omniplugin
 call dein#add('xolox/vim-lua-ftplugin')
 " moonscript syntax
 call dein#add('leafo/moonscript-vim')
+
+" vue syntax
+call dein#add('posva/vim-vue')
 
 " typescript syntax
 call dein#add('leafgarland/typescript-vim')
