@@ -10,12 +10,11 @@ URxvt.depth:                32
 URxvt.geometry:             90x30
 URxvt.transparent:          false
 URxvt.fading:               0
-!! URxvt.urgentOnBell:         true
-!! URxvt.visualBell:           true
 URxvt.loginShell:           true
 URxvt.saveLines:            512
 URxvt.internalBorder:       3
 URxvt.lineSpace:            0
+URxvt.internalBorder:       20
 
 ! Fonts
 URxvt.allow_bold:           false
@@ -81,3 +80,9 @@ URxvt.color14:      #1eeff2
 URxvt.color7:       #c0c7f3
 URxvt.color15:      #0fe1f7
 
+
+! ==============================================================================
+!                         rofi settings
+! ==============================================================================
+
+rofi.monitor:       DP-0

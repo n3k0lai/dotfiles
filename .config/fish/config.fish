@@ -15,28 +15,28 @@ function _is_git_dirty
 end
 
 # Prompt aesthetics
-function fish_prompt
-  set -l teal (set_color -o cyan)
-  set -l purple (set_color -o green)
-  set -l cream (set_color -o red)
-  set -l violet (set_color white)
-  if [ (_git_branch_name) ]
-    if test (_git_branch_name) = "master"
-      set_color -o red;
-      printf $cream( prompt_pwd )"$purple(m)"
-    else
-      printf $cream( prompt_pwd )"$purple("(_git_branch_name)")"
-    end
-
-    if [ (_is_git_dirty) ]
-      printf " $teal~$purple< "
-    else
-      printf " $teal~$purple> "
-    end
-  else
-    printf "$cr"(prompt_pwd)" $teal~$purple> ";
-  end
-end
+#function fish_prompt
+#  set -l teal (set_color -o cyan)
+#  set -l purple (set_color -o green)
+#  set -l cream (set_color -o red)
+#  set -l violet (set_color white)
+#  if [ (_git_branch_name) ]
+#    if test (_git_branch_name) = "master"
+#      set_color -o red;
+#      printf $cream( prompt_pwd )"$purple(m)"
+#    else
+#      printf $cream( prompt_pwd )"$purple("(_git_branch_name)")"
+#    end
+#
+#    if [ (_is_git_dirty) ]
+#      printf " $teal~$purple< "
+#    else
+#      printf " $teal~$purple> "
+#    end
+#  else
+#    printf "$cr"(prompt_pwd)" $teal~$purple> ";
+#  end
+#end
 
 # make sure su uses fish
 "function su
