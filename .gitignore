@@ -1,0 +1,15 @@
+.ssh
+
+# temp file and local data
+.bash_history
+.viminfo
+.vim
+.npm
+.luarocks
+composer.json
+composer.lock
+vendor
+
+# my personal directories
+code
+txt
