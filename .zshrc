@@ -38,6 +38,4 @@ zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
 
 # path variables
-if [ -d "/usr/local/bin" ] ; then
-  export PATH="/usr/local/bin:$PATH"
-fi
+export PATH="/usr/local/bin:$PATH"

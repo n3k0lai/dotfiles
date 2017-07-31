@@ -39,9 +39,9 @@ end
 #end
 
 # make sure su uses fish
-"function su
-  /bin/su --shell=/usr/bin/fish $argv
-end"
+#function su
+#  /bin/su --shell=/usr/bin/fish $argv
+#end
 
 # make sure ag uses .agignore
 function ag
@@ -62,3 +62,10 @@ end
 # path variables
 set -xU EDITOR vim
 set -xU GOPATH $HOME/.local/share/go $PATH 
+
+# tabtab source for serverless package
+# uninstall by removing these lines or running `tabtab uninstall serverless`
+[ -f /home/me0wmix/.config/yarn/global/node_modules/tabtab/.completions/serverless.fish ]; and . /home/me0wmix/.config/yarn/global/node_modules/tabtab/.completions/serverless.fish
+# tabtab source for sls package
+# uninstall by removing these lines or running `tabtab uninstall sls`
+[ -f /home/me0wmix/.config/yarn/global/node_modules/tabtab/.completions/sls.fish ]; and . /home/me0wmix/.config/yarn/global/node_modules/tabtab/.completions/sls.fish
