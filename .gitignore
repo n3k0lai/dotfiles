@@ -1,11 +1,32 @@
+# NO
 .ssh
+.gnupg
+.serverlessrc
 
 # temp file and local data
+.local
+.cache
+.wget-hsts
+.sudo_as_admin_successful
+
+# sh
 .bash_history
+.zsh_history
+.zcompdump
+*fishd*
+
+# vim
 .viminfo
 .vim
+*.swp
+
+# js
 .npm
+.yarnrc
 .luarocks
+.serverless
+
+# php
 composer.json
 composer.lock
 vendor
@@ -13,3 +34,4 @@ vendor
 # my personal directories
 code
 txt
+fonts
