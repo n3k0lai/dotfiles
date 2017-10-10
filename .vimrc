@@ -52,18 +52,11 @@ call dein#add('xolox/vim-misc')
 call dein#add('xolox/vim-lua-ftplugin')
 " moonscript syntax
 call dein#add('leafo/moonscript-vim')
+" love2d plugin 
+call dein#add('davisdude/vim-love-docs')
 
 " vue syntax
 call dein#add('posva/vim-vue')
-
-" typescript syntax
-call dein#add('leafgarland/typescript-vim')
-" typescript Typings syntax
-call dein#add('mhartington/vim-typings')
-" needed for tsuquyomi
-call dein#add('Shougo/vimproc', {'build': 'make'})
-" typescript omniplugin shiz
-call dein#add('Quramy/tsuquyomi')
 
 " for editing view stuff
 call dein#add('kovetskiy/sxhkd-vim')
