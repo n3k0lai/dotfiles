@@ -1,0 +1,13 @@
+music_directory "~/Music/beets"        # Beets music library folder
+playlist_directory "~/.mpd/playlists"  # Where do playlists live?
+db_file "~/.mpd/database"              
+pid_file "~/.mpd/pid"                  
+state_file "~/.mpd/state"
+sticker_file "~/.mpd/sticker.sql"
+port "6600"                          
+auto_update "yes"
+audio_output {
+         type "osx"
+         name "My Mac Device"
+         mixer_type "software"
+}
