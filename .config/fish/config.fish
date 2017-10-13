@@ -60,8 +60,8 @@ function tmux2
   tmux
 end
 # path variables
-set -xU EDITOR vim
-set -xU GOPATH $HOME/.local/share/go $PATH 
+#set -xU EDITOR vim
+#set -xU GOPATH $HOME/.local/share/go $PATH 
 
 # tabtab source for serverless package
 # uninstall by removing these lines or running `tabtab uninstall serverless`

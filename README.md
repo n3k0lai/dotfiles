@@ -1,14 +1,13 @@
 # My Dotfiles
-These are my dotfiles. Filled with crispy memes
+These are my dotfiles. Main focus is on X11, OSX, and dev tools
+
+![current desktop](current.png)
 
 ## TODO
-* configure compton
-* configure lemonbar
-* style firefox
+* fix kitty
+* optimize shkd
+* touch up chunkwm
 * create homepage
-* style 4chan
-* style steam
-* set tmux nesting rules http://stahlke.org/dan/tmux-nested/
 * set up stow https://www.gnu.org/software/stow/
 * configure fisherman
 * encrypt weechat files http://dev.weechat.org/post/2013/08/04/Secured-data
