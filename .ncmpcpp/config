@@ -1,6 +1,4 @@
-mpd_host = "127.0.0.1"
-mpd_port = "6600"
-mpd_music_dir = "/home/mpd/music"
+ignore_leading_the = yes  # Alphabetize "The Beatles" with "B" instead of "T"
 
 visualizer_in_stereo = "yes"
 # visualizer_type = "wave" (spectrum/wave)
