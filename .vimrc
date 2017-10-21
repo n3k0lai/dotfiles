@@ -16,21 +16,22 @@ call dein#begin('~/.vim/bundle')
 " let Dein manage Dein
 call dein#add('Shougo/dein.vim')
 
-" *=================================================================*
-" *                        Personal Plugins                         *
-" *=================================================================*
+" *==========================================*
+" *              Personal Plugins            *
+" *==========================================*
+
+" shougo
+call dein#add('Shougo/neocomplete.vim')
+call dein#add('Shougo/neosnippet.vim')
+call dein#add('Shougo/neosnippet-snippets')
+call dein#add('Shougo/unite.vim')
+call dein#add('Shougo/vimfiler.vim')
 
 " colorscheme management
 call dein#add('flazz/vim-colorschemes')
 
 " world famous multicursor
 call dein#add('terryma/vim-multiple-cursors')
-
-" ctrl-p tool
-call dein#add('kien/ctrlp.vim')
-
-" source tree explorer
-call dein#add('scrooloose/nerdtree')
 
 " super tight linter
 call dein#add('w0rp/ale')
@@ -67,14 +68,14 @@ call dein#add('tpope/vim-speeddating')
 " makes vim pretty :>
 call dein#add('junegunn/goyo.vim')
 
-" *==========================End Plugins============================*
+" *==========End Plugins==============*
 
 call dein#end()            " required
 filetype plugin indent on    " required
 
-" *=================================================================*
-" *                        Generic Settings                         *
-" *=================================================================*
+" *===================================*
+" *           Generic Settings        *
+" *===================================*
 
 " color scheme
 " colorscheme heroku 
@@ -110,47 +111,11 @@ nnoremap k gk
 " stops screen redraw from interrupting macros
 set lazyredraw
 
-" ag + ctrlp integration
-if executable("ag")
-  set grepprg=ag\ --nogroup\ --nocolor\ --hidden\ --path-to-ignore\ ~/.agignore
-  let g:ctrlp_user_command = 'ag %s -l --nocolor --hidden --path-to-ignore ~/.agignore -g ""'
-endif
+" enable autocomplete
+let g:neocomplete#enable_at_startup = 1
 
-let g:ctrlp_show_hidden = 1
+" enable file explorer
+let g:vimfiler_as_default_explorer = 1
 
-if executable('matcher')
-  let g:ctrlp_match_func = { 'match': 'GoodMatch' }
-
-  function! GoodMatch(items, str, limit, mmode, ispath, crfile, regex)
-
-    " Create a cache file if not yet exists
-    let cachefile = ctrlp#utils#cachedir().'/matcher.cache'
-    if !( filereadable(cachefile) && a:items == readfile(cachefile) )
-      call writefile(a:items, cachefile)
-    endif
-    
-    if !filereadable(cachefile)
-      return []
-    endif
-    
-    " a:mmode is currently ignored. In the future, we should fix 
-    " about that. the matcher behaves like 'full-line'.
-    let cmd = 'matcher --limit '.a:limit.' --manifest '.cachefile.' '
-    if!(exists('g:ctrlp_dotfiles') && g:ctrlp_dotfiles)
-      let cmd = cmd.'--no-dotfiles'
-    endif
-    
-    let cmd = cmd.a:str
-  
-    return split(system(cmd), "\n")
-  
-  endfunction
-end
 " command for super-write
 command! -nargs=0 Sw w !sudo tee % > /dev/null
-
-" force autoclose if nerdtree is only open buffer
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-
-" ctrl-\ toggles open nerdtree
-map <C-\> :NERDTreeToggle<CR>
