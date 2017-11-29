@@ -2,18 +2,28 @@
 .ssh
 .gnupg
 .serverlessrc
+.rainbow_oauth
+.aws
+.weechat
 
 # temp file and local data
 .local
 .cache
 .wget-hsts
 .sudo_as_admin_successful
+.gitconfig
+.config/configstore
 
 # sh
 .bash_history
 .zsh_history
 .zcompdump
 *fishd*
+.config/fish/functions
+!.config/fish/functions/fisher.fish
+.config/fish/conf.d
+.config/fish/completions
+.config/fisherman
 
 # vim
 .viminfo
@@ -23,15 +33,23 @@
 # js
 .npm
 .yarnrc
-.luarocks
 .serverless
-
+.standard-cache
+.v8flags*
+.node-gyp
+.babel.json
 # php
 composer.json
 composer.lock
 vendor
 
+# ruby
+.gem
+.rvm
+
+# lua
+.luarocks
+
 # my personal directories
 code
 txt
-fonts

@@ -1,5 +1,15 @@
+fisherman/anicode
+fisherman/await
+fisherman/choices
 fisherman/fishkit
+fisherman/fnm
 fisherman/get
+fisherman/get_file_age
 fisherman/getopts
+fisherman/git_util
+fisherman/last_job_id
 fisherman/menu
 fisherman/paths
+catlover91/pronto-prompto
+fisherman/spin
+fisherman/vault
