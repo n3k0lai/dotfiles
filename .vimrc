@@ -9,68 +9,77 @@ scriptencoding utf-8
 set encoding=utf-8
 
 " set the runtime path to include Dein and initialize
-set rtp+=~/.vim/bundle/repos/github.com/Shougo/dein.vim
+set runtimepath+=~/.vim/bundle/repos/github.com/Shougo/dein.vim
 
-call dein#begin('~/.vim/bundle')
+if dein#load_state('~/.vim/bundle')
+  call dein#begin('~/.vim/bundle')
 
-" let Dein manage Dein
-call dein#add('Shougo/dein.vim')
+  " let Dein manage Dein
+  call dein#add('Shougo/dein.vim')
 
-" *==========================================*
-" *              Personal Plugins            *
-" *==========================================*
+  " *==========================================*
+  " *              Personal Plugins            *
+  " *==========================================*
 
-" shougo
-call dein#add('Shougo/neocomplete.vim')
-call dein#add('Shougo/neosnippet.vim')
-call dein#add('Shougo/neosnippet-snippets')
-call dein#add('Shougo/unite.vim')
-call dein#add('Shougo/vimfiler.vim')
+  " shougo
+  call dein#add('Shougo/neocomplete.vim')
+  call dein#add('Shougo/neosnippet.vim')
+  call dein#add('Shougo/neosnippet-snippets')
+  call dein#add('Shougo/unite.vim')
+  call dein#add('Shougo/vimfiler.vim')
 
-" colorscheme management
-call dein#add('flazz/vim-colorschemes')
+  " colorscheme management
+  call dein#add('flazz/vim-colorschemes')
 
-" world famous multicursor
-call dein#add('terryma/vim-multiple-cursors')
+  " world famous multicursor
+  call dein#add('terryma/vim-multiple-cursors')
 
-" super tight linter
-call dein#add('w0rp/ale')
-" dank emojis
-call dein#add('chrisbra/unicode.vim')
+  " super tight linter
+  call dein#add('w0rp/ale')
 
-" JSON syntax
-call dein#add('elzr/vim-json')
+  " dank emojis
+  call dein#add('chrisbra/unicode.vim')
 
-" fish syntax
-call dein#add('dag/vim-fish')
+  " JSON syntax
+  call dein#add('elzr/vim-json')
 
-" node gigaplugin
-call dein#add('moll/vim-node')
+  " fish syntax
+  call dein#add('dag/vim-fish')
 
-" needed for lua omniplugin
-call dein#add('xolox/vim-misc')
-" lua omniplugin
-call dein#add('xolox/vim-lua-ftplugin')
-" moonscript syntax
-call dein#add('leafo/moonscript-vim')
-" love2d plugin 
-call dein#add('davisdude/vim-love-docs')
+  " node gigaplugin
+  call dein#add('moll/vim-node')
 
-" vue syntax
-call dein#add('posva/vim-vue')
+  " needed for lua omniplugin
+  call dein#add('xolox/vim-misc')
+  " lua omniplugin
+  call dein#add('xolox/vim-lua-ftplugin')
+  " moonscript syntax
+  call dein#add('leafo/moonscript-vim')
+  " love2d plugin 
+  call dein#add('davisdude/vim-love-docs')
 
-" for editing view stuff
-call dein#add('kovetskiy/sxhkd-vim')
+  " vue syntax
+  call dein#add('posva/vim-vue')
 
-" super tight datetime utility
-call dein#add('tpope/vim-speeddating')
+  " for editing view stuff
+  call dein#add('kovetskiy/sxhkd-vim')
 
-" makes vim pretty :>
-call dein#add('junegunn/goyo.vim')
+  " super tight datetime utility
+  call dein#add('tpope/vim-speeddating')
 
-" *==========End Plugins==============*
+  " makes vim pretty :>
+  call dein#add('junegunn/goyo.vim')
 
-call dein#end()            " required
+  " neovim only
+  if !has('nvim')
+    
+  endif
+  " *==========End Plugins==============*
+
+  call dein#end()            " required
+  call dein#save_state()
+endif
+
 filetype plugin indent on    " required
 
 " *===================================*
@@ -90,7 +99,7 @@ set shiftwidth=2
 set expandtab
 
 " keep on syntax highlighting
-syntax on
+syntax enable
 
 " show line numbers
 set number
