@@ -38,6 +38,8 @@
 .v8flags*
 .node-gyp
 .babel.json
+.electron
+
 # php
 composer.json
 composer.lock
