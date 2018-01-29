@@ -79,11 +79,11 @@ while getopts hvf: opt; do
             
             # sxhkd
             mkdir -p ~/.config/sxhkd
-            ln -s $basedir/sxhkd/sxhkdrc ~/.config/sxhkd/sxhkdrc
+            ln -s $basedir/x11/sxhkdrc ~/.config/sxhkd/sxhkdrc
             
             # bspwm
             mkdir -p ~/.config/bsmpwm
-            ln -s $basedir/bspwm/bspwmrc ~/.config/bspwm/bspwmrc
+            ln -s $basedir/x11/bspwmrc ~/.config/bspwm/bspwmrc
             
             # convert to lemonbar
             # mkdir -p ~/.config/statusbar
