@@ -13,6 +13,7 @@ Usage: ${0##*/} [-h] [-core] [-gui] [-util]...
 extras:
     -weechat    install weechat config
     -newsbeuter install newsbeuter config
+    -scim       install sc-im config
 EOF
 }
 # Resetting OPTIND is necessary if getopts was used previously in the script.
@@ -146,6 +147,9 @@ while getopts hvf: opt; do
             ln -s $basedir/newsbeuter/urls ~/.newsbeuter/urls
             ;;
 
+        scim)
+            ln -s $basedir/scimrc ~/.scimrc
+            ;;
         ?|*)
             show_help >&2
             exit 1
