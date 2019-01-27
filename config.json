@@ -1,0 +1,19 @@
+{
+    "ignore": [
+        "fish",
+        "ncmpcpp",
+        "newsbeuter",
+        "osx",
+        "qutebrowser",
+        "ranger",
+        "comfy.sh",
+        "x11",
+        "zathura",
+        "bashrc",
+        "current.png",
+        "scimrc",
+        "tmux.conf",
+        "vimrc",
+        "zshrc"
+    ]
+}

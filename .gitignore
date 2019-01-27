@@ -5,6 +5,7 @@
 .rainbow_oauth
 .aws
 .weechat
+comfy.sh
 
 # temp file and local data
 .local
@@ -13,7 +14,6 @@
 .sudo_as_admin_successful
 .gitconfig
 .config/configstore
-
 # sh
 .bash_history
 .zsh_history

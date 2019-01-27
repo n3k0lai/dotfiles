@@ -1,0 +1,4 @@
+{
+    "os": "win32",
+    "output": "C:\\Users\\{{ HOME }}\\AppData\\Roaming\\bug.n"
+}
