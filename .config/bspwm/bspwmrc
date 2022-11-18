@@ -1,16 +1,24 @@
 #! /bin/sh
 
-sxhkd &
+pgrep -x sxhkd > /dev/null || sxhkd &
+#set -xv
+#exec 2>>/tmp/bspwm.log
+~/.fehbg
+#bspc query -M --names
+#bspc monitor -d I II III IV V VI VII VIII IX X
+#bspc monitor -d 1 2 3 4 5
 
-bspc monitor DP-0 -d I II V VI
-bspc monitor DVI-I-1 -d III IV VII VIII
-bspc config border_width         2
-bspc config window_gap          12
+bspc config border_width         5
+bspc config window_gap          100
+
+#bspc monitor eDP1 -d I II III IV V VI VII VIII IX X
 
 bspc config click_to_focus       true
 bspc config split_ratio          0.52
 bspc config borderless_monocle   true
 bspc config gapless_monocle      true
+
+bspc monitor -d I II III IV V VI VII VIII IX X
 
 bspc rule -a Steam desktop='^5' follow=on split_dir=right
 bspc rule -a Gimp desktop='^8' state=floating follow=on
@@ -18,3 +26,5 @@ bspc rule -a Chromium desktop='^2'
 bspc rule -a mplayer2 state=floating
 bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off
+
+#xsetroot -cursor_name left_ptr &
