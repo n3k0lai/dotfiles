@@ -1,11 +1,14 @@
+# make config opt-out by default
+.config
+
 # NO
 .ssh
 .gnupg
+.pki
 .serverlessrc
 .rainbow_oauth
 .aws
 .weechat
-comfy.sh
 
 # temp file and local data
 .local
