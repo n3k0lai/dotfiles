@@ -9,7 +9,7 @@ scriptencoding utf-8
 set encoding=utf-8
 
 " set the runtime path to include Dein and initialize
-set runtimepath+=~/.vim/bundle/repos/github.com/Shougo/dein.vim
+set runtimepath+=~/.vim/dein.vim
 
 if dein#load_state('~/.vim/bundle')
   call dein#begin('~/.vim/bundle')

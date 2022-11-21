@@ -5,8 +5,13 @@ These are my dotfiles. Main focus is on X11, and dev tools
 
 ## TODO
 * Audio
+    * mpd
+    * ncmpcpp
+    * zathura
+    * irig
+    * git repo
 * optimize sxhkd
 * optimize bspwm
-* configure luakitK
+* configure luakit
 * create homepage
 * configure fisherman
