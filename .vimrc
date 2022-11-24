@@ -10,6 +10,7 @@ set encoding=utf-8
 
 " set the runtime path to include Dein and initialize
 set runtimepath+=~/.vim/dein.vim
+" run :call dein#install() on first run
 
 if dein#load_state('~/.vim/bundle')
   call dein#begin('~/.vim/bundle')
@@ -27,6 +28,10 @@ if dein#load_state('~/.vim/bundle')
   call dein#add('Shougo/neosnippet-snippets')
   call dein#add('Shougo/unite.vim')
   call dein#add('Shougo/vimfiler.vim')
+
+  " go lang
+  call dein#add('fatih/vim-go')
+  " remember to call :GoInstallBinaries after initial dein install
 
   " colorscheme management
   call dein#add('flazz/vim-colorschemes')
