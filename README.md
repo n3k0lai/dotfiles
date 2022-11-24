@@ -15,3 +15,7 @@ These are my dotfiles. Main focus is on X11, and dev tools
 * configure luakit
 * create homepage
 * configure fisherman
+* anki
+* pinyin
+* calibre
+* emoji
