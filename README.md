@@ -10,8 +10,9 @@ These are my dotfiles. Main focus is on X11, and dev tools
     * zathura
     * irig
     * git repo
-* optimize sxhkd
-* optimize bspwm
+* swap to dwm
+* swap to dmenu
+* swap to st
 * configure luakit
 * create homepage
 * configure fisherman
@@ -19,3 +20,9 @@ These are my dotfiles. Main focus is on X11, and dev tools
 * pinyin
 * calibre
 * emoji
+* streamlink
+* set up doom
+* thunderbolt
+* dwarf fortress 
+* unify colors
+* wow

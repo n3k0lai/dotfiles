@@ -3,7 +3,7 @@
 pgrep -x sxhkd > /dev/null || sxhkd &
 ~/.fehbg
 
-bspc config border_width         5
+bspc config border_width        2
 bspc config window_gap          20
 
 bspc config click_to_focus       true
