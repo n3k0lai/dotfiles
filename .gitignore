@@ -58,6 +58,9 @@ vendor
 # lua
 .luarocks
 
+# go
+go
+
 # my personal directories
 code
 papes

@@ -8,6 +8,9 @@ filetype off                  " required
 scriptencoding utf-8
 set encoding=utf-8
 
+" chinese support
+set fileencodings=utf8,cp936,gb18030,big5
+
 " set the runtime path to include Dein and initialize
 set runtimepath+=~/.vim/dein.vim
 " run :call dein#install() on first run
