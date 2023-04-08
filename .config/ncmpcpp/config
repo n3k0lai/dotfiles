@@ -1,0 +1,7 @@
+#ignore_leading_the = yes  # Alphabetize "The Beatles" with "B" instead of "T"
+visualizer_data_source = "/tmp/mpd.fifo"
+visualizer_output_name = "Visualizer feed"
+visualizer_in_stereo = "yes"
+# wave, wave_filled, spectrum, ellipse
+visualizer_type = "spectrum"
+visualizer_look = "+|"

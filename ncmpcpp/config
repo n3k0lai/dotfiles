@@ -1,6 +1,0 @@
-ignore_leading_the = yes  # Alphabetize "The Beatles" with "B" instead of "T"
-
-visualizer_in_stereo = "yes"
-# visualizer_type = "wave" (spectrum/wave)
-visualizer_type = "spectrum" (spectrum/wave)
-visualizer_look = "+|"

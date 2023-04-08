@@ -1,2 +1,2 @@
 #!/bin/sh
-feh --no-fehbg --bg-fill 
+feh --no-fehbg --bg-fill '/home/me0w/papes/fall.jpg' 
