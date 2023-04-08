@@ -2,6 +2,8 @@
 # set -x TERM ansi 
 # set -x TERM rxvt-256color
 
+set_profile
+
 # Terminal greeting
 set fish_greeting (fortune);
 
@@ -62,10 +64,3 @@ end
 # path variables
 #set -xU EDITOR vim
 #set -xU GOPATH $HOME/.local/share/go $PATH 
-
-# tabtab source for serverless package
-# uninstall by removing these lines or running `tabtab uninstall serverless`
-[ -f /home/me0wmix/.config/yarn/global/node_modules/tabtab/.completions/serverless.fish ]; and . /home/me0wmix/.config/yarn/global/node_modules/tabtab/.completions/serverless.fish
-# tabtab source for sls package
-# uninstall by removing these lines or running `tabtab uninstall sls`
-[ -f /home/me0wmix/.config/yarn/global/node_modules/tabtab/.completions/sls.fish ]; and . /home/me0wmix/.config/yarn/global/node_modules/tabtab/.completions/sls.fish

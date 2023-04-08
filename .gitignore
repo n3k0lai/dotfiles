@@ -35,6 +35,14 @@
 .viminfo
 .vim
 *.swp
+*.tmp
+
+# android
+.android
+.gradle
+.java
+Android
+.m2
 
 # js
 .npm
@@ -66,4 +74,23 @@ code
 papes
 txt
 Downloads
-dotfiles 
+dotfiles
+tunes
+lib
+Desktop
+.obsidian
+
+# gaming
+.steam
+.steampath
+.steampid
+.eve
+.wine 
+.nvidia-settings-rc
+.var
+
+# work
+.zoom
+.vscode-oss
+.mozilla
+
