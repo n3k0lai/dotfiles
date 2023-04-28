@@ -1,5 +1,4 @@
-# make config opt-out by default
-.config
+# config opt-out
 
 # NO
 .ssh

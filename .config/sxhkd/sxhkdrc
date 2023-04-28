@@ -1,14 +1,20 @@
+#!/usr/bin/env sh
+
 #
 # wm independent hotkeys
 #
 
 # terminal emulator
 super + Return
-	urxvt
+	kitty
 
 # program launcher
 super + @space
-	dmenu_run
+	rofi -show drun
+
+# emoji
+super + period
+	rofi -show emoji
 
 # make sxhkd reload its configuration files:
 super + Escape
@@ -17,8 +23,15 @@ super + Escape
 super + {_,shift + }q
 	bspc node -{c,k}
 
+# lock the screen
+super + shift + e
+	betterlockscreen -l
+
 Print
 	scrot
+
+super + shift + i
+	bspc node -i
 #
 # bspwm hotkeys
 #
@@ -69,8 +82,8 @@ super + {_,shift + }{h,j,k,l}
 	bspc node -{f,s} {west,south,north,east}
 
 # focus the node for the given path jump
-super + {p,b,comma,period}
-	bspc node -f @{parent,brother,first,second}
+#super + {p,b,comma,period}
+#	bspc node -f @{parent,brother,first,second}
 
 # focus the next/previous window in the current desktop
 super + {_,shift + }c

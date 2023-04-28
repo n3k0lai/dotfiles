@@ -2,11 +2,7 @@
 # set -x TERM ansi 
 # set -x TERM rxvt-256color
 
-set_profile
-
-# Terminal greeting
-set fish_greeting (fortune);
-
+set_profile;
 
 function _git_branch_name
   echo (command git symbolic-ref HEAD ^/dev/null | sed -e 's|^refs/heads/||')
