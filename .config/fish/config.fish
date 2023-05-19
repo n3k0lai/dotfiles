@@ -1,62 +1,36 @@
-# Force 256 color
-# set -x TERM ansi 
-# set -x TERM rxvt-256color
+# \  _/\_
+#  ><_  _*> config.fish
+# /   \/
+set -gx PATH "/bin /usr/bin /usr/local/bin /sbin /usr/sbin/ /user/local/sbin $PATH"
+# default programs
+set -gx EDITOR "nvim"
+set -gx TERMINAL "kitty"
+set -gx BROWSER "opera"
+set -gx BROWSER_MIN "luakit"
 
-set_profile;
-
-function _git_branch_name
-  echo (command git symbolic-ref HEAD ^/dev/null | sed -e 's|^refs/heads/||')
-end
-
-function _is_git_dirty
-    echo (command git status -s --ignore-submodules=dirty ^/dev/null)
-end
-
-# Prompt aesthetics
-#function fish_prompt
-#  set -l teal (set_color -o cyan)
-#  set -l purple (set_color -o green)
-#  set -l cream (set_color -o red)
-#  set -l violet (set_color white)
-#  if [ (_git_branch_name) ]
-#    if test (_git_branch_name) = "master"
-#      set_color -o red;
-#      printf $cream( prompt_pwd )"$purple(m)"
-#    else
-#      printf $cream( prompt_pwd )"$purple("(_git_branch_name)")"
-#    end
+# config
+set -gx XDG_CONFIG_HOME "$HOME/.config"
+set -gx XDG_DATA_HOME "$HOME/.local/share"
+set -gx GOPATH "$HOME/go" # should be in data
+set -gx SXHKD_SHELL '/usr/bin/sh'
+ 
+# colorscheme 
 #
-#    if [ (_is_git_dirty) ]
-#      printf " $teal~$purple< "
-#    else
-#      printf " $teal~$purple> "
-#    end
-#  else
-#    printf "$cr"(prompt_pwd)" $teal~$purple> ";
-#  end
-#end
 
-# make sure su uses fish
-#function su
-#  /bin/su --shell=/usr/bin/fish $argv
-#end
+# input for multilang
+set -gx XMODIFIERS "fcitx5"
+set -gx GTK_IM_MODULE "fcitx5"
+set -gx QT_IM_MODULE "fcitx5"
+set -gx DISPLAY ":0"
+set -gx BETTERLOCKSCREEN_WALLPAPER_COMMAND "mtrx"
 
-# make sure ag uses .agignore
-function ag
-  /bin/ag --path-to-ignore $HOME/.agignore
-end
+# wine
+set -gx WINEDEBUG "fps"
+set -gx FREETYPE_PROPERTIES "truetype:interpreter-version=35"
 
-# command to quick-update vundle 
-function updatevim
-  set -lx SHELL (which sh)
-  vim +BundleInstall! +BundleClean +qall
-end
+# fixes
+set -gx MOZ_USE_XINPUT2 "1" # mozilla smooth scrolling/touchpads
+set -gx _JAVA_AWT_WM_NONREPARENTING "1" # android studio x11 ui fix
 
-# stole this function from bcrypt
-function tmux2
-  set TERM screen-256color-bce
-  tmux
-end
-# path variables
-#set -xU EDITOR vim
-#set -xU GOPATH $HOME/.local/share/go $PATH 
+# wmname LG3D
+

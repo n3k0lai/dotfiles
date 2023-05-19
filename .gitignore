@@ -8,6 +8,9 @@
 .rainbow_oauth
 .aws
 .weechat
+.emulator_console_auth_token
+.config/Bitwarden
+.config/freerdp
 
 # temp file and local data
 .local
@@ -17,17 +20,13 @@
 .gitconfig
 .config/configstore
 .logs
+.config/ibus
 
 # sh
 .bash_history
+.bash_logout
 .zsh_history
 .zcompdump
-*fishd*
-.config/fish/functions
-!.config/fish/functions/fisher.fish
-.config/fish/conf.d
-.config/fish/completions
-.config/fisherman
 .Xauthority
 
 # vim
@@ -68,16 +67,34 @@ vendor
 # go
 go
 
+# qt
+.config/QtProject.conf
+
 # my personal directories
 code
 papes
 txt
 Downloads
+Documents
+Pictures
 dotfiles
 tunes
 lib
 Desktop
 .obsidian
+.config/obsidian
+
+# ui
+.config/kdeglobals
+.config/xdg-desktop-portal-kderc
+.config/user-dirs.dirs
+.config/user-dirs.locale
+.config/mimeapps.list
+.config/dconf
+
+# audio
+.config/ncmpcpp/error.log
+.config/pulse
 
 # gaming
 .steam
@@ -87,9 +104,29 @@ Desktop
 .wine 
 .nvidia-settings-rc
 .var
+.config/CCP
+.config/openrazer
+.config/polychromatic
+.config/discord
+.config/lutris
 
 # work
 .zoom
 .vscode-oss
+.config/chromium
+.config/opera
+.config/Google
 .mozilla
+.config/zoom.conf
+.config/zoomus.conf
+opera_autoupdate.log
+.config/Slack
+.config/github-copilot
+.vscode
+.config/Code
+.config/Code - OSS
+# zoom conf
+.config/Unknown Organization 
 
+# music
+.config/Renoise
