@@ -38,7 +38,11 @@ fi
 #xterm -geometry 80x20+494-0 &
 #exec xterm -geometry 80x66+0+0 -name login
 
-feh --bg-fill -r ~/papes/ &
+feh --bg-fill ~/papes/ene.jpg #-r ~/papes/ &
 wmname LG3D
-#exec --no-startup-id fcitx5 -d
+# multilanguage input
+GTK_IM_MODULE=fcitx5
+exec fcitx5 -d &
+
+# display manager
 exec bspwm
