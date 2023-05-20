@@ -1,4 +1,6 @@
 # My Dotfiles
-These are my dotfiles. Main focus is on X11, and dev tools
+These are my dotfiles. Main focus is on fish, hyprland, and dev tools
 
-![current desktop](scrots/2022-11-18-105928_1920x1080_scrot.png)
+
+my old x11 look
+![old desktop](scrots/2023-x11.png)
