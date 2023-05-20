@@ -1,0 +1,29 @@
+window {
+  margin: 5px;
+  border-width: 2px;
+  border-style: solid;
+  border-image: linear-gradient(to bottom right, #83d9f7, #6f95fc) 1;
+  background-color: #191919;
+  border-radius: 10px;
+}
+#input {
+  margin: 20px;
+  background-color: #3f3f3f;
+  border: 0;
+}
+
+#inner-box {
+  margin: 10px;
+  background-color: #3f3f3f;
+  color: #ffffff;
+}
+
+#scroll {
+  margin: 0 20px 20px;
+  border-radius: 5px;
+  background-color: #3f3f3f;
+}
+
+#entry:selected {
+  background-color: #6f95fc;
+}

@@ -85,6 +85,7 @@ Desktop
 .config/obsidian
 
 # ui
+.hyprland
 .config/kdeglobals
 .config/xdg-desktop-portal-kderc
 .config/user-dirs.dirs
