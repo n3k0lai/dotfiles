@@ -1,4 +1,4 @@
 function aesth
   
-  exec mpv --loop --no-audio ~/papes/ene.gif
+  exec mpv --loop --no-audio ~/papes/ene.gif &
 end

@@ -42,7 +42,11 @@ feh --bg-fill ~/papes/ene.jpg #-r ~/papes/ &
 wmname LG3D
 # multilanguage input
 GTK_IM_MODULE=fcitx5
+QT_IM_MODULE=fcitx5
+XMODIFIERS=@im=fcitx5
+GLFW_IM_MODULE=ibus
 exec fcitx5 -d &
 
 # display manager
 exec bspwm
+#exec Hyprland
