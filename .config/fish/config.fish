@@ -21,7 +21,7 @@ set -gx SXHKD_SHELL '/usr/bin/sh'
 set -gx XMODIFIERS "fcitx5"
 set -gx GTK_IM_MODULE "fcitx5"
 set -gx QT_IM_MODULE "fcitx5"
-set -gx DISPLAY ":0"
+#set -gx DISPLAY ":0"
 set -gx BETTERLOCKSCREEN_WALLPAPER_COMMAND "mtrx"
 
 # wine

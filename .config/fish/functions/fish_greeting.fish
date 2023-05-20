@@ -1,3 +1,3 @@
 function fish_greeting
-  fortune chinese;
+  fortune -s chinese;
 end
