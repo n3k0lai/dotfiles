@@ -1,7 +1,9 @@
 # \  _/\_
 #  ><_  _*> config.fish
 # /   \/
+
 set -gx PATH "/bin /usr/bin /usr/local/bin /sbin /usr/sbin/ /user/local/sbin $PATH"
+
 # default programs
 set -gx EDITOR "nvim"
 set -gx TERMINAL "kitty"
@@ -31,6 +33,17 @@ set -gx FREETYPE_PROPERTIES "truetype:interpreter-version=35"
 # fixes
 set -gx MOZ_USE_XINPUT2 "1" # mozilla smooth scrolling/touchpads
 set -gx _JAVA_AWT_WM_NONREPARENTING "1" # android studio x11 ui fix
+
+
+# aliases
+alias vim="nvim"
+alias v="nvim"
+alias ls="ls -hN --color=auto --group-directories-first"
+alias cp="cp -iv"
+alias mv="mv -iv"
+alias rm="rm -vI"
+alias mkdir="mkdir -pv"
+alias ip="ip -color=auto"
 
 # wmname LG3D
 
