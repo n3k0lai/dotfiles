@@ -39,23 +39,36 @@ call dein#begin(s:dein_base)
 " let Dein manage Dein
 call dein#add(s:dein_src)
 
-" *==========================================*
-" *              Personal Plugins            *
-" *==========================================*
+" *===================================*
+" *         Personal Plugins          *
+" *===================================*
+
+" copilot - neovim only
 call dein#add('github/copilot.vim')
+
+" *====== Syntax Highlighting ========*
+
+call dein#add('dag/vim-fish')
+call dein#add('moll/vim-node')
+call dein#add('posva/vim-vue')
+call dein#add('elzr/vim-json')
+" does not work
+call dein#add('theRealCarneiro/hyprland-vim-syntax')
+" needed for lua omniplugin
+call dein#add('xolox/vim-misc')
+" lua omniplugin
+call dein#add('xolox/vim-lua-ftplugin')
+call dein#add('leafo/moonscript-vim')
+call dein#add('fatih/vim-go')
+" remember to call :GoInstallBinaries after initial dein install
+call dein#add('kovetskiy/sxhkd-vim')
+
 " shougo
 "call dein#add('Shougo/neocomplete.vim')
 "call dein#add('Shougo/neosnippet.vim')
 "call dein#add('Shougo/neosnippet-snippets')
 "call dein#add('Shougo/unite.vim')
 "call dein#add('Shougo/vimfiler.vim')
-
-" go lang
-"call dein#add('fatih/vim-go')
-" remember to call :GoInstallBinaries after initial dein install
-
-" colorscheme management
-"call dein#add('flazz/vim-colorschemes')
 
 " world famous multicursor
 "call dein#add('terryma/vim-multiple-cursors')
@@ -66,29 +79,6 @@ call dein#add('github/copilot.vim')
 " dank emojis
 "call dein#add('chrisbra/unicode.vim')
 
-" JSON syntax
-"call dein#add('elzr/vim-json')
-
-" fish syntax
-call dein#add('dag/vim-fish')
-
-" node gigaplugin
-"call dein#add('moll/vim-node')
-
-" needed for lua omniplugin
-"call dein#add('xolox/vim-misc')
-" lua omniplugin
-"call dein#add('xolox/vim-lua-ftplugin')
-" moonscript syntax
-call dein#add('leafo/moonscript-vim')
-" love2d plugin 
-"call dein#add('davisdude/vim-love-docs')
-
-" vue syntax
-"call dein#add('posva/vim-vue')
-
-" for editing view stuff
-"call dein#add('kovetskiy/sxhkd-vim')
 
 " super tight datetime utility
 "call dein#add('tpope/vim-speeddating')
@@ -96,11 +86,7 @@ call dein#add('leafo/moonscript-vim')
 " makes vim pretty :>
 "call dein#add('junegunn/goyo.vim')
 
-" neovim only
-if !has('nvim')
-  "call dein#add('github/copilot.vim')
-endif
-" *==========End Plugins==============*
+" *========== End Plugins ============*
 
 call dein#end()            " required
 
