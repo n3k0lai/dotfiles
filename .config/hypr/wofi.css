@@ -1,10 +1,24 @@
+:root {
+ --accent-main:#6f95fc;
+  --accent-sub: #83d9f7;
+
+
+}
 window {
-  margin: 5px;
+   display: block;
+  
+  border: none;
+  background-repeat: no-repeat;
+  background-image: linear-gradient(to bottom right, #83d9f7, #6f95fc);
+  border-radius: 10px;
+}
+#outer-box {
+  margin: 3px;
   border-width: 2px;
   border-style: solid;
-  border-image: linear-gradient(to bottom right, #83d9f7, #6f95fc) 1;
   background-color: #191919;
-  border-radius: 10px;
+  border-radius: 6px;
+
 }
 #input {
   margin: 20px;
