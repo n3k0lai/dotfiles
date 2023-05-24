@@ -2,7 +2,9 @@
 #  ><_  _*> config.fish
 # /   \/
 
-set -gx PATH "/bin /usr/bin /usr/local/bin /sbin /usr/sbin/ /user/local/sbin $PATH"
+
+set -p PATH "/bin /usr/bin /usr/local/bin "
+set -p PATH "/sbin /usr/sbin /user/local/sbin "
 
 # default programs
 set -gx EDITOR "nvim"
@@ -13,8 +15,7 @@ set -gx BROWSER_MIN "luakit"
 # config
 set -gx XDG_CONFIG_HOME "$HOME/.config"
 set -gx XDG_DATA_HOME "$HOME/.local/share"
-set -gx GOPATH "$HOME/go" # should be in data
-set -gx SXHKD_SHELL '/usr/bin/sh'
+set -gx GOPATH "$XDG_DATA_HOME/go"
  
 # colorscheme 
 #
@@ -26,13 +27,16 @@ set -gx QT_IM_MODULE "fcitx5"
 #set -gx DISPLAY ":0"
 set -gx BETTERLOCKSCREEN_WALLPAPER_COMMAND "mtrx"
 
+# hypr
+set -gx _JAVA_AWT_WM_NONREPARENTING "1" # android studio x11 ui fix
+set -gx XCURSOR_SIZE "24"
+
 # wine
 set -gx WINEDEBUG "fps"
 set -gx FREETYPE_PROPERTIES "truetype:interpreter-version=35"
 
 # fixes
 set -gx MOZ_USE_XINPUT2 "1" # mozilla smooth scrolling/touchpads
-set -gx _JAVA_AWT_WM_NONREPARENTING "1" # android studio x11 ui fix
 
 
 # aliases
