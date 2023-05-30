@@ -84,6 +84,7 @@ lib
 Desktop
 .obsidian
 .config/obsidian
+.config/fcitx
 
 # ui
 .hyprland
@@ -111,6 +112,8 @@ Desktop
 .config/polychromatic
 .config/discord
 .config/lutris
+.config/obs-studio
+.config/streamlink
 
 # work
 .zoom
