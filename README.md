@@ -1,10 +1,12 @@
-# My Dotfiles
+# 鱼
 These are my dotfiles. Main focus is on fish, hyprland, and dev tools
 
 # TODO
 * UI
   - [x] clean out x11
   - [ ] finish waybar
+    - [ ] move config to hypr
+    - [ ] style icons
   - [ ] wofi compositor
   - [ ] fish functions in wofi
   - [ ] fcitx theme
@@ -15,11 +17,12 @@ These are my dotfiles. Main focus is on fish, hyprland, and dev tools
   - [ ] keybboard hotkeys
   - [ ] spotify/soundcloud
 * dev
-  - [ ] emacs
+  - [ ] doom emacs
 * common
   - [ ] file manager
   - [ ] wifi manager
   - [x] rdp
+  - [ ] mv public to usr/share
 
 my old x11 look
 ![old desktop](scrots/2023-x11.png)
