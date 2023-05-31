@@ -5,7 +5,7 @@
 
 }
 window {
-   display: block;
+  display: block;
   
   border: none;
   background-repeat: no-repeat;
@@ -23,6 +23,7 @@ window {
 #input {
   margin: 20px;
   background-color: #3f3f3f;
+  color: #83d9f7;
   border: 0;
 }
 
