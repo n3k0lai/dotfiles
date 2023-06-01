@@ -48,6 +48,8 @@ alias mv="mv -iv"
 alias rm="rm -vI"
 alias mkdir="mkdir -pv"
 alias ip="ip -color=auto"
+alias mtrx="cmatrix -a -b -u 3 -C blue"
+alias aesth="mpv --loop --no-audio ~/papes/ene.gif"
 
 # wmname LG3D
 

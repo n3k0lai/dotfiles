@@ -7,6 +7,8 @@ These are my dotfiles. Main focus is on fish, hyprland, and dev tools
   - [ ] finish waybar
     - [ ] move config to hypr
     - [ ] style icons
+    - [ ] fps
+    - [ ] ping
   - [ ] wofi compositor
   - [ ] fish functions in wofi
   - [ ] fcitx theme
