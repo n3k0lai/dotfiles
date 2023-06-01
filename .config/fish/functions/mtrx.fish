@@ -1,4 +1,5 @@
 function mtrx
-  exec cmatrix -a -b -u 3 -C blue
+  cmatrix -a -b -u 3 -C blue
+  and return 1
 end
 
