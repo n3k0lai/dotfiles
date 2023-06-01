@@ -1,7 +1,7 @@
 # bc i always forget how to use nmcli
-function connect
+function wifi
   set -l options (fish_opt -s l -l list)
-  set options $options (fish_opt -s i -l id --required-val)
+  set options $options (fish_opt -s c -l connect --required-val)
   
   argparse $options -- $argv
   or return 1
@@ -11,7 +11,7 @@ function connect
       return 0
   end
   
-  if set -q _flag_id
+  if set -q _flag_connect
       sudo nmcli dev wifi connect "$_flag_id" -a
       return 0
   end
