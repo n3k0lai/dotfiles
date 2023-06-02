@@ -22,6 +22,9 @@
 .logs
 .config/ibus
 
+# fish
+.config/fish/fish_variables
+
 # sh
 .bash_history
 .bash_logout
