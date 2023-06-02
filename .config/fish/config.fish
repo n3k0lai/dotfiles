@@ -3,8 +3,8 @@
 # /   \/
 
 
-set -p PATH "/bin /usr/bin /usr/local/bin "
-set -p PATH "/sbin /usr/sbin /user/local/sbin "
+fish_add_path /bin /usr/bin /usr/local/bin
+fish_add_path /sbin /usr/sbin /user/local/sbin
 
 # default programs
 set -gx EDITOR "nvim"
@@ -24,8 +24,9 @@ set -gx GOPATH "$XDG_DATA_HOME/go"
 set -gx XMODIFIERS "fcitx5"
 set -gx GTK_IM_MODULE "fcitx5"
 set -gx QT_IM_MODULE "fcitx5"
-#set -gx DISPLAY ":0"
-set -gx BETTERLOCKSCREEN_WALLPAPER_COMMAND "mtrx"
+
+
+set -gx DISPLAY ":0"
 
 # hypr
 set -gx _JAVA_AWT_WM_NONREPARENTING "1" # android studio x11 ui fix
@@ -37,19 +38,3 @@ set -gx FREETYPE_PROPERTIES "truetype:interpreter-version=35"
 
 # fixes
 set -gx MOZ_USE_XINPUT2 "1" # mozilla smooth scrolling/touchpads
-
-
-# aliases
-alias vim="nvim"
-alias v="nvim"
-alias ls="ls -hN --color=auto --group-directories-first"
-alias cp="cp -iv"
-alias mv="mv -iv"
-alias rm="rm -vI"
-alias mkdir="mkdir -pv"
-alias ip="ip -color=auto"
-alias mtrx="cmatrix -a -b -u 3 -C blue"
-alias aesth="mpv --loop --no-audio ~/papes/ene.gif"
-
-# wmname LG3D
-

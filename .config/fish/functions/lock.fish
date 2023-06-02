@@ -1,4 +1,4 @@
-# wrapper for mortie/swalock-effects
+# wrapper for jirutka/swalock-effects
 function lock
   set -l lockargs --clock -d -c 191919
   set lockargs $lockargs --indicator --indicator-radius 100 --indicator-thickness 7 
