@@ -18,7 +18,22 @@ set -gx XDG_DATA_HOME "$HOME/.local/share"
 set -gx GOPATH "$XDG_DATA_HOME/go"
  
 # colorscheme 
-#
+set -gx foreground "fef3e9"
+set -gx background "191919"
+# black
+set -gx color0 "191919"
+set -gx color8 "3f3f3f"
+# yellow
+set -gx color3 "af9976"
+set -gx color11 "ffe8c5"
+# blue 
+set -gx color4 "6495fc"
+set -gx color12 "83d9f7"
+# cyan
+set -gx color6 "39928d"
+set -gx color14 "adf0e7"
+# white
+set -gx color15 "fef3e9"
 
 # input for multilang
 set -gx XMODIFIERS "fcitx5"

@@ -12,7 +12,7 @@ function wifi
   end
   
   if set -q _flag_connect
-      sudo nmcli dev wifi connect "$_flag_id" -a
+      sudo nmcli dev wifi connect "$_flag_connect" -a
       return 0
   end
 end
