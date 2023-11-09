@@ -1,17 +1,17 @@
 # 鱼 [![Made with Doom Emacs](https://img.shields.io/badge/Made_with-Doom_Emacs-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)](https://github.com/hlissner/doom-emacs) [![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 
-These are my dotfiles. I use nix to manage everything because I am crazy. heavily inspod by [hlissner](https://github.com/hlissner/dotfiles/tree/master)
+Crazy? I Was Crazy Once. They Locked Me In A Room. A Rubber Room. A Rubber Room With Nix. And Nix Makes Me Crazy. Heavily inspod by [hlissner](https://github.com/hlissner/dotfiles/tree/master)
 
-|                |                                                          |
-|----------------|----------------------------------------------------------|
-| **Shell:**     | fish                                                     |
-| **DM:**        | lightdm + lightdm-mini-greeter                           |
-| **WM:**        | hyprland                                                 |
-| **Editor:**    | [Doom Emacs][doom-emacs]                                 |
-| **Terminal:**  | foot                                                     |
-| **Launcher:**  | wofi                                                     |
-| **Browser:**   | opera                                                    |
-| **GTK Theme:** | dracula                                                  |
+|                |                                 |
+|----------------|---------------------------------|
+| **Shell:**     | fish                            |
+| **DM:**        | lightdm + lightdm-mini-greeter  |
+| **WM:**        | hyprland                        |
+| **Editor:**    | [Doom Emacs][doom-emacs]        |
+| **Terminal:**  | foot                            |
+| **Launcher:**  | wofi                            |
+| **Browser:**   | opera                           |
+| **GTK Theme:** | dracula                         |
 
 install:
    ```sh
