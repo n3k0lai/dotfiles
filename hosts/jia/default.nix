@@ -47,7 +47,7 @@ with lib.my;
   ## Local config
   time.timeZone = "Europe/Copenhagen";
   networking.networkmanager.enable = true;
-  security.acme.defaults.email = "acme@accounts.henrik.io";
+  security.acme.defaults.email = "acme@itsnicholai.fyi";
   # security.acme.defaults.server = "https://acme-staging-v02.api.letsencrypt.org/directory";
 
   ## Shared nginx settings
@@ -75,13 +75,13 @@ with lib.my;
     '';
 
     # nginx hosts
-    virtualHosts."home.lissner.net" = {
-      serverAliases = [ "home2.lissner.net" ];
+    virtualHosts."home.itsnicholai.fyi" = {
+      serverAliases = [ "itsnicholai.fyi" ];
       default = true;
       http2 = true;
       forceSSL = true;
       enableACME = true;
-      root = "/srv/www/home.lissner.net";
+      root = "/srv/www/home.itsnicholai.fyi";
       # extraConfig = ''
       #   client_max_body_size 10m;
       #   proxy_buffering off;
