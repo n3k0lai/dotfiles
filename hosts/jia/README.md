@@ -1,6 +1,5 @@
-# my home server
-
-a media server
+# 家 - jiā 
+my media server
 
 - [ ] plex
 - [ ] deluge

@@ -1,3 +1,6 @@
+# fish.nix <~ 
+# check out https://github.com/donovanglover/nix-config/blob/master/modules/fish.nix
+
 { config, options, pkgs, lib, ... }:
 
 with lib;
