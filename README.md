@@ -1,5 +1,5 @@
 # 鱼
-These are my dotfiles. Main focus is on fish, hyprland, and dev tools
+These are my dotfiles. I use nix to manage everything because I am crazy. heavily inspod by [hlissner](https://github.com/hlissner/dotfiles/tree/master)
 
 # TODO
 * UI
