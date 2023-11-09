@@ -1,6 +1,6 @@
 # 鱼 [![Made with Doom Emacs](https://img.shields.io/badge/Made_with-Doom_Emacs-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)](https://github.com/hlissner/doom-emacs) [![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 
-Crazy? I Was Crazy Once. They Locked Me In A Room. A Rubber Room. A Rubber Room With Nix. And Nix Makes Me Crazy. Heavily inspod by [hlissner](https://github.com/hlissner/dotfiles/tree/master)
+Crazy? I was crazy once. They locked me in a room. A rubber room. A rubber room with Nix. And Nix makes me crazy. Heavily inspod by [hlissner](https://github.com/hlissner/dotfiles/tree/master)
 
 |                |                                 |
 |----------------|---------------------------------|
@@ -72,15 +72,26 @@ install:
     - [ ] ping
   - [ ] wofi compositor
   - [ ] fish functions in wofi
-  - [ ] fcitx theme
+  - [ ] fcitx
+    - [ ] fcitx theme
   - [ ] notification daemon
   - [ ] wayland lockscreen
+* Security
+  - [ ] gpg
+  - [ ] agenix
+  - [ ] tailscale
+  - [ ] virtualbox
+  - [ ] harden 
 * audio
   - [ ] ncmpcpp
   - [ ] keybboard hotkeys
   - [ ] spotify/soundcloud
+  - [ ] renoise
 * dev
   - [ ] doom emacs
+* work
+  - [ ] docker 
+  - [ ] c# in doom
 * common
   - [ ] file manager
   - [ ] wifi manager

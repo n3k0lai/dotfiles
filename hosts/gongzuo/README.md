@@ -1,3 +1,3 @@
-# 工作 - gōngzuò
+# 🧑‍💼 工作 - gōngzuò
 
-work pc. hardened virtualbox wrapper
+work pc. hardened virtualization wrapper with preferred dev tools.
