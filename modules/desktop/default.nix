@@ -67,13 +67,14 @@ in {
         "100:class_g = 'krita'"
         "100:class_g = 'feh'"
         "100:class_g = 'mpv'"
+        "100:class_g = 'Wofi'"
         "100:class_g = 'Rofi'"
         "100:class_g = 'Peek'"
         "99:_NET_WM_STATE@:32a = '_NET_WM_STATE_FULLSCREEN'"
       ];
       shadowExclude = [
         # Put shadows on notifications, the scratch popup and rofi only
-        "! name~='(rofi|scratch|Dunst)$'"
+        "! name~='(wofi|rofi|scratch|Dunst)$'"
       ];
       settings = {
         blur-background-exclude = [
