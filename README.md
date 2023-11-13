@@ -45,6 +45,7 @@ install:
 
 # NIX TODO
 * wtf is nix dawg idk
+  - [ ] [RTFM](https://nixos.org/manual/nix/stable/introduction)
   - [ ] [A three-part tweag article that everyone's read.](https://www.tweag.io/blog/2020-05-25-flakes/)
   - [ ] [An overengineered config to scare off beginners.](https://github.com/divnix/devos)
   - [ ] [A minimalistic config for scared beginners.](https://github.com/colemickens/nixos-flake-example)
@@ -65,6 +66,8 @@ install:
   - [ ] [What y'all will need when Nix drives you to drink.](https://www.youtube.com/watch?v=Eni9PPPPBpg)
 * UI
   - [ ] add back x11
+  - [ ] foot
+  - [ ] eww
   - [ ] finish waybar
     - [ ] move config to hypr
     - [ ] style icons
@@ -76,9 +79,10 @@ install:
     - [ ] fcitx theme
   - [ ] notification daemon
   - [ ] wayland lockscreen
+  - [ ] chatterino
 * Security
   - [ ] gpg
-  - [ ] agenix
+  - [ ] [agenix](https://github.com/ryantm/agenix#tutorial)
   - [ ] tailscale
   - [ ] virtualbox
   - [ ] harden 
@@ -89,9 +93,13 @@ install:
   - [ ] renoise
 * dev
   - [ ] doom emacs
+  - [ ] fish: peep [some](https://github.com/donovanglover/nix-config/blob/master/modules/fish.nix) [inspo](https://github.com/lilyball/nix-env.fish/blob/master/conf.d/nix-env.fish)
 * work
   - [ ] docker 
   - [ ] c# in doom
+* gaming
+  - [ ] doom
+  - [ ] wow 
 * common
   - [ ] file manager
   - [ ] wifi manager
