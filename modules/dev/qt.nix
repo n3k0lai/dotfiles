@@ -1,1 +1,0 @@
-# dev environment for building chatterino

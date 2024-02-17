@@ -1,1 +1,0 @@
-# a generic node project
