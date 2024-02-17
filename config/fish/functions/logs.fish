@@ -1,3 +1,0 @@
-function logs
-
-end
