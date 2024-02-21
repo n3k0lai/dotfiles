@@ -15,6 +15,7 @@ set -gx BROWSER_MIN luakit
 set -gx XDG_CONFIG_HOME "$HOME/.config"
 set -gx XDG_DATA_HOME "$HOME/.local/share"
 set -gx GOPATH "$XDG_DATA_HOME/go"
+fish_add_path "$HOME/.local/bin"
 fish_add_path "$GOPATH/bin"
 
 # emacs
