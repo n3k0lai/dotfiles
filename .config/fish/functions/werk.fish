@@ -5,8 +5,8 @@ function werk --argument-names cmd
     switch "$cmd"
         # case for local ip
         case -l
-            xfreerdp /w:2560 /h:1340 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP
+            sdl-freerdp /w:2560 /h:1340 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /cert:ignore
         case ""
-            xfreerdp /w:1920 /h:1050 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP
+            sdl-freerdp /w:1920 /h:1050 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /cert:ignore
     end
 end
