@@ -42,9 +42,9 @@ set -gx color14 adf0e7
 set -gx color15 fef3e9
 
 # input for multilang
-set -gx XMODIFIERS fcitx5
-set -gx GTK_IM_MODULE fcitx5
-set -gx QT_IM_MODULE fcitx5
+#set -gx XMODIFIERS fcitx5
+#set -gx GTK_IM_MODULE fcitx5
+#set -gx QT_IM_MODULE fcitx5
 
 
 set -gx DISPLAY ":0"
@@ -57,6 +57,10 @@ set -gx SXHKD_SHELL sh
 # wine
 set -gx WINEDEBUG fps
 set -gx FREETYPE_PROPERTIES "truetype:interpreter-version=35"
+set -gx WINEARCH "win64"
+set -gx WINEPREFIX "$HOME/.wine-battlenet"
+set -gx WINE_SIMULATE_WRITECOPY 1
+
 # obs game capture on x11 - needs yay -S obs-vkcapture-git
 set -gx OBS_USE_EGL 1
 # fixes

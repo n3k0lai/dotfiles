@@ -4,9 +4,11 @@ function set_profile
 
     fish_add_path /bin /usr/bin /usr/local/bin
     fish_add_path /sbin /usr/sbin /user/local/sbin
+    
+    fish_add_path -g $HOME/.npm-global/bin
     fish_add_path ~/.dotnet/tools
     # default programs
-    set -gx EDITOR nvim
+    set -gx EDITOR emacs
 
     # config
     set -gx XDG_CONFIG_HOME "$HOME/.config"
@@ -33,14 +35,14 @@ function set_profile
 
     if set -q _flag_ui
         set -gx DISPLAY ":0"
-        set -gx TERMINAL foot
-        set -gx BROWSER opera
+        #set -gx TERMINAL foot
+        set -gx BROWSER firefox
         set -gx BROWSER_MIN luakit
 
         # input for multilang
-        set -gx XMODIFIERS fcitx5
-        set -gx GTK_IM_MODULE fcitx5
-        set -gx QT_IM_MODULE fcitx5
+        #set -gx XMODIFIERS fcitx5
+        #set -gx GTK_IM_MODULE fcitx5
+        #set -gx QT_IM_MODULE fcitx5
 
         # wm
         set -gx _JAVA_AWT_WM_NONREPARENTING 1 # android studio x11 ui fix
@@ -49,6 +51,9 @@ function set_profile
         # wine
         set -gx WINEDEBUG fps
         set -gx FREETYPE_PROPERTIES "truetype:interpreter-version=35"
+        set -gx WINEARCH "win64"
+        set -gx WINEPREFIX "$HOME/.wine-battlenet"
+        set -gx WINE_SIMULATE_WRITECOPY 1
 
         # fixes
         set -gx MOZ_USE_XINPUT2 1 # mozilla smooth scrolling/touchpads
