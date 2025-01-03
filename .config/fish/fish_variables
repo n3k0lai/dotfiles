@@ -1,5 +1,6 @@
 # This file contains fish universal variable definitions.
 # VERSION: 3.0
+SETUVAR SSH_KEYS_TO_AUTOLOAD:/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss\x1e/home/nicho/\x2essh/kiss
 SETUVAR --export YU_DIR:/home/n3k0/Code/yu
 SETUVAR __fish_initialized:3400
 SETUVAR fish_color_autosuggestion:555\x1ebrblack
@@ -30,4 +31,4 @@ SETUVAR fish_pager_color_description:B3A06D\x1eyellow\x1e\x2di
 SETUVAR fish_pager_color_prefix:normal\x1e\x2d\x2dbold\x1e\x2d\x2dunderline
 SETUVAR fish_pager_color_progress:brwhite\x1e\x2d\x2dbackground\x3dcyan
 SETUVAR fish_pager_color_selected_background:\x2dr
-SETUVAR fish_user_paths:/home/n3k0/\x2econfig/emacs/bin\x1e/home/n3k0/\x2elocal/share/go/bin\x1e/home/n3k0/\x2edotnet/tools\x1e/home/n3k0/\x2eemacs\x2ed/bin\x1e/sbin\x1e/usr/sbin\x1e/bin\x1e/usr/bin\x1e/usr/local/bin
+SETUVAR fish_user_paths:/home/nicho/\x2econfig/emacs/bin\x1e/home/n3k0/\x2econfig/emacs/bin\x1e/home/n3k0/\x2elocal/share/go/bin\x1e/home/n3k0/\x2edotnet/tools\x1e/home/n3k0/\x2eemacs\x2ed/bin\x1e/sbin\x1e/usr/sbin\x1e/bin\x1e/usr/bin\x1e/usr/local/bin
