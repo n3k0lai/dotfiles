@@ -1,3 +1,47 @@
-.cache
-.config/Code
-.config/Slack
+# Cache directories
+.cache/
+**/Cache/
+**/CacheStorage/
+
+# Application config and data
+.config/Code/
+.config/Slack/
+.config/discord/
+.config/chromium/
+.config/google-chrome/
+.config/**/Crashpad/
+.config/obs-studio/
+.config/dconf/
+.config/pulse/
+.config/QtProject.conf
+
+# Proton Mail
+.config/Proton?Mail/
+
+# Shell history
+.bash_history
+.zsh_history
+.python_history
+
+# VS Code
+.vscode/
+
+# Local state and data
+.local/state/
+.local/share/applications/
+.local/share/lutris/
+.local/share/Steam/
+.local/share/recently-used.xbel
+
+# Development
+.dotnet/
+node_modules/
+__pycache__/
+
+# Other common exclusions
+.wget-hsts
+.pulse-cookie
+.steam/
+.steampath
+.steampid
+*.log
