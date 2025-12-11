@@ -1,7 +1,14 @@
+Downloads/
+.ssh/
+
 # Cache directories
 .cache/
 **/Cache/
 **/CacheStorage/
+.nix-defexpr
+.nix-profile
+.manpath
+.config/ibus/
 
 # Application config and data
 .config/Code/
@@ -14,7 +21,8 @@
 .config/dconf/
 .config/pulse/
 .config/QtProject.conf
-
+.config/rustdesk
+.mozilla/
 # Proton Mail
 .config/Proton?Mail/
 
@@ -28,20 +36,20 @@
 
 # Local state and data
 .local/state/
-.local/share/applications/
-.local/share/lutris/
-.local/share/Steam/
-.local/share/recently-used.xbel
+.local/share/
 
 # Development
 .dotnet/
 node_modules/
 __pycache__/
+.zen/
 
 # Other common exclusions
 .wget-hsts
 .pulse-cookie
+Games/
 .steam/
 .steampath
 .steampid
 *.log
+.pki/
