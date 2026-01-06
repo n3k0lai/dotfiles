@@ -35,7 +35,7 @@ Code/
 .android/
 .mono/
 .config/Proton?Mail/
-
+Unity/
 # Shell history
 .bash_history
 .zsh_history
