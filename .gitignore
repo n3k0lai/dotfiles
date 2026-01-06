@@ -1,5 +1,6 @@
 Downloads/
 .ssh/
+.gnupg/
 
 # Cache directories
 .cache/
@@ -11,19 +12,28 @@ Downloads/
 .config/ibus/
 
 # Application config and data
+Code/
 .config/Code/
 .config/Slack/
 .config/discord/
 .config/chromium/
 .config/google-chrome/
+.config/BraveSoftware/
 .config/**/Crashpad/
 .config/obs-studio/
 .config/dconf/
 .config/pulse/
 .config/QtProject.conf
 .config/rustdesk
+.config/kde.org/
+.config/menus/
+.config/session/
+.config/SideQuest/
+.config/unity3d/
+.config/unityhub/
 .mozilla/
-# Proton Mail
+.android/
+.mono/
 .config/Proton?Mail/
 
 # Shell history
