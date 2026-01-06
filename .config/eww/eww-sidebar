@@ -1,0 +1,102 @@
+#!/usr/bin/env fish
+
+# Eww Sidebar Manager Script
+
+function show_help
+    echo "Eww Sidebar Manager"
+    echo ""
+    echo "Usage: eww-sidebar [command]"
+    echo ""
+    echo "Commands:"
+    echo "  start       Start the Eww daemon and open sidebar"
+    echo "  stop        Close sidebar and kill daemon"
+    echo "  restart     Restart the sidebar"
+    echo "  reload      Reload configuration without closing"
+    echo "  toggle      Toggle sidebar visibility"
+    echo "  status      Show sidebar status"
+    echo "  help        Show this help message"
+end
+
+function start_sidebar
+    echo "Starting Eww sidebar..."
+    eww daemon 2>/dev/null
+    sleep 1
+    eww open sidebar
+    echo "Sidebar started!"
+end
+
+function stop_sidebar
+    echo "Stopping Eww sidebar..."
+    eww close sidebar 2>/dev/null
+    eww kill 2>/dev/null
+    echo "Sidebar stopped!"
+end
+
+function restart_sidebar
+    echo "Restarting Eww sidebar..."
+    stop_sidebar
+    sleep 1
+    start_sidebar
+end
+
+function reload_sidebar
+    echo "Reloading Eww configuration..."
+    eww reload
+    echo "Configuration reloaded!"
+end
+
+function toggle_sidebar
+    if eww active-windows | grep -q sidebar
+        echo "Closing sidebar..."
+        eww close sidebar
+    else
+        echo "Opening sidebar..."
+        eww open sidebar
+    end
+end
+
+function show_status
+    echo "Eww Sidebar Status:"
+    echo ""
+    if pgrep eww > /dev/null
+        echo "✓ Eww daemon is running"
+        if eww active-windows | grep -q sidebar
+            echo "✓ Sidebar is open"
+        else
+            echo "✗ Sidebar is closed"
+        end
+        echo ""
+        echo "Active windows:"
+        eww active-windows
+    else
+        echo "✗ Eww daemon is not running"
+    end
+end
+
+# Main command handler
+if test (count $argv) -eq 0
+    show_help
+    exit 0
+end
+
+switch $argv[1]
+    case start
+        start_sidebar
+    case stop
+        stop_sidebar
+    case restart
+        restart_sidebar
+    case reload
+        reload_sidebar
+    case toggle
+        toggle_sidebar
+    case status
+        show_status
+    case help
+        show_help
+    case '*'
+        echo "Unknown command: $argv[1]"
+        echo ""
+        show_help
+        exit 1
+end
