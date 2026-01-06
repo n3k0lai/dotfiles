@@ -183,7 +183,7 @@ super + w
   firefox
 
 super + n 
-  thunar  
+  dolphin  
 
 super + F1
   ~/.config/bspwm/scripts/keybindings_rofi.sh
