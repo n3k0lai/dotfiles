@@ -12,18 +12,22 @@ function werk --argument-names cmd
     echo "logging into $WORK_IP"
     
     set -l clip_opts \
-        /clipboard \
-        +clipboard \
-        # /dynamic-resolution \
-        # /bpp:32 \
+        /kbd:remap:0x5B=0x0,remap:0x5C=0x0 \
         /cert:ignore \
-        +home-drive
+        +home-drive \
+        /dynamic-resolution
     
     switch "$cmd"
-        # case for local ip
+        # case for fullscreen (legacy behavior)
+        case -l
+            xfreerdp /w:2560 /h:1440 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-fullscreen $clip_opts &
+        # case for small resolution
         case -s
-            sdl-freerdp /w:1920 /h:1080 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP $clip_opts
+            xfreerdp /w:1920 /h:1080 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-small $clip_opts &
+        # default: respect hyprland tiling (no fixed size)
         case "*"
-            sdl-freerdp /w:2560 /h:1440 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP $clip_opts
+            xfreerdp /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-tiled $clip_opts &
     end
+    
+    disown
 end
