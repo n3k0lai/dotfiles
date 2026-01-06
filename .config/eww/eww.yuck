@@ -1,0 +1,134 @@
+;; Eww Sidebar Configuration
+;; Main layout and widget definitions
+
+;; Variables
+(defvar reveal_sidebar false)
+
+;; Polls for system information
+(defpoll time :interval "1s" "date '+%-I:%M %p'")
+(defpoll date :interval "60s" "date '+%a, %b %d'")
+(defpoll uptime :interval "60s" "uptime -p | sed 's/up //'")
+
+(defpoll cpu_usage :interval "2s" "scripts/cpu.fish")
+(defpoll memory_usage :interval "2s" "scripts/memory.fish")
+(defpoll memory_total :interval "60s" "free -h | awk '/^Mem:/ {print $2}'")
+
+(defpoll volume :interval "1s" "scripts/volume.fish")
+(defpoll volume_icon :interval "1s" "scripts/volume.fish icon")
+
+(defpoll disk_usage :interval "60s" "df -h / | awk 'NR==2 {print $5}' | tr -d '%'")
+
+;; Workspace tracking
+(deflisten workspaces :initial "[]" "scripts/workspaces.fish")
+(deflisten current_workspace :initial "1" "scripts/current-workspace.fish")
+
+;; Main sidebar window
+(defwindow sidebar
+  :monitor 1
+  :geometry (geometry :x "0px"
+                      :y "0px"
+                      :width "140px"
+                      :height "100%"
+                      :anchor "left center")
+  :stacking "fg"
+  :exclusive true
+  :focusable false
+  (sidebar_content))
+
+;; Sidebar content
+(defwidget sidebar_content []
+  (box :class "sidebar"
+       :orientation "v"
+       :space-evenly false
+    ;; Header section
+    (box :class "header-section" :orientation "v" :space-evenly false
+      (label :class "time" :text time)
+      (label :class "date" :text date))
+    
+    ;; Workspaces
+    (box :class "workspaces-section" :orientation "v" :space-evenly false
+      (label :class "section-title" :text "Workspaces")
+      (workspaces))
+    
+    ;; System stats
+    (box :class "system-section" :orientation "v" :space-evenly false
+      (label :class "section-title" :text "System")
+      (system_stats))
+    
+    ;; Volume control
+    (box :class "volume-section" :orientation "v" :space-evenly false
+      (label :class "section-title" :text "Volume")
+      (volume_widget))
+    
+    ;; Spacer to push info to bottom
+    (box :class "spacer" :vexpand true)
+    
+    ;; System info at bottom
+    (box :class "footer-section" :orientation "v" :space-evenly false
+      (label :class "uptime" :text "⏱  ${uptime}")
+      (label :class "hostname" :text "󰌢  tr1ste"))))
+
+;; Workspaces widget
+(defwidget workspaces []
+  (box :class "workspaces"
+       :orientation "v"
+       :space-evenly false
+       :spacing 8
+    (for workspace in workspaces
+      (button :class "workspace ${workspace.id == current_workspace ? 'active' : ''} ${workspace.windows > 0 ? 'occupied' : ''}"
+              :onclick "hyprctl dispatch workspace ${workspace.id}"
+        (label :text "${workspace.id}")))))
+
+;; System stats widget
+(defwidget system_stats []
+  (box :class "stats"
+       :orientation "v"
+       :space-evenly false
+       :spacing 12
+    ;; CPU
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰻠")
+        (label :class "stat-label" :text "CPU")
+        (label :class "stat-value" :text "${cpu_usage}%"))
+      (progress :class "stat-bar cpu-bar" 
+                :value cpu_usage 
+                :orientation "h"))
+    
+    ;; Memory
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰍛")
+        (label :class "stat-label" :text "RAM")
+        (label :class "stat-value" :text "${memory_usage}%"))
+      (progress :class "stat-bar memory-bar" 
+                :value memory_usage 
+                :orientation "h"))
+    
+    ;; Disk
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰋊")
+        (label :class "stat-label" :text "Disk")
+        (label :class "stat-value" :text "${disk_usage}%"))
+      (progress :class "stat-bar disk-bar" 
+                :value disk_usage 
+                :orientation "h"))))
+
+;; Volume widget
+(defwidget volume_widget []
+  (box :class "volume"
+       :orientation "v"
+       :space-evenly false
+       :spacing 8
+    (box :orientation "h" :space-evenly false :spacing 12
+      (button :class "volume-icon" 
+              :onclick "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        (label :text volume_icon))
+      (label :class "volume-value" :text "${volume}%"))
+    (scale :class "volume-slider"
+           :value volume
+           :min 0
+           :max 100
+           :orientation "h"
+           :onchange "wpctl set-volume @DEFAULT_AUDIO_SINK@ {}%")))

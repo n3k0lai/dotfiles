@@ -1,0 +1,35 @@
+/* Eww Sidebar - Waves Colorscheme */
+.sidebar { background-color: rgba(10, 14, 20, 0.3); border-right: 2px solid #4ba69c; padding: 20px 8px; color: #bfbab0; }
+.header-section { padding: 12px; background-image: linear-gradient(135deg, rgba(75, 166, 156, 0.15), rgba(191, 186, 176, 0.1)); border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(75, 166, 156, 0.4); }
+.time { font-size: 42px; font-weight: bold; color: #bfbab0; margin-bottom: 4px; }
+.date { font-size: 16px; color: #9da09e; }
+.section-title { font-size: 12px; font-weight: bold; color: #4ba69c; margin-bottom: 12px; padding-left: 4px; }
+.workspaces-section, .system-section, .volume-section { margin-bottom: 24px; }
+.workspaces { padding: 8px; background-color: rgba(31, 30, 30, 0.6); border-radius: 8px; border: 1px solid rgba(75, 166, 156, 0.2); }
+.workspaces button { all: unset; }
+.workspace { padding: 10px 0; margin: 2px 0; background-color: rgba(157, 160, 158, 0.1); border-radius: 6px; border: 1px solid transparent; color: #bfbab0; font-size: 14px; font-weight: 500; min-width: 40px; }
+.workspace label { color: #bfbab0; }
+.workspace:hover { background-color: rgba(75, 166, 156, 0.2); border-color: #4ba69c; }
+.workspace.active { background-color: #4ba69c; color: #0A0E14; font-weight: bold; border-color: #bfbab0; }
+.workspace.active label { color: #0A0E14; }
+.workspace.occupied { border-left: 3px solid #4ba69c; }
+.stats { padding: 12px; background-color: rgba(31, 30, 30, 0.6); border-radius: 8px; border: 1px solid rgba(75, 166, 156, 0.2); }
+.stat-item { margin-bottom: 12px; }
+.stat-icon { font-size: 16px; color: #4ba69c; margin-right: 8px; min-width: 20px; }
+.stat-label { font-size: 13px; color: #9da09e; }
+.stat-value { font-size: 13px; font-weight: bold; color: #bfbab0; margin-left: 8px; }
+.stat-bar trough { background-color: rgba(157, 160, 158, 0.2); border-radius: 3px; min-height: 6px; }
+.cpu-bar trough progress { background-image: linear-gradient(to right, #4ba69c, #bfbab0); border-radius: 3px; min-height: 6px; }
+.memory-bar trough progress { background-image: linear-gradient(to right, #4ba69c, #bae67e); border-radius: 3px; min-height: 6px; }
+.disk-bar trough progress { background-image: linear-gradient(to right, #bfbab0, #4ba69c); border-radius: 3px; min-height: 6px; }
+.volume { padding: 12px; background-color: rgba(31, 30, 30, 0.6); border-radius: 8px; border: 1px solid rgba(75, 166, 156, 0.2); }
+.volume button { all: unset; }
+.volume label { color: #bae67e; }
+.volume-icon { font-size: 20px; color: #bae67e; padding: 8px; background-color: rgba(186, 230, 126, 0.1); border-radius: 6px; min-width: 40px; }
+.volume-icon label { color: #bae67e; }
+.volume-value { font-size: 16px; font-weight: bold; color: #bfbab0; }
+.volume-slider trough { min-height: 8px; border-radius: 4px; background-color: rgba(157, 160, 158, 0.2); }
+.volume-slider trough highlight { background-image: linear-gradient(to right, #bae67e, #4ba69c); border-radius: 4px; }
+.volume-slider slider { min-width: 16px; min-height: 16px; border-radius: 8px; background-color: #bfbab0; border: 2px solid #0A0E14; }
+.footer-section { padding: 12px; background-image: linear-gradient(135deg, rgba(75, 166, 156, 0.15), rgba(191, 186, 176, 0.1)); border-radius: 8px; border: 1px solid rgba(75, 166, 156, 0.4); }
+.uptime, .hostname { font-size: 14px; color: #9da09e; padding: 6px 0; letter-spacing: 0.5px; }
