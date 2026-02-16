@@ -59,6 +59,9 @@
     };
   };
 
+  # DigitalOcean monitoring agent
+  services.do-agent.enable = true;
+
   # Memory optimization for low-RAM VPS
   zramSwap = {
     enable = true;
