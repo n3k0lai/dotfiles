@@ -1,18 +1,20 @@
-# 鱼 [![Made with Doom Emacs](https://img.shields.io/badge/Made_with-Doom_Emacs-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)](https://github.com/hlissner/doom-emacs) 
+# Managing my fleet, through nix and fish ~>
 
-Crazy? I was crazy once. They locked me in a room. A rubber room. A rubber room with Fish. And Fish makes me crazy.
-
-![desktop](.local/share/assets/scrots/2023-x11.png)
+千举万变，其道一也 - *"Though there are thousands of actions and ten thousand changes, the way is one"*
 
 |                |                                 |
 |----------------|---------------------------------|
 | **Shell:**     | fish                            |
-| **DM:**        | lightdm + lightdm-mini-greeter  |
+| **DM:**        | sddm                            |
 | **WM:**        | bspwm/hyprland                  |
 | **Editor:**    | [Doom Emacs][doom-emacs]        |
 | **Terminal:**  | kitty                           |
-| **Launcher:**  | rofi                            |
+| **Launcher:**  | rofi/hyprlauncher               |
 | **Browser:**   | firefox                         |
-| **GTK Theme:** | dracula                         |
+| **Theme:**     | waves                           |
 
-[doom-emacs]: https://github.com/hlissner/doom-emacs
+ene running on my x11 setup:
+![ene](.local/share/assets/scrots/2023-x11.png)
+
+
+

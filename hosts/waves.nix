@@ -1,0 +1,1 @@
+# My M4 Macbook Air 13" laptop running nix shell
