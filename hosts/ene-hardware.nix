@@ -1,4 +1,4 @@
-# Hardware configuration placeholder for ene (DigitalOcean droplet)
+# Hardware configuration for ene (DigitalOcean droplet)
 # This file will be replaced by nix-infect output after deployment.
 #
 # After running nix-infect on the droplet:
@@ -10,6 +10,7 @@
 {
   imports = [
     (modulesPath + "/profiles/qemu-guest.nix")
+    (modulesPath + "/virtualisation/digital-ocean-config.nix")
   ];
 
   boot.initrd.availableKernelModules = [ "virtio_pci" "virtio_scsi" "ahci" "sd_mod" ];
