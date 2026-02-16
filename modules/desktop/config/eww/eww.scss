@@ -1,0 +1,237 @@
+/* Eww Sidebar Styles - Waves Colorscheme */
+/* Color Palette from waves */
+/* Main sidebar */
+.sidebar {
+  background-color: rgba(10, 14, 20, 0.25);
+  border-right: 2px solid #4ba69c;
+  padding: 20px 16px;
+  color: #bfbab0;
+  font-family: "Martian Mono", monospace;
+}
+
+/* Header Section */
+.header-section {
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(175, 153, 118, 0.1), rgba(173, 240, 231, 0.1));
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(75, 166, 156, 0.3);
+}
+
+.time {
+  font-size: 24px;
+  font-weight: bold;
+  color: #adf0e7;
+  margin-bottom: 4px;
+  font-family: "Hurmit Nerd Font", monospace;
+}
+
+.date {
+  font-size: 16px;
+  color: #9da09e;
+  font-family: "Hurmit Nerd Font", monospace;
+}
+
+/* Section Titles */
+.section-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #4ba69c;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  padding-left: 4px;
+  font-family: "Hurmit Nerd Font", monospace;
+}
+
+/* Sections */
+.workspaces-section,
+.system-section,
+.network-section,
+.volume-section {
+  margin-bottom: 24px;
+}
+
+/* Workspaces */
+.workspaces {
+  padding: 8px;
+  background-color: rgba(31, 30, 30, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(75, 166, 156, 0.2);
+}
+.workspace {
+  /* Reset GTK button defaults */
+  all: unset;
+  padding: 8px 12px;
+  margin: 2px 0;
+  background-color: rgba(157, 160, 158, 0.1);
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+.workspace label {
+  color: #bfbab0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.workspace:hover {
+  background-color: rgba(75, 166, 156, 0.2);
+  border-color: #4ba69c;
+}
+.workspace:hover label {
+  color: #bfbab0;
+}
+.workspace.active {
+  background-color: #4ba69c;
+  border-color: #adf0e7;
+}
+.workspace.active label {
+  color: #0A0E14;
+  font-weight: bold;
+}
+.workspace.occupied {
+  border-left: 3px solid #af9976;
+}
+.workspace.occupied label {
+  color: #bfbab0;
+}
+
+/* System Stats */
+.stats {
+  padding: 12px;
+  background-color: rgba(31, 30, 30, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(75, 166, 156, 0.2);
+}
+
+.stat-item {
+  margin-bottom: 12px;
+}
+
+.stat-item:last-child {
+  margin-bottom: 0;
+}
+
+.stat-item > box:first-child {
+  margin-bottom: 6px;
+}
+
+.stat-icon {
+  font-size: 16px;
+  color: #4ba69c;
+  margin-right: 8px;
+  min-width: 20px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #9da09e;
+}
+
+.stat-value {
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffe8c5;
+  margin-left: 8px;
+}
+
+.stat-bar {
+  min-height: 6px;
+  border-radius: 3px;
+  background-color: rgba(157, 160, 158, 0.2);
+}
+
+.cpu-bar trough progress {
+  background: linear-gradient(90deg, #af9976, #ffe8c5);
+  border-radius: 3px;
+}
+
+.memory-bar trough progress {
+  background: linear-gradient(90deg, #4ba69c, #bae67e);
+  border-radius: 3px;
+}
+
+.disk-bar trough progress {
+  background: linear-gradient(90deg, #adf0e7, #4ba69c);
+  border-radius: 3px;
+}
+
+/* Volume */
+.volume {
+  padding: 12px;
+  background-color: rgba(31, 30, 30, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(75, 166, 156, 0.2);
+}
+
+.volume-icon {
+  /* Reset GTK button defaults */
+  all: unset;
+  font-size: 20px;
+  color: #bae67e;
+  padding: 8px;
+  background-color: rgba(186, 230, 126, 0.1);
+  border-radius: 6px;
+  min-width: 40px;
+}
+
+.volume-icon:hover {
+  background-color: rgba(186, 230, 126, 0.2);
+}
+
+.volume-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffe8c5;
+}
+
+.volume-slider {
+  margin-top: 4px;
+}
+
+.volume-slider trough {
+  min-height: 8px;
+  border-radius: 4px;
+  background-color: rgba(157, 160, 158, 0.2);
+}
+
+.volume-slider trough highlight {
+  background: linear-gradient(90deg, #bae67e, #4ba69c);
+  border-radius: 4px;
+}
+
+.volume-slider trough slider {
+  min-width: 16px;
+  min-height: 16px;
+  border-radius: 50%;
+  background-color: #adf0e7;
+  border: 2px solid #0A0E14;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Sparkline labels */
+.spark-label {
+  font-size: 11px;
+  color: #4ba69c;
+  letter-spacing: 0px;
+}
+
+/* Footer Section */
+.footer-section {
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(75, 166, 156, 0.1), rgba(175, 153, 118, 0.1));
+  border-radius: 8px;
+  border: 1px solid rgba(75, 166, 156, 0.3);
+}
+
+.uptime,
+.hostname,
+.input-lang {
+  font-size: 12px;
+  color: #9da09e;
+  padding: 4px 0;
+}
+
+/* Spacer */
+.spacer {
+  min-height: 20px;
+}

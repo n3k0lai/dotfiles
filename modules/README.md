@@ -1,0 +1,2 @@
+# My Modules
+These modules make up the actionable tools of my systems. This directory is seperated into a `Category` folders which are preferred by seperate `Host`s. Each `Category` has a `Module` nix file which could have related files in `config/*` which are symlinked to `~/.config`. 

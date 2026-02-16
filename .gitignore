@@ -1,79 +1,41 @@
-Downloads/
-.ssh/
-.gnupg/
+# NixOS Configuration .gitignore
 
-# Cache directories
-.cache/
-**/Cache/
-**/CacheStorage/
-.nix-defexpr
-.nix-profile
-.manpath
-.config/ibus/
+# Home-manager backups
+*.backup
 
-# Application config and data
-Code/
-.config/Code/
-.config/Slack/
-.config/discord/
-.config/chromium/
-.config/google-chrome/
-.config/BraveSoftware/
-.config/**/Crashpad/
-.config/obs-studio/
-.config/dconf/
-.config/systemd/
-.config/pulse/
-.config/QtProject.conf
-.config/rustdesk/
-.config/environment.d/
-.config/kde.org/
-.config/kwalletrc
-.config/dolphinrc
-.config/xdg-desktop-portal-hyprland/
-.config/mimeapps.list
-.config/menus/
-.config/fcitx5/conf/
-.config/session/
-.config/SideQuest/
-.config/unity3d/
-.config/openvr/
-.config/openxr/
-.config/unityhub/
-.config/wivrn/
-.mozilla/
-.android/
-.mono/
-.config/Proton?Mail/
-Unity/
-steamvr/
-.nv/
-.plastic4/
+# Fish shell runtime
+bin/fish/fish_variables
+bin/fish/fishfile
 
-# Shell history
-.bash_history
-.zsh_history
-.python_history
-
-# VS Code
+# Editor files
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Local state and data
-.local/state/
-.local/share/
+# OS files
+.DS_Store
+Thumbs.db
 
-# Development
-.dotnet/
-node_modules/
-__pycache__/
-.zen/
+# Build artifacts
+result
+result-*
 
-# Other common exclusions
-.wget-hsts
-.pulse-cookie
-Games/
-.steam/
-.steampath
-.steampid
+# Temporary files
+*.tmp
 *.log
-.pki/
+
+# Asset source files (keep compressed versions only)
+assets/*.xcf
+assets/*.psd
+assets/scrots/
+
+# Config backups from migration
+*.backup.*
+
+# AI configuration files
+.claude/
+CLAUDE.md
+.github/copilot-instructions.md
+.github/*.code-workspace

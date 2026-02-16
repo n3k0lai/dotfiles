@@ -1,0 +1,2 @@
+# Work
+mission critical applications. These apps are updated conservativily, and utilized daily at all hours. Do not be the meme of the loser with the broken linux system trying to submit an important deadline. These apps always need to work.

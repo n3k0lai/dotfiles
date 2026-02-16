@@ -1,0 +1,189 @@
+;; Eww Sidebar Configuration
+;; Main layout and widget definitions
+;; Styles are auto-loaded from eww.scss
+
+;; Variables
+(defvar reveal_sidebar false)
+
+;; Polls for system information
+(defpoll time :interval "1s" :initial "00:00" "date '+%-I:%M %p'")
+(defpoll date :interval "60s" :initial "..." "date '+%a, %b %d'")
+(defpoll uptime :interval "60s" :initial "..." "uptime | awk -F'up ' '{print $2}' | awk -F',' '{print $1}'")
+
+(defpoll cpu_usage :interval "2s" :initial "0" "scripts/cpu.fish")
+(defpoll memory_usage :interval "2s" :initial "0" "scripts/memory.fish")
+(defpoll memory_total :interval "60s" :initial "0G" "free -h | awk '/^Mem:/ {print $2}'")
+
+(defpoll volume :interval "1s" :initial "50" "scripts/volume.fish")
+(defpoll volume_icon :interval "1s" :initial "󰕾" "scripts/volume.fish icon")
+
+(defpoll disk_usage :interval "60s" :initial "0" "df -h / | awk 'NR==2 {print $5}' | tr -d '%'")
+
+(defpoll gpu_usage :interval "2s" :initial "0" "scripts/gpu.fish")
+
+(defpoll network_up :interval "2s" :initial "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁" "scripts/network-spark.fish up")
+(defpoll network_down :interval "2s" :initial "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁" "scripts/network-spark.fish down")
+(defpoll network_interface :interval "10s" :initial "..." "scripts/network.fish interface")
+(defpoll network_ping :interval "3s" :initial "0" "scripts/ping.fish")
+
+(defpoll input_lang :interval "1s" :initial "EN" "scripts/input-method.fish")
+
+;; Workspace tracking
+(deflisten workspaces :initial "[]" "scripts/workspaces.fish")
+(deflisten current_workspace :initial "1" "scripts/current-workspace.fish")
+
+;; Main sidebar window
+(defwindow sidebar
+  :monitor "BenQ EX2710Q"
+  :geometry (geometry :x "0px"
+                      :y "0px"
+                      :width "140px"
+                      :height "100%"
+                      :anchor "left center")
+  :stacking "fg"
+  :exclusive true
+  :focusable false
+  (sidebar_content))
+
+;; Sidebar content
+(defwidget sidebar_content []
+  (box :class "sidebar"
+       :orientation "v"
+       :space-evenly false
+    ;; Header section
+    (box :class "header-section" :orientation "v" :space-evenly false
+      (label :class "time" :text time)
+      (label :class "date" :text date))
+    
+    ;; Workspaces
+    (box :class "workspaces-section" :orientation "v" :space-evenly false
+      (label :class "section-title" :text "Workspaces")
+      (workspaces))
+    
+    ;; System stats
+    (box :class "system-section" :orientation "v" :space-evenly false
+      (label :class "section-title" :text "System")
+      (system_stats))
+    
+    ;; Network stats
+    (box :class "network-section" :orientation "v" :space-evenly false
+      (label :class "section-title" :text "Network")
+      (network_stats))
+    
+    ;; Volume control
+    (box :class "volume-section" :orientation "v" :space-evenly false
+      (label :class "section-title" :text "Volume")
+      (volume_widget))
+    
+    ;; Spacer to push info to bottom
+    (box :class "spacer" :vexpand true)
+    
+    ;; System info at bottom
+    (box :class "footer-section" :orientation "v" :space-evenly false
+      (label :class "uptime" :text "⏱  ${uptime}")
+      (label :class "hostname" :text "󰌢  kiss")
+      (label :class "input-lang" :text "󰌌  ${input_lang}"))))
+
+;; Workspaces widget
+(defwidget workspaces []
+  (box :class "workspaces"
+       :orientation "v"
+       :space-evenly false
+       :spacing 8
+    (for workspace in workspaces
+      (button :class "workspace ${workspace.id == current_workspace ? 'active' : ''} ${workspace.windows > 0 ? 'occupied' : ''}"
+              :onclick "hyprctl dispatch workspace ${workspace.id}"
+        (label :text "${workspace.id}" :halign "center")))))
+
+;; System stats widget
+(defwidget system_stats []
+  (box :class "stats"
+       :orientation "v"
+       :space-evenly false
+       :spacing 12
+    ;; CPU
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰻠")
+        (label :class "stat-label" :text "CPU")
+        (label :class "stat-value" :text "${cpu_usage}%"))
+      (progress :class "stat-bar cpu-bar" 
+                :value cpu_usage 
+                :orientation "h"))
+    
+    ;; Memory
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰍛")
+        (label :class "stat-label" :text "RAM")
+        (label :class "stat-value" :text "${memory_usage}%"))
+      (progress :class "stat-bar memory-bar" 
+                :value memory_usage 
+                :orientation "h"))
+    
+    ;; Disk
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰋊")
+        (label :class "stat-label" :text "Disk")
+        (label :class "stat-value" :text "${disk_usage}%"))
+      (progress :class "stat-bar disk-bar" 
+                :value disk_usage 
+                :orientation "h"))
+    
+    ;; GPU
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰾲")
+        (label :class "stat-label" :text "GPU")
+        (label :class "stat-value" :text "${gpu_usage}%"))
+      (progress :class "stat-bar gpu-bar" 
+                :value gpu_usage 
+                :orientation "h"))))
+
+;; Network stats widget
+(defwidget network_stats []
+  (box :class "stats"
+       :orientation "v"
+       :space-evenly false
+       :spacing 12
+    ;; Download
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰇚")
+        (label :class "spark-label" :text network_down)))
+
+    ;; Upload
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰕒")
+        (label :class "spark-label" :text network_up)))
+    
+    ;; Interface
+    (box :class "stat-item" :orientation "h" :space-evenly false
+      (label :class "stat-icon" :text "󰈀")
+      (label :class "stat-label" :text "${network_interface}"))
+    
+    ;; Ping
+    (box :class "stat-item" :orientation "h" :space-evenly false
+      (label :class "stat-icon" :text "󱑥")
+      (label :class "stat-label" :text "Ping")
+      (label :class "stat-value" :text "${network_ping} ms"))))
+
+;; Volume widget
+(defwidget volume_widget []
+  (box :class "volume"
+       :orientation "v"
+       :space-evenly false
+       :spacing 8
+    (box :orientation "h" :space-evenly false :spacing 12
+      (button :class "volume-icon" 
+              :onclick "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        (label :text volume_icon :halign "center"))
+      (label :class "volume-value" :text "${volume}%"))
+    (scale :class "volume-slider"
+           :value volume
+           :min 0
+           :max 100
+           :orientation "h"
+           :onchange "wpctl set-volume @DEFAULT_AUDIO_SINK@ {}%")))

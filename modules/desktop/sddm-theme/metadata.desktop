@@ -1,0 +1,9 @@
+[SddmGreeterTheme]
+Name=Waves
+Description=Animated wave theme inspired by waves colorscheme
+Author=nicho
+License=MIT
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
