@@ -18,14 +18,15 @@
   # Machine hostname
   networking.hostName = "ene";
 
-  # Boot configuration for DigitalOcean virtio
-  boot.loader.grub = {
-    enable = true;
-    device = "/dev/vda";
-  };
-
-  # Networking
-  networking.useDHCP = lib.mkDefault true;
+  # Networking - static IP for DigitalOcean
+  # Update these values when migrating to a new droplet
+  networking.useDHCP = false;
+  networking.interfaces.eth0.ipv4.addresses = [{
+    address = "198.199.80.235";  # TODO: change to production IP
+    prefixLength = 24;
+  }];
+  networking.defaultGateway = "198.199.80.1";  # TODO: change to production gateway
+  networking.nameservers = [ "67.207.67.2" "67.207.67.3" ];
 
   networking.firewall = {
     enable = true;
@@ -68,5 +69,5 @@
     memoryPercent = 50;
   };
 
-  system.stateVersion = "25.05";
+  system.stateVersion = "23.11";
 }
