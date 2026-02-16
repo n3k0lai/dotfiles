@@ -9,7 +9,7 @@ let
     owner = "n3k0lai";
     repo = "bruhxd";
     rev = "master";
-    sha256 = lib.fakeSha256; # placeholder — will fail on first build, nix prints the real hash
+    sha256 = "sha256-sPxIp9ltNBWeXDioqAxiUMQ6+CD2526YB/LJggkkU4s="; # placeholder — will fail on first build, nix prints the real hash
   };
 in
 {
