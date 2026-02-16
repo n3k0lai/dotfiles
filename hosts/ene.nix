@@ -5,16 +5,14 @@
   imports = [
     # Web server (Caddy)
     ../modules/servers/web.nix
-    # Backup git server
-    ../modules/servers/git.nix
-    # API services
-    ../modules/servers/api.nix
-    # Wiki/knowledge base
-    ../modules/servers/wiki.nix
-    # Clawd chatbot/AI
+    # Clawd chatbot/AI (Ene)
     ../modules/servers/clawd.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
+    # TODO: enable when ready
+    # ../modules/servers/git.nix
+    # ../modules/servers/api.nix
+    # ../modules/servers/wiki.nix
   ];
 
   # Machine hostname
