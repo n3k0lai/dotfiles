@@ -21,11 +21,17 @@
   # Networking - static IP for DigitalOcean
   # Update these values when migrating to a new droplet
   networking.useDHCP = false;
-  networking.interfaces.eth0.ipv4.addresses = [{
-    address = "198.199.80.235";  # TODO: change to production IP
-    prefixLength = 24;
-  }];
-  networking.defaultGateway = "198.199.80.1";  # TODO: change to production gateway
+  networking.interfaces.eth0.ipv4.addresses = [
+    {
+      address = "198.199.80.235";  # Droplet public IP
+      prefixLength = 24;
+    }
+    {
+      address = "10.10.0.6";  # DO reserved IP anchor
+      prefixLength = 16;
+    }
+  ];
+  networking.defaultGateway = "198.199.80.1";
   networking.nameservers = [ "67.207.67.2" "67.207.67.3" ];
 
   networking.firewall = {
