@@ -7,6 +7,12 @@
 bin/fish/fish_variables
 bin/fish/fishfile
 
+# Doom Emacs distribution (cloned at runtime by activation script)
+modules/editors/config/emacs/
+
+# Work repo (private, not tracked in dotfiles)
+modules/work/zoomph/
+
 # Editor files
 .vscode/
 .idea/

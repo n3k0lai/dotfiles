@@ -203,17 +203,22 @@ in {
     
     # Doom Emacs configuration via home-manager
     home-manager.users.nicho = {
-      # Activation script to install Doom and create symlinks
+      # Activation script to clone Doom Emacs and create symlinks
       home.activation.doomSetup = ''
-        export PATH="${emacsPkg}/bin:$PATH"
-        # Create symlinks to submodule directories (writable)
+        export PATH="${emacsPkg}/bin:${pkgs.git}/bin:$PATH"
+        # Clone Doom Emacs distribution if not already present
+        if [ ! -d "$HOME/Code/nix/modules/editors/config/emacs" ]; then
+          echo "Cloning Doom Emacs..."
+          git clone --depth 1 https://github.com/doomemacs/doomemacs \
+            $HOME/Code/nix/modules/editors/config/emacs
+        fi
+        # Symlink emacs and doom config to XDG config dir
         ln -sf $HOME/Code/nix/modules/editors/config/emacs $HOME/.config/emacs
         ln -sf $HOME/Code/nix/modules/editors/config/doom $HOME/.config/doom
-        if [ ! -d "$HOME/.config/emacs/bin" ]; then
+        if [ ! -d "$HOME/.config/emacs/.local" ]; then
           echo "Installing Doom Emacs..."
           $HOME/.config/emacs/bin/doom install --no-config
         fi
-        # Note: Run 'doom sync' manually after first setup
       '';
     };
   };

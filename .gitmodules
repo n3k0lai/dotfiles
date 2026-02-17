@@ -1,9 +1,3 @@
-[submodule "modules/work/zoomph"]
-	path = modules/work/zoomph
-	url = git@github.com:n3k0lai/work.git
 [submodule "modules/editors/config/doom"]
 	path = modules/editors/config/doom
 	url = https://github.com/n3k0lai/doom
-[submodule "modules/editors/config/emacs"]
-	path = modules/editors/config/emacs
-	url = https://github.com/n3k0lai/doomemacs
