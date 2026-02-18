@@ -3,7 +3,7 @@ let
   # HOST KEYS - add new hosts here
   # ===========================================
   kiss = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ5xQ12AZjr/B7nwR4xQwtnh7g/4PlBMoiZ3MsTLoInK root@tr1ste";
-  # ene = "ssh-ed25519 AAAA...";  # TODO: add when ene is converted to NixOS
+  ene = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDJVEWuJ9zhai0WJm3j90jOps4KIOiG8JITvoOcJ4hrA root@test";
   # blade = "ssh-ed25519 AAAA...";  # future host example
 
   # ===========================================
@@ -14,9 +14,9 @@ let
   # ===========================================
   # HOST GROUPS - organize by access level
   # ===========================================
-  allHosts = [ kiss ];           # add ene when converted to NixOS
+  allHosts = [ kiss ene ];
   desktops = [ kiss ];           # desktop machines only
-  # servers = [ ene ];           # server machines only (uncomment when ene is NixOS)
+  servers = [ ene ];             # server machines only
 
 in
 {
@@ -35,4 +35,9 @@ in
   "modules/core/config/secrets/garmin_password.age".publicKeys = allHosts ++ [ nicho ];
   "modules/core/config/secrets/gdrive_credentials.age".publicKeys = allHosts ++ [ nicho ];
   "modules/core/config/secrets/gdrive_token.age".publicKeys = allHosts ++ [ nicho ];
+
+  # ===========================================
+  # SERVER SECRETS (ene)
+  # ===========================================
+  "modules/servers/secrets/xai_api_key.age".publicKeys = servers ++ [ nicho ];
 }

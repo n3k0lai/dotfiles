@@ -9,6 +9,8 @@
     ../modules/servers/clawd.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
+    # ProtonMail Bridge (ene@comfy.sh)
+    ../modules/servers/proton.nix
     # TODO: enable when ready
     # ../modules/servers/git.nix
     # ../modules/servers/api.nix
