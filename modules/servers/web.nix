@@ -27,7 +27,7 @@ in
 
       "bruhxd.com" = {
         extraConfig = ''
-          root * ${bruhxd}/dist
+          root * /var/www/bruhxd/dist
           file_server
         '';
       };
