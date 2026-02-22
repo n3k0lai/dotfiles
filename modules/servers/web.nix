@@ -97,11 +97,10 @@ in
         '';
       };
 
-      # OctoPrint — proxied to Chat via Tailscale, Tailscale-only access
+      # OctoPrint — proxied to Chat via Tailscale
       "factory.comfy.sh" = {
         extraConfig = ''
-          @blocked not remote_ip 100.64.0.0/10
-          respond @blocked 403
+          import /etc/caddy/auth.conf
           reverse_proxy 203.0.113.11:5000 {
             header_up Host {host}
             header_up X-Forwarded-Proto {scheme}
