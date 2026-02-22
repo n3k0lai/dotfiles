@@ -3,6 +3,7 @@
 # holds the most sensitive personal data in the mesh.
 #
 # Hardware: i5-6600K, 16GB DDR4, 256GB NVMe, Svalbard USB RAID
+# GPU: None currently (GTX 970 removed due to boot issues — may return)
 # Tailscale: "chat", 100.114.138.5
 # Agent: Chat (OpenClaw instance)
 # Scope: Obsidian vault, journaling, location, banking, home automation,
@@ -14,18 +15,18 @@
 #   - NO public internet exposure (Tailscale-only access)
 #   - NO email capability (Ene relays if needed)
 #   - NO outbound messaging to strangers
-#   - Encrypted at rest where possible
-#   - Minimal attack surface (no Caddy public, no SSH from internet)
-#   - Agenix for all secrets
-#   - Svalbard mounted read-only by default
+#   - Minimal attack surface (Ene runs Caddy public, not us)
+#   - CouchDB on all interfaces but firewall blocks public; Tailscale is perimeter
+#
+# Network topology:
+#   Ene (VPS, public Caddy) → Tailscale → Chat (services on Tailscale interface)
+#   Obsidian LiveSync (phone) → Ene's Caddy → Tailscale → CouchDB :5984
 #
 # Boot checklist:
-#   1. Physical access: sudo tailscale up
-#   2. Get SSH host key: cat /etc/ssh/ssh_host_ed25519_key.pub → send to Ene
-#   3. nixos-generate-config --show-hardware-config → update chat-hardware.nix
-#   4. sudo nixos-rebuild switch --flake ~/Code/nix#chat
-#   5. npm i -g openclaw && openclaw configure
-#   6. Discord bot (app id 1473545693946843136) → join wavy gang
+#   1. sudo nixos-rebuild switch --flake ~/Code/nix#chat
+#   2. sudo tailscale up
+#   3. npm i -g openclaw && openclaw configure
+#   4. Discord bot (app id 1473545693946843136) → join wavy gang
 { config, pkgs, lib, ... }:
 
 {
@@ -36,65 +37,124 @@
     ../modules/hardware/svalbard.nix
     # Home automation (lights, IoT)
     ../modules/servers/home.nix
+    # Samba NAS sharing
+    ../modules/servers/samba.nix
+    # Calibre-Web ebook server
+    ../modules/servers/lib.nix
+    # CouchDB/Obsidian wiki sync
+    ../modules/servers/wiki.nix
+    # Stream bouncer — RTMP relay with fallback scene
+    ../modules/servers/stream-bouncer.nix
+    ../modules/servers/octoprint.nix
   ];
 
   networking.hostName = "chat";
 
+  # Boot
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # No WiFi needed on this box
+  boot.blacklistedKernelModules = [ "iwlwifi" ];
+
+  # NTFS support for Svalbard
+  boot.supportedFilesystems = [ "ntfs" ];
+
+  # Build dependencies (for OpenClaw native modules, etc.)
+  environment.systemPackages = with pkgs; [
+    cmake
+    gnumake
+    gcc
+    ntfs3g
+    # Playwright needs a real browser on NixOS (can't use dynamically linked downloads)
+    chromium
+    # X11 forwarding for headful browser sessions from Kiss
+    xorg.xauth
+  ];
+
   # === NETWORK SECURITY ===
   # Tailscale is the ONLY way in. No public ports except SSH on LAN.
-  services.tailscale.enable = true;
-
   networking.firewall = {
     enable = true;
-    # Nothing open to the public internet
     allowedTCPPorts = [
       22  # SSH (LAN only — Tailscale handles remote)
     ];
-    # Tailscale interface is the trusted perimeter
     trustedInterfaces = [ "tailscale0" ];
-    # Block all other interfaces from reaching services
+    checkReversePath = "loose";
   };
 
-  # === SSH (LAN + Tailscale only) ===
+  # === SSH ===
   services.openssh = {
     enable = true;
     settings = {
       PermitRootLogin = "prohibit-password";
       PasswordAuthentication = false;
       KbdInteractiveAuthentication = false;
+      X11Forwarding = true;
     };
-    # Only listen on local network + Tailscale, NOT public
-    listenAddresses = [
-      { addr = "0.0.0.0"; port = 22; }  # LAN
-    ];
   };
 
   services.fail2ban = {
     enable = true;
-    maxretry = 3;  # Stricter than ene — this box has sensitive data
+    maxretry = 3;
     bantime = "4h";
     bantime-increment = {
       enable = true;
-      maxtime = "168h";  # 1 week max ban
+      maxtime = "168h";
       factor = "4";
     };
   };
 
   # === STORAGE ===
-  # Svalbard RAID — mounted read-only by default for safety
-  # Use `sudo mount -o remount,rw /mnt/svalbard` when write access is needed
+  # Svalbard RAID — read-write for Calibre, Plex, Obsidian attachments, media
   hardware.svalbard = {
     enable = true;
-    # fsType = "ntfs";  # default
-    # mountPoint = "/mnt/svalbard";  # default
   };
 
-  # === DATABASES ===
-  # CouchDB for Obsidian LiveSync — localhost only, Tailscale for remote
-  services.couchdb = {
+  # === COUCHDB / OBSIDIAN LIVESYNC ===
+  # Wiki module handles CouchDB declaration.
+  # We override it here for Chat's specific needs:
+  # - Bind 0.0.0.0 so Tailscale interface can reach it (firewall blocks public)
+  # - Single node, CORS enabled for LiveSync, require auth
+  modules.servers.wiki = {
     enable = true;
-    bindAddress = "127.0.0.1";
-    port = 5984;
+    couchdbBindAddress = "0.0.0.0";
+  };
+
+  # Additional CouchDB config beyond what the wiki module sets
+  services.couchdb = {
+    package = pkgs.couchdb3;
+    extraConfig = ''
+      [couchdb]
+      single_node = true
+
+      [chttpd]
+      bind_address = 0.0.0.0
+      port = 5984
+      max_dbs_open = 100
+
+      [httpd]
+      enable_cors = true
+      bind_address = 0.0.0.0
+      port = 5984
+
+      [cors]
+      origins = *
+      credentials = true
+      methods = GET, PUT, POST, HEAD, DELETE
+      headers = accept, authorization, content-type, origin, referer, x-csrf-token
+
+      [cluster]
+      n = 1
+      q = 1
+
+      [chttpd_auth]
+      timeout = 600
+      require_valid_user = true
+
+      [couch_httpd_auth]
+      require_valid_user = true
+    '';
   };
 
   # === HOME AUTOMATION ===
@@ -103,9 +163,28 @@
     port = 8123;
     enableMqtt = true;
   };
+  # NOTE: home.nix uses pkgs.home-assistant. Old config had unstable + custom
+  # Python overrides for aiohue/aionanoleaf. Re-enable if integrations break.
+
+  # === SAMBA ===
+  modules.servers.samba = {
+    enable = true;
+    sharePath = "/mnt/svalbard";
+    shareName = "svalbard";
+  };
+
+  # === CALIBRE-WEB ===
+  modules.servers.calibre = {
+    enable = true;
+    libraryPath = "/mnt/svalbard/calibre";
+  };
+
+  # Override calibre-web to listen on all interfaces (Tailscale access)
+  services.calibre-web.listen.ip = lib.mkForce "0.0.0.0";
 
   # === CADDY (Tailscale-only reverse proxy) ===
-  # No public TLS — only accessible via Tailscale
+  # Ene handles public-facing Caddy. This is for local Tailscale dashboards.
+  # The wiki and calibre modules add their own virtualHosts to Caddy.
   services.caddy = {
     enable = true;
     virtualHosts = {
@@ -115,28 +194,131 @@
           reverse_proxy localhost:18789
         '';
       };
-      # CouchDB — Tailscale only
-      ":5985" = {
-        extraConfig = ''
-          reverse_proxy localhost:5984
-        '';
-      };
     };
   };
 
+  # === STREAM BOUNCER ===
+  # Headless RTMP relay — Kiss/phone → Chat → Twitch (+ X when enabled)
+  # Falls back to chat overlay + clips if source drops
+  # TODO: Uncomment after `agenix -e` creates these secrets from Kiss
+  # age.secrets.twitch_stream_key = {
+  #   file = ../modules/servers/secrets/twitch_stream_key.age;
+  #   owner = "stream-bouncer";
+  # };
+  # age.secrets.x_stream_key = {
+  #   file = ../modules/servers/secrets/x_stream_key.age;
+  #   owner = "stream-bouncer";
+  # };
+  services.stream-bouncer = {
+    enable = false;  # Disabled until stream key secrets are created
+    chatOverlayUrl = "https://chatis.is2511.com/";
+    # enableX = true;  # Uncomment when X streaming is ready
+    # xStreamKeyFile = config.age.secrets.x_stream_key.path;
+  };
+
+  # === POSTGRESQL ===
+  # Chat history archive for the AI mesh.
+  # Stores: conversations with Nicholai (all agents), scraped Grok/Perplexity/Claude logs
+  # Data lives on Svalbard for durability; WAL on NVMe for performance.
+  services.postgresql = {
+    enable = true;
+    package = pkgs.postgresql_16;
+    # NVMe for proper Unix permissions (NTFS on Svalbard can't chmod).
+    # We'll use pg_dump to backup to Svalbard periodically.
+    dataDir = "/var/lib/postgresql/16";
+    settings = {
+      # Listen on all interfaces (Tailscale firewall handles access)
+      listen_addresses = lib.mkForce "*";
+      port = 5432;
+      # Performance tuning for 16GB RAM shared with other services
+      shared_buffers = "1GB";
+      effective_cache_size = "4GB";
+      work_mem = "64MB";
+      maintenance_work_mem = "256MB";
+      # WAL settings
+      wal_level = "replica";
+      max_wal_size = "2GB";
+      # Logging
+      log_statement = "ddl";
+      log_min_duration_statement = 1000;  # Log slow queries >1s
+    };
+    # pg_hba: mesh agent access rules loaded from local file at build time
+    # Deploy /etc/postgresql/pg_hba_mesh.conf on Chat before rebuild
+    # Contains: IP-locked role→schema mappings for Tailscale mesh agents
+    authentication = lib.mkForce (builtins.readFile /etc/postgresql/pg_hba_mesh.conf);
+    # Create databases and roles on first boot
+    ensureDatabases = [ "svalbard" ];
+    ensureUsers = [
+      {
+        name = "mesh";
+      }
+    ];
+    # Initial schema setup
+    initialScript = pkgs.writeText "pg-init.sql" ''
+      -- Mesh agent role (read/write for all agents)
+      -- Passwords set manually via psql, not in repo
+      GRANT ALL PRIVILEGES ON DATABASE svalbard TO mesh;
+
+      -- Read-only role for queries
+      CREATE ROLE mesh_reader WITH LOGIN;
+
+      -- Grant read access
+      ALTER DEFAULT PRIVILEGES FOR ROLE mesh IN SCHEMA public
+        GRANT SELECT ON TABLES TO mesh_reader;
+
+      -- Chat history table
+      CREATE TABLE IF NOT EXISTS conversations (
+        id BIGSERIAL PRIMARY KEY,
+        agent TEXT NOT NULL,           -- 'chat', 'ene', 'rook'
+        source TEXT NOT NULL,          -- 'openclaw', 'grok', 'perplexity', 'claude-web'
+        project TEXT,                  -- project name (nullable)
+        role TEXT NOT NULL,            -- 'user', 'assistant', 'system'
+        content TEXT NOT NULL,
+        metadata JSONB DEFAULT '{}',   -- extra fields (model, tokens, etc.)
+        timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        session_id TEXT,               -- group messages by session
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- Indexes for common queries
+      CREATE INDEX IF NOT EXISTS idx_conv_agent ON conversations(agent);
+      CREATE INDEX IF NOT EXISTS idx_conv_source ON conversations(source);
+      CREATE INDEX IF NOT EXISTS idx_conv_project ON conversations(project);
+      CREATE INDEX IF NOT EXISTS idx_conv_timestamp ON conversations(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_conv_session ON conversations(session_id);
+      CREATE INDEX IF NOT EXISTS idx_conv_content_search ON conversations USING gin(to_tsvector('english', content));
+
+      -- Session metadata table
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        agent TEXT NOT NULL,
+        source TEXT NOT NULL,
+        project TEXT,
+        title TEXT,
+        started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        ended_at TIMESTAMPTZ,
+        metadata JSONB DEFAULT '{}'
+      );
+
+      -- Scraped conversation imports tracking
+      CREATE TABLE IF NOT EXISTS imports (
+        id BIGSERIAL PRIMARY KEY,
+        source TEXT NOT NULL,           -- 'grok', 'perplexity', 'claude-web'
+        external_id TEXT,               -- ID from the source platform
+        project TEXT,
+        status TEXT DEFAULT 'pending',  -- 'pending', 'imported', 'failed'
+        imported_at TIMESTAMPTZ,
+        error TEXT,
+        metadata JSONB DEFAULT '{}'
+      );
+    '';
+  };
+
   # === RESOURCE MANAGEMENT ===
-  # 16GB RAM, shared between OpenClaw, CouchDB, Home Assistant, and MQTT
   zramSwap = {
     enable = true;
-    memoryPercent = 25;  # Conservative — we have 16GB
+    memoryPercent = 25;
   };
 
-  # === MAINTENANCE ===
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 14d";
-  };
-
-  system.stateVersion = "23.11";
+  system.stateVersion = "24.11";
 }

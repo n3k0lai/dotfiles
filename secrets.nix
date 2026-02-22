@@ -4,7 +4,7 @@ let
   # ===========================================
   kiss = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ5xQ12AZjr/B7nwR4xQwtnh7g/4PlBMoiZ3MsTLoInK root@tr1ste";
   ene = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDJVEWuJ9zhai0WJm3j90jOps4KIOiG8JITvoOcJ4hrA root@test";
-  # blade = "ssh-ed25519 AAAA...";  # future host example
+  chat = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKc43hg3+7eZ8JUTNNi+F0k2fjs8nVusG8wcLCj8Xc4A root@chateau";
 
   # ===========================================
   # USER KEY - for editing secrets from any machine
@@ -14,9 +14,10 @@ let
   # ===========================================
   # HOST GROUPS - organize by access level
   # ===========================================
-  allHosts = [ kiss ene ];
+  allHosts = [ kiss ene chat ];
   desktops = [ kiss ];           # desktop machines only
-  servers = [ ene ];             # server machines only
+  servers = [ ene chat ];        # server machines only
+  streaming = [ chat ];          # stream bouncer
 
 in
 {
@@ -40,4 +41,16 @@ in
   # SERVER SECRETS (ene)
   # ===========================================
   "modules/servers/secrets/xai_api_key.age".publicKeys = servers ++ [ nicho ];
+
+  # ===========================================
+  # STREAMING SECRETS (chat — stream bouncer)
+  # ===========================================
+  "modules/servers/secrets/twitch_stream_key.age".publicKeys = streaming ++ [ nicho ];
+  "modules/servers/secrets/x_stream_key.age".publicKeys = streaming ++ [ nicho ];
+
+  # ===========================================
+  # MESH DB SECRETS (agent → Postgres on Chat)
+  # ===========================================
+  "modules/servers/secrets/ene_pg_finance_reader.age".publicKeys = [ ene nicho ];
+  "modules/servers/secrets/ene_pg_personal_reader.age".publicKeys = [ ene nicho ];
 }
