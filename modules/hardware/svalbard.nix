@@ -44,6 +44,24 @@ with lib;
       description = "USB product ID of the RAID enclosure";
     };
 
+    readOnly = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Mount read-only for safety (use remount for writes)";
+    };
+
+    uid = mkOption {
+      type = types.int;
+      default = 1000;
+      description = "UID for NTFS mount ownership";
+    };
+
+    gid = mkOption {
+      type = types.int;
+      default = 100;
+      description = "GID for NTFS mount ownership";
+    };
+
     assembleRaid = mkOption {
       type = types.bool;
       default = false;
@@ -118,7 +136,9 @@ with lib;
 
             # Mount the filesystem
             echo "Mounting Svalbard RAID array at $MOUNT_POINT"
-            ${pkgs.util-linux}/bin/mount -t ${config.hardware.svalbard.fsType} "$DEVICE" "$MOUNT_POINT"
+            MOUNT_OPTS="defaults,nofail,uid=${toString config.hardware.svalbard.uid},gid=${toString config.hardware.svalbard.gid}"
+            ${lib.optionalString config.hardware.svalbard.readOnly ''MOUNT_OPTS="$MOUNT_OPTS,ro"''}
+            ${pkgs.util-linux}/bin/mount -t ${config.hardware.svalbard.fsType} -o "$MOUNT_OPTS" "$DEVICE" "$MOUNT_POINT"
           '';
         in "${mountScript}";
 
