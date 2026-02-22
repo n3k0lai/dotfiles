@@ -19,8 +19,8 @@ function fish_prompt --description 'Write out the prompt'
       case 'chateau' 'chat'
           set host_icon '🍹'
       case 'kiss'
-          set host_icon '💋'
+          set host_icon '鱼'
   end
 
-  echo -n -s (set_color brblack) "$hn " (set_color blue) "$host_icon " (set_color brblue) (prompt_pwd) $suffix " "
+  echo -n -s (set_color blue) "$host_icon " (set_color brblue) (prompt_pwd) $suffix " "
 end
