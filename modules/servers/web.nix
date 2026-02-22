@@ -103,7 +103,9 @@ in
           import /etc/caddy/auth.conf
           reverse_proxy 100.114.138.5:5000 {
             header_up Host {host}
-            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Proto https
+            header_up X-Forwarded-Host {host}
+            header_up X-Scheme https
           }
         '';
       };
