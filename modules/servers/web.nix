@@ -97,6 +97,18 @@ in
         '';
       };
 
+      # OctoPrint — proxied to Chat via Tailscale, Tailscale-only access
+      "factory.comfy.sh" = {
+        extraConfig = ''
+          @blocked not remote_ip 100.64.0.0/10
+          respond @blocked 403
+          reverse_proxy 100.114.138.5:5000 {
+            header_up Host {host}
+            header_up X-Forwarded-Proto {scheme}
+          }
+        '';
+      };
+
       # === PLANNED BUT NOT YET LIVE ===
       # Uncomment as DNS records are added and content is ready
 
