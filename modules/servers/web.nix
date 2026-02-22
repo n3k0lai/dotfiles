@@ -40,36 +40,25 @@ in
       };
 
       # OpenClaw dashboards + private services
-      # Tailscale IPs pass through; public access gets basic auth
+      # Basic auth with password hash loaded from agenix secret at runtime
+      # TODO: migrate to agenix secret file — for now use import from local file
       "ene.comfy.sh" = {
         extraConfig = ''
-          @tailscale remote_ip 100.64.0.0/10
-          basicauth {
-            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
-          }
-
+          import /etc/caddy/auth.conf
           reverse_proxy localhost:18789
         '';
       };
 
       "rook.comfy.sh" = {
         extraConfig = ''
-          @tailscale remote_ip 100.64.0.0/10
-          basicauth {
-            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
-          }
-
+          import /etc/caddy/auth.conf
           reverse_proxy 100.95.242.40:18789
         '';
       };
 
       "chat.comfy.sh" = {
         extraConfig = ''
-          @tailscale remote_ip 100.64.0.0/10
-          basicauth {
-            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
-          }
-
+          import /etc/caddy/auth.conf
           reverse_proxy 100.114.138.5:18789
         '';
       };
@@ -77,11 +66,7 @@ in
       # Home Assistant — proxied to Chat via Tailscale
       "home.comfy.sh" = {
         extraConfig = ''
-          @tailscale remote_ip 100.64.0.0/10
-          basicauth {
-            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
-          }
-
+          import /etc/caddy/auth.conf
           reverse_proxy 100.114.138.5:8123 {
             header_up Host {host}
             header_up X-Forwarded-Proto {scheme}
@@ -92,10 +77,7 @@ in
       # Calibre-Web (lib) — proxied to Chat via Tailscale
       "lib.comfy.sh" = {
         extraConfig = ''
-          basicauth {
-            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
-          }
-
+          import /etc/caddy/auth.conf
           reverse_proxy 100.114.138.5:8083
         '';
       };
@@ -103,10 +85,7 @@ in
       # Obsidian LiveSync (wiki) — CouchDB on Chat via Tailscale
       "wiki.comfy.sh" = {
         extraConfig = ''
-          basicauth {
-            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
-          }
-
+          import /etc/caddy/auth.conf
           reverse_proxy 100.114.138.5:5984 {
             header_up Host {host}
             header_up X-Forwarded-Proto {scheme}
