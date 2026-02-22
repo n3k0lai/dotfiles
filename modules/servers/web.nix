@@ -39,11 +39,14 @@ in
         '';
       };
 
-      # OpenClaw dashboards — Tailscale only
+      # OpenClaw dashboards + private services
+      # Tailscale IPs pass through; public access gets basic auth
       "ene.comfy.sh" = {
         extraConfig = ''
-          @denied not remote_ip 100.64.0.0/10
-          respond @denied 403
+          @tailscale remote_ip 100.64.0.0/10
+          basicauth {
+            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
+          }
 
           reverse_proxy localhost:18789
         '';
@@ -51,8 +54,10 @@ in
 
       "rook.comfy.sh" = {
         extraConfig = ''
-          @denied not remote_ip 100.64.0.0/10
-          respond @denied 403
+          @tailscale remote_ip 100.64.0.0/10
+          basicauth {
+            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
+          }
 
           reverse_proxy 100.95.242.40:18789
         '';
@@ -60,8 +65,10 @@ in
 
       "chat.comfy.sh" = {
         extraConfig = ''
-          @denied not remote_ip 100.64.0.0/10
-          respond @denied 403
+          @tailscale remote_ip 100.64.0.0/10
+          basicauth {
+            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
+          }
 
           reverse_proxy 100.114.138.5:18789
         '';
@@ -70,8 +77,10 @@ in
       # Home Assistant — proxied to Chat via Tailscale
       "home.comfy.sh" = {
         extraConfig = ''
-          @denied not remote_ip 100.64.0.0/10
-          respond @denied 403
+          @tailscale remote_ip 100.64.0.0/10
+          basicauth {
+            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
+          }
 
           reverse_proxy 100.114.138.5:8123 {
             header_up Host {host}
@@ -83,6 +92,10 @@ in
       # Calibre-Web (lib) — proxied to Chat via Tailscale
       "lib.comfy.sh" = {
         extraConfig = ''
+          basicauth {
+            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
+          }
+
           reverse_proxy 100.114.138.5:8083
         '';
       };
@@ -90,6 +103,10 @@ in
       # Obsidian LiveSync (wiki) — CouchDB on Chat via Tailscale
       "wiki.comfy.sh" = {
         extraConfig = ''
+          basicauth {
+            nicholai $2a$14$jUGrOohCVC2HK8TPOtH7YOrX.mnykNfEViaTd8WsTS1Z2DC3EDRMy
+          }
+
           reverse_proxy 100.114.138.5:5984 {
             header_up Host {host}
             header_up X-Forwarded-Proto {scheme}
