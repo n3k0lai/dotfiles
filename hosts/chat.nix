@@ -209,6 +209,60 @@
   #   file = ../modules/servers/secrets/x_stream_key.age;
   #   owner = "stream-bouncer";
   # };
+
+  # === POSTGRES PASSWORD SECRETS (agenix) ===
+  # Encrypted in repo, decrypted at runtime to /run/agenix/
+  # Create with: cd ~/Code/nix && agenix -e modules/servers/secrets/<name>.age
+  # Each file should contain ONLY the password (no newline)
+  age.secrets.pg_mesh_password = {
+    file = ../modules/servers/secrets/pg_mesh_password.age;
+    owner = "postgres";
+  };
+  age.secrets.pg_mesh_reader_password = {
+    file = ../modules/servers/secrets/pg_mesh_reader_password.age;
+    owner = "postgres";
+  };
+  age.secrets.pg_finance_admin_password = {
+    file = ../modules/servers/secrets/pg_finance_admin_password.age;
+    owner = "postgres";
+  };
+  age.secrets.pg_personal_admin_password = {
+    file = ../modules/servers/secrets/pg_personal_admin_password.age;
+    owner = "postgres";
+  };
+  age.secrets.pg_work_admin_password = {
+    file = ../modules/servers/secrets/pg_work_admin_password.age;
+    owner = "postgres";
+  };
+
+  # Apply rotated passwords on boot from agenix secrets
+  systemd.services.pg-password-sync = {
+    description = "Sync Postgres role passwords from agenix secrets";
+    after = [ "postgresql.service" ];
+    requires = [ "postgresql.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "postgres";
+    };
+    script = ''
+      set -euo pipefail
+      PSQL="${pkgs.postgresql_16}/bin/psql"
+      apply_password() {
+        local role="$1" file="$2"
+        if [ -f "$file" ]; then
+          local pw
+          pw=$(cat "$file")
+          $PSQL -c "ALTER ROLE $role WITH PASSWORD '$pw';" 2>/dev/null || true
+        fi
+      }
+      apply_password mesh          /run/agenix/pg_mesh_password
+      apply_password mesh_reader   /run/agenix/pg_mesh_reader_password
+      apply_password finance_admin /run/agenix/pg_finance_admin_password
+      apply_password personal_admin /run/agenix/pg_personal_admin_password
+      apply_password work_admin    /run/agenix/pg_work_admin_password
+    '';
+  };
   services.stream-bouncer = {
     enable = false;  # Disabled until stream key secrets are created
     chatOverlayUrl = "https://chatis.is2511.com/";

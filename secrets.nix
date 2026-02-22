@@ -51,6 +51,13 @@ in
   # ===========================================
   # MESH DB SECRETS (agent → Postgres on Chat)
   # ===========================================
+  # Ene's read-only credentials (decrypted on ene)
   "modules/servers/secrets/ene_pg_finance_reader.age".publicKeys = [ ene nicho ];
   "modules/servers/secrets/ene_pg_personal_reader.age".publicKeys = [ ene nicho ];
+  # Chat's Postgres role passwords (decrypted on chat, applied via activation script)
+  "modules/servers/secrets/pg_mesh_password.age".publicKeys = [ chat nicho ];
+  "modules/servers/secrets/pg_mesh_reader_password.age".publicKeys = [ chat nicho ];
+  "modules/servers/secrets/pg_finance_admin_password.age".publicKeys = [ chat nicho ];
+  "modules/servers/secrets/pg_personal_admin_password.age".publicKeys = [ chat nicho ];
+  "modules/servers/secrets/pg_work_admin_password.age".publicKeys = [ chat nicho ];
 }
