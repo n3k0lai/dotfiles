@@ -29,6 +29,9 @@
 #   4. Discord bot (app id 1473545693946843136) → join wavy gang
 { config, pkgs, lib, ... }:
 
+let
+  fortune-zh-module = import ../modules/core/fortune-zh.nix { inherit pkgs; };
+in
 {
   imports = [
     # OpenClaw + Grok proxy
@@ -66,6 +69,8 @@
     gnumake
     gcc
     ntfs3g
+    keychain
+    fortune-zh-module.fortune-with-zh
     # Playwright needs a real browser on NixOS (can't use dynamically linked downloads)
     chromium
     # X11 forwarding for headful browser sessions from Kiss
