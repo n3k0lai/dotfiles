@@ -29,6 +29,9 @@
 #   4. Discord bot (app id 1473545693946843136) → join wavy gang
 { config, pkgs, lib, ... }:
 
+let
+  fortune-zh-module = import ../modules/core/fortune-zh.nix { inherit pkgs; };
+in
 {
   imports = [
     # OpenClaw + Grok proxy
@@ -66,6 +69,8 @@
     gnumake
     gcc
     ntfs3g
+    keychain
+    fortune-zh-module.fortune-with-zh
     # Playwright needs a real browser on NixOS (can't use dynamically linked downloads)
     chromium
     # X11 forwarding for headful browser sessions from Kiss
@@ -299,7 +304,7 @@
     # pg_hba: mesh agent access rules loaded from local file at build time
     # Deploy /etc/postgresql/pg_hba_mesh.conf on Chat before rebuild
     # Contains: IP-locked role→schema mappings for Tailscale mesh agents
-    authentication = lib.mkForce (builtins.readFile /etc/postgresql/pg_hba_mesh.conf);
+    authentication = lib.mkForce (builtins.readFile ../modules/servers/pg_hba_mesh.conf);
     # Create databases and roles on first boot
     ensureDatabases = [ "svalbard" ];
     ensureUsers = [
