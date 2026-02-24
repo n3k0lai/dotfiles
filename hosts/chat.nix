@@ -299,7 +299,7 @@
     # pg_hba: mesh agent access rules loaded from local file at build time
     # Deploy /etc/postgresql/pg_hba_mesh.conf on Chat before rebuild
     # Contains: IP-locked role→schema mappings for Tailscale mesh agents
-    authentication = lib.mkForce (builtins.readFile /etc/postgresql/pg_hba_mesh.conf);
+    authentication = lib.mkForce (builtins.readFile ../modules/servers/pg_hba_mesh.conf);
     # Create databases and roles on first boot
     ensureDatabases = [ "svalbard" ];
     ensureUsers = [

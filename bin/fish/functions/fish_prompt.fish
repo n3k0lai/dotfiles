@@ -9,8 +9,8 @@ function fish_prompt --description 'Write out the prompt'
 
   # host-specific icon
   set -l host_icon '鱼'
-  set -l hn (cat /etc/hostname 2>/dev/null; or hostname 2>/dev/null; or echo 'unknown')
-  set hn (string trim $hn)
+  set -l hn (hostname 2>/dev/null || cat /etc/hostname 2>/dev/null || echo 'unknown')
+  set hn (string trim -- $hn)
   switch $hn
       case 'ene' 'ene-1'
           set host_icon '🩵'
