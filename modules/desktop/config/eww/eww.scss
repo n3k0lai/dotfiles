@@ -231,46 +231,6 @@
   padding: 4px 0;
 }
 
-/* Claude AI Usage */
-.claude-section {
-  margin-bottom: 24px;
-}
-
-.claude-icon {
-  color: #d4a574;  /* warm sandy tone — Anthropic vibes meets waves */
-}
-
-/* Status-based container colors */
-.claude-stats-ok {
-  border: 1px solid rgba(75, 166, 156, 0.2);
-}
-
-.claude-stats-warning {
-  border: 1px solid rgba(255, 232, 197, 0.4);
-}
-
-.claude-stats-critical {
-  border: 1px solid rgba(255, 100, 100, 0.5);
-  background-color: rgba(255, 50, 50, 0.05);
-}
-
-.claude-session-bar trough progress {
-  background: linear-gradient(90deg, #4ba69c, #d4a574);
-  border-radius: 3px;
-}
-
-.claude-weekly-bar trough progress {
-  background: linear-gradient(90deg, #d4a574, #ff6464);
-  border-radius: 3px;
-}
-
-/* Override bar colors when critical */
-.claude-stats-critical .claude-session-bar trough progress,
-.claude-stats-critical .claude-weekly-bar trough progress {
-  background: linear-gradient(90deg, #ff6464, #ff3232);
-}
 
 /* Spacer */
 .spacer {
-  min-height: 20px;
-}
