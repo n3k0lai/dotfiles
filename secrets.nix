@@ -41,7 +41,7 @@ in
   # SERVER SECRETS (ene)
   # ===========================================
   "modules/servers/secrets/xai_api_key.age".publicKeys = servers ++ [ nicho ];
-  "modules/servers/secrets/openclaw_env.age".publicKeys = [ ene nicho ];
+  "modules/servers/secrets/openclaw_env.age".publicKeys = servers ++ [ nicho ];
   "modules/servers/secrets/gemini_api_key.age".publicKeys = servers ++ [ nicho ];
 
   # ===========================================
