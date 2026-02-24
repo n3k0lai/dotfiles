@@ -35,6 +35,9 @@ with lib;
   };
 
   config = {
+    # Agenix CLI for managing encrypted secrets
+    environment.systemPackages = [ pkgs.agenix ];
+
     # Enable Scarlett audio interface
     hardware.scarlett.enable = true;
     

@@ -6,6 +6,14 @@ let
   grokPython = pkgs.python3.withPackages (ps: [ ps.aiohttp ]);
 in
 {
+  # Secrets (decrypted at activation by agenix)
+  age.secrets.openclaw-env = {
+    file = ./secrets/openclaw_env.age;
+    owner = "nicho";
+    group = "users";
+    mode = "0400";
+  };
+
   environment.systemPackages = with pkgs; [
     nodePkg
     gh
@@ -19,8 +27,6 @@ in
 
     environment = {
       HOME = "/home/nicho";
-      GOG_KEYRING_PASSWORD = "openclaw-ene";
-      GOG_ACCOUNT = "theguy@itsnicholai.fyi";
     };
 
     path = [ nodePkg ];
@@ -32,6 +38,7 @@ in
       Restart = "always";
       RestartSec = 5;
       KillMode = "process";
+      EnvironmentFile = config.age.secrets.openclaw-env.path;
       Environment = [
         "PATH=/home/nicho/bin:/home/nicho/.npm-global/bin:${nodePkg}/bin:/run/current-system/sw/bin"
       ];
