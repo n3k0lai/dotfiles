@@ -16,6 +16,10 @@
     options = "--delete-older-than 30d";
   };
 
+  imports = [
+    ./modules/core/security.nix
+  ];
+
   # Agenix secrets configuration
   age.identityPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
   # Note: Add server-specific secrets here as needed

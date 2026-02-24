@@ -25,6 +25,9 @@ in
       ./modules/desktop/theme/waves.nix
       # ./modules/desktop/theme/ene.nix  # Alternative theme
       
+      # System hardening
+      ./modules/core/security.nix
+
       # Dev mode (hot-reload configs)
       ./modules/core/dev-mode.nix
 
