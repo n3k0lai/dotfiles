@@ -71,6 +71,8 @@
           ./hosts/chat-hardware.nix
           ./configuration-server.nix
           ./hosts/chat.nix
+          ./bin/default.nix
+          home-manager.nixosModules.home-manager
           agenix.nixosModules.default
           {
             nixpkgs.overlays = [ agenix.overlays.default ];
