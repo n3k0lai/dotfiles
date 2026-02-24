@@ -5,6 +5,13 @@
 ;; Variables
 (defvar reveal_sidebar false)
 
+;; Claude AI usage tracking
+(defpoll claude_session :interval "30s" :initial "0" "scripts/claude-usage.fish session")
+(defpoll claude_weekly :interval "30s" :initial "0" "scripts/claude-usage.fish weekly")
+(defpoll claude_reset :interval "60s" :initial "?" "scripts/claude-usage.fish reset")
+(defpoll claude_status :interval "30s" :initial "ok" "scripts/claude-usage.fish status")
+(defpoll claude_context :interval "10s" :initial "0" "scripts/claude-usage.fish context")
+
 ;; Polls for system information
 (defpoll time :interval "1s" :initial "00:00" "date '+%-I:%M %p'")
 (defpoll date :interval "60s" :initial "..." "date '+%a, %b %d'")
@@ -74,6 +81,11 @@
     (box :class "volume-section" :orientation "v" :space-evenly false
       (label :class "section-title" :text "Volume")
       (volume_widget))
+    
+    ;; Claude AI usage
+    (box :class "claude-section" :orientation "v" :space-evenly false
+      (label :class "section-title" :text "Claude")
+      (claude_widget))
     
     ;; Spacer to push info to bottom
     (box :class "spacer" :vexpand true)
@@ -187,3 +199,35 @@
            :max 100
            :orientation "h"
            :onchange "wpctl set-volume @DEFAULT_AUDIO_SINK@ {}%")))
+
+;; Claude AI usage widget
+(defwidget claude_widget []
+  (box :class "stats claude-stats-${claude_status}"
+       :orientation "v"
+       :space-evenly false
+       :spacing 12
+    ;; Session usage
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon claude-icon" :text "󰧑")
+        (label :class "stat-label" :text "Session")
+        (label :class "stat-value" :text "${claude_session}%"))
+      (progress :class "stat-bar claude-session-bar" 
+                :value claude_session
+                :orientation "h"))
+    
+    ;; Weekly usage
+    (box :class "stat-item" :orientation "v" :space-evenly false
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon claude-icon" :text "󰃰")
+        (label :class "stat-label" :text "Weekly")
+        (label :class "stat-value" :text "${claude_weekly}%"))
+      (progress :class "stat-bar claude-weekly-bar" 
+                :value claude_weekly
+                :orientation "h"))
+    
+    ;; Reset timer
+    (box :class "stat-item" :orientation "h" :space-evenly false
+      (label :class "stat-icon claude-icon" :text "󰑐")
+      (label :class "stat-label" :text "Reset")
+      (label :class "stat-value" :text claude_reset))))
