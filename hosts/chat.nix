@@ -53,6 +53,9 @@ in
 
   networking.hostName = "chat";
 
+  # Home-manager state version
+  home-manager.users.nicho.home.stateVersion = "24.11";
+
   # Boot
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
