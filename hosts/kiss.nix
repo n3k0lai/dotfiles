@@ -36,7 +36,8 @@ with lib;
 
   config = {
     # Agenix CLI for managing encrypted secrets
-    environment.systemPackages = [ pkgs.agenix ];
+    # Moonlight for streaming from Rook (League, etc)
+    environment.systemPackages = [ pkgs.agenix pkgs.moonlight-qt ];
 
     # Enable Scarlett audio interface
     hardware.scarlett.enable = true;
