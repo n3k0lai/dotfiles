@@ -12,7 +12,7 @@
 /* Header Section */
 .header-section {
   padding: 12px;
-  background: linear-gradient(135deg, rgba(175, 153, 118, 0.1), rgba(173, 240, 231, 0.1));
+  background-image: linear-gradient(135deg, rgba(175, 153, 118, 0.1), rgba(173, 240, 231, 0.1));
   border-radius: 8px;
   margin-bottom: 20px;
   border: 1px solid rgba(75, 166, 156, 0.3);
@@ -141,17 +141,17 @@
 }
 
 .cpu-bar trough progress {
-  background: linear-gradient(90deg, #af9976, #ffe8c5);
+  background-image: linear-gradient(90deg, #af9976, #ffe8c5);
   border-radius: 3px;
 }
 
 .memory-bar trough progress {
-  background: linear-gradient(90deg, #4ba69c, #bae67e);
+  background-image: linear-gradient(90deg, #4ba69c, #bae67e);
   border-radius: 3px;
 }
 
 .disk-bar trough progress {
-  background: linear-gradient(90deg, #adf0e7, #4ba69c);
+  background-image: linear-gradient(90deg, #adf0e7, #4ba69c);
   border-radius: 3px;
 }
 
@@ -195,7 +195,7 @@
 }
 
 .volume-slider trough highlight {
-  background: linear-gradient(90deg, #bae67e, #4ba69c);
+  background-image: linear-gradient(90deg, #bae67e, #4ba69c);
   border-radius: 4px;
 }
 
@@ -218,7 +218,7 @@
 /* Footer Section */
 .footer-section {
   padding: 12px;
-  background: linear-gradient(135deg, rgba(75, 166, 156, 0.1), rgba(175, 153, 118, 0.1));
+  background-image: linear-gradient(135deg, rgba(75, 166, 156, 0.1), rgba(175, 153, 118, 0.1));
   border-radius: 8px;
   border: 1px solid rgba(75, 166, 156, 0.3);
 }
@@ -237,7 +237,7 @@
 }
 
 .claude-icon {
-  color: #d4a574;  /* warm sandy tone — Anthropic vibes meets waves */
+  color: #d4a574;  /* warm sandy tone - Anthropic vibes meets waves */
 }
 
 /* Status-based container colors */
@@ -255,19 +255,19 @@
 }
 
 .claude-session-bar trough progress {
-  background: linear-gradient(90deg, #4ba69c, #d4a574);
+  background-image: linear-gradient(90deg, #4ba69c, #d4a574);
   border-radius: 3px;
 }
 
 .claude-weekly-bar trough progress {
-  background: linear-gradient(90deg, #d4a574, #ff6464);
+  background-image: linear-gradient(90deg, #d4a574, #ff6464);
   border-radius: 3px;
 }
 
 /* Override bar colors when critical */
 .claude-stats-critical .claude-session-bar trough progress,
 .claude-stats-critical .claude-weekly-bar trough progress {
-  background: linear-gradient(90deg, #ff6464, #ff3232);
+  background-image: linear-gradient(90deg, #ff6464, #ff3232);
 }
 
 /* Spacer */
