@@ -1,7 +1,11 @@
 #!/usr/bin/env fish
 
 # Claude usage tracker for eww sidebar
-# Probes Anthropic rate limit headers from a minimal API call
+# Reads from claude.ai usage API (five_hour / seven_day utilization)
+#
+# Requires in ~/.config/anthropic.env:
+#   CLAUDE_SESSION_KEY=sk-ant-sid01-...  (from claude.ai browser cookies, expires ~30 days)
+#   CLAUDE_ORG_ID=...                    (from the API URL on claude.ai/settings/usage)
 #
 # Usage: claude-usage.fish [session|weekly|reset|status|all]
 
@@ -9,7 +13,7 @@ set -l mode $argv[1]
 test -z "$mode"; and set mode "all"
 
 set -l cache_file "/tmp/claude-usage-cache.json"
-set -l cache_max_age 30  # seconds
+set -l cache_max_age 60  # seconds
 
 # Check cache freshness
 if test -f "$cache_file"
@@ -21,9 +25,11 @@ if test -f "$cache_file"
             case weekly
                 jq -r '.weekly_pct' "$cache_file" 2>/dev/null; or echo "0"
             case reset
-                jq -r '.weekly_reset' "$cache_file" 2>/dev/null; or echo "?"
+                jq -r '.reset' "$cache_file" 2>/dev/null; or echo "?"
             case status
                 jq -r '.status' "$cache_file" 2>/dev/null; or echo "ok"
+            case context
+                echo "0"
             case all
                 cat "$cache_file"
         end
@@ -31,77 +37,76 @@ if test -f "$cache_file"
     end
 end
 
-# Read API key from local env file or environment
-set -l anthropic_key ""
-if test -n "$ANTHROPIC_API_KEY"
-    set anthropic_key "$ANTHROPIC_API_KEY"
-else if test -f "$HOME/.config/anthropic.env"
-    set anthropic_key (grep ANTHROPIC_API_KEY "$HOME/.config/anthropic.env" | cut -d= -f2 | tr -d '"' | tr -d "'" | string trim)
-else if test -f /run/agenix/openclaw-env
-    set anthropic_key (grep ANTHROPIC_API_KEY /run/agenix/openclaw-env 2>/dev/null | cut -d= -f2 | string trim)
+# Read credentials
+set -l session_key ""
+set -l org_id ""
+
+if test -f "$HOME/.config/anthropic.env"
+    set session_key (grep CLAUDE_SESSION_KEY "$HOME/.config/anthropic.env" | cut -d= -f2- | string trim)
+    set org_id (grep CLAUDE_ORG_ID "$HOME/.config/anthropic.env" | cut -d= -f2- | string trim)
 end
 
 set -l session_pct 0
 set -l weekly_pct 0
 set -l weekly_reset "?"
 
-if test -n "$anthropic_key"
-    # Minimal API call to get rate limit headers
-    set -l headers (curl -s -D - -o /dev/null --connect-timeout 5 \
-        -H "x-api-key: $anthropic_key" \
-        -H "anthropic-version: 2023-06-01" \
-        -H "content-type: application/json" \
-        -d '{"model":"claude-sonnet-4-20250514","messages":[{"role":"user","content":"hi"}],"max_tokens":1}' \
-        "https://api.anthropic.com/v1/messages" 2>/dev/null)
-
-    # Parse rate limit headers
-    set -l token_limit (echo "$headers" | grep -i "anthropic-ratelimit-tokens-limit" | head -1 | awk '{print $2}' | tr -d '\r')
-    set -l token_remaining (echo "$headers" | grep -i "anthropic-ratelimit-tokens-remaining" | head -1 | awk '{print $2}' | tr -d '\r')
-    set -l reset_time (echo "$headers" | grep -i "anthropic-ratelimit-tokens-reset" | head -1 | awk '{print $2}' | tr -d '\r')
-
-    # Request-level limits (may indicate weekly)
-    set -l req_limit (echo "$headers" | grep -i "anthropic-ratelimit-requests-limit" | head -1 | awk '{print $2}' | tr -d '\r')
-    set -l req_remaining (echo "$headers" | grep -i "anthropic-ratelimit-requests-remaining" | head -1 | awk '{print $2}' | tr -d '\r')
-
-    # Session token usage
-    if test -n "$token_limit" -a -n "$token_remaining" -a "$token_limit" != "0"
-        set -l used (math "$token_limit - $token_remaining")
-        set session_pct (math --scale=0 "($used / $token_limit) * 100")
+if test -n "$org_id"
+    # Extract all claude.ai cookies from Firefox (bypasses Cloudflare bot protection)
+    # Use find instead of glob to avoid fish wildcard errors when path doesn't exist
+    set -l ff_profile (find ~/.mozilla/firefox -maxdepth 1 -name "*.default*" -type d 2>/dev/null | sort -r | head -1)
+    set -l cookie_str ""
+    if test -n "$ff_profile" -a -f "$ff_profile/cookies.sqlite"
+        set -l tmp_db "/tmp/eww-claude-cookies.sqlite"
+        cp "$ff_profile/cookies.sqlite" "$tmp_db" 2>/dev/null
+        set cookie_str (sqlite3 "$tmp_db" \
+            "SELECT name || '=' || value FROM moz_cookies WHERE host LIKE '%claude.ai';" 2>/dev/null | \
+            string join "; ")
+    end
+    # Fall back to just sessionKey if Firefox cookies unavailable
+    if test -z "$cookie_str" -a -n "$session_key"
+        set cookie_str "sessionKey=$session_key"
     end
 
-    # Request usage (proxy for weekly)
-    if test -n "$req_limit" -a -n "$req_remaining" -a "$req_limit" != "0"
-        set -l req_used (math "$req_limit - $req_remaining")
-        set weekly_pct (math --scale=0 "($req_used / $req_limit) * 100")
-    end
+    # curl-impersonate-ff mimics Firefox's TLS fingerprint, required to pass Cloudflare
+    set -l response (string join \n (curl-impersonate-ff -s --connect-timeout 5 \
+        -H "Cookie: $cookie_str" \
+        -H "Content-Type: application/json" \
+        -H "anthropic-client-platform: web_claude_ai" \
+        "https://claude.ai/api/organizations/$org_id/usage" 2>/dev/null))
 
-    # Parse reset time
-    if test -n "$reset_time"
-        set -l reset_epoch (date -d "$reset_time" +%s 2>/dev/null)
-        if test -n "$reset_epoch"
-            set -l now_epoch (date +%s)
-            set -l diff (math "$reset_epoch - $now_epoch")
-            if test $diff -gt 3600
-                set weekly_reset (math --scale=0 "$diff / 3600")"h"
-            else if test $diff -gt 60
-                set weekly_reset (math --scale=0 "$diff / 60")"m"
-            else if test $diff -gt 0
-                set weekly_reset "now"
+    # Only parse if response is valid JSON
+    if echo "$response" | jq . >/dev/null 2>/dev/null
+        set session_pct (echo "$response" | jq -r '(.five_hour.utilization // 0) | floor')
+        set weekly_pct (echo "$response" | jq -r '(.seven_day.utilization // 0) | floor')
+
+        # Reset time from five_hour window
+        set -l reset_iso (echo "$response" | jq -r '.five_hour.resets_at // ""')
+        if test -n "$reset_iso"
+            set -l reset_epoch (date -d "$reset_iso" +%s 2>/dev/null)
+            if test -n "$reset_epoch"
+                set -l diff (math "$reset_epoch - "(date +%s))
+                if test $diff -gt 3600
+                    set weekly_reset (math --scale=0 "$diff / 3600")"h"(math --scale=0 "($diff % 3600) / 60")"m"
+                else if test $diff -gt 60
+                    set weekly_reset (math --scale=0 "$diff / 60")"m"
+                else if test $diff -gt 0
+                    set weekly_reset "<1m"
+                end
             end
         end
     end
 end
 
 # Determine status
-set -l status "ok"
+set -l usage_status "ok"
 if test $session_pct -ge 90; or test $weekly_pct -ge 90
-    set status "critical"
+    set usage_status "critical"
 else if test $session_pct -ge 70; or test $weekly_pct -ge 70
-    set status "warning"
+    set usage_status "warning"
 end
 
-# Build JSON and cache
-set -l json "{\"session_pct\": $session_pct, \"weekly_pct\": $weekly_pct, \"weekly_reset\": \"$weekly_reset\", \"status\": \"$status\"}"
+# Cache and output
+set -l json "{\"session_pct\": $session_pct, \"weekly_pct\": $weekly_pct, \"reset\": \"$weekly_reset\", \"status\": \"$usage_status\"}"
 echo "$json" > "$cache_file"
 
 switch $mode
@@ -112,7 +117,9 @@ switch $mode
     case reset
         echo "$weekly_reset"
     case status
-        echo "$status"
+        echo "$usage_status"
+    case context
+        echo "0"
     case all
         echo "$json"
 end

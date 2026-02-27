@@ -52,6 +52,8 @@ in {
       # Utilities
       jq  # For wallpaper script
       socat  # For eww workspace script (hyprland socket)
+      sqlite  # For eww claude-usage script (reads Firefox cookies)
+      curl-impersonate  # For eww claude-usage script (bypasses Cloudflare TLS fingerprinting)
       grim  # Screenshot
       slurp  # Screen selection
       wl-clipboard  # Clipboard
