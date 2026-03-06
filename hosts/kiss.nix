@@ -12,6 +12,7 @@ with lib;
     ../modules/hardware/sammy.nix
     ../modules/servers/garmin.nix
     ../modules/desktop/fcitx5.nix
+    ../modules/desktop/editors.nix
   ];
 
   options.hardware.kiss.gpu = {
@@ -53,6 +54,9 @@ with lib;
 
     # Input method (fcitx5 with Pinyin)
     modules.desktop.fcitx5.enable = true;
+
+    # KiCad for Artemis hardware design
+    modules.desktop.editors.kicad.enable = true;
 
     # Machine-specific hostname
     networking.hostName = "kiss";
