@@ -101,12 +101,21 @@
   services.caddy = {
     enable = true;
     virtualHosts = {
-      "artemis.comfy.sh" = {
+      "artemis.bond" = {
+        extraConfig = ''
+          root * /var/www/artemis/site
+          file_server
+        '';
+      };
+      "app.artemis.bond" = {
         extraConfig = ''
           root * /var/www/artemis/dist
           file_server
           handle /api/* {
             reverse_proxy localhost:8080
+          }
+          handle /webhook {
+            reverse_proxy localhost:9000
           }
         '';
       };
