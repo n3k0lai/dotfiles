@@ -4,7 +4,6 @@
 
 {
   imports = [
-    ../modules/servers/web.nix
   ];
 
   # Boot loader
@@ -62,11 +61,9 @@
   # DigitalOcean monitoring
   services.do-agent.enable = true;
 
-  # --- JDK for Kotlin engine ---
   environment.systemPackages = with pkgs; [
-    temurin-bin-21  # Eclipse Temurin JDK 21 LTS
-    gradle
     git
+    nodejs_22
   ];
 
   # --- Postgres for sensor data ---
@@ -91,30 +88,6 @@
     '';
   };
 
-  # --- Artemis Engine service ---
-  # Runs the Kotlin/Gradle fat jar
-  # Build: cd /opt/artemis/engine && gradle shadowJar
-  # Output: engine/build/libs/engine-all.jar
-  systemd.services.artemis-engine = {
-    description = "Artemis Telemetry Engine (Kotlin)";
-    after = [ "network.target" "postgresql.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      ExecStart = "${pkgs.temurin-bin-21}/bin/java -jar /opt/artemis/engine/build/libs/engine-all.jar";
-      Restart = "always";
-      RestartSec = 5;
-      User = "artemis";
-      Group = "artemis";
-      WorkingDirectory = "/opt/artemis";
-      EnvironmentFile = "/opt/artemis/.env";
-      # Hardening
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      NoNewPrivileges = true;
-      ReadWritePaths = [ "/opt/artemis" ];
-    };
-  };
-
   # Service user
   users.users.artemis = {
     isSystemUser = true;
@@ -124,11 +97,39 @@
   };
   users.groups.artemis = {};
 
-  # --- Caddy reverse proxy ---
-  services.caddy.virtualHosts."artemis.comfy.sh" = {
-    extraConfig = ''
-      reverse_proxy localhost:8080
-    '';
+  # --- Caddy ---
+  services.caddy = {
+    enable = true;
+    virtualHosts = {
+      "artemis.comfy.sh" = {
+        extraConfig = ''
+          root * /var/www/artemis/dist
+          file_server
+          handle /api/* {
+            reverse_proxy localhost:8080
+          }
+        '';
+      };
+    };
+  };
+  networking.firewall.allowedTCPPorts = [ 80 443 ];
+
+  # --- GitHub webhook auto-deploy ---
+  # Listens on :9000 for push events, pulls + builds platform
+  systemd.services.artemis-deploy-webhook = {
+    description = "GitHub Webhook for Artemis Platform Deploy";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    path = with pkgs; [ git nodejs_22 bash ];
+    serviceConfig = {
+      ExecStart = "${pkgs.nodejs_22}/bin/node ${../bin/artemis-webhook.js}";
+      Restart = "always";
+      RestartSec = 5;
+      User = "artemis";
+      Group = "artemis";
+      WorkingDirectory = "/opt/artemis";
+      EnvironmentFile = "/opt/artemis/.env";
+    };
   };
 
   # Memory optimization for low-RAM VPS
