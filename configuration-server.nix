@@ -65,6 +65,9 @@
     btop
     ncdu
     lsof
+
+    # Media tools
+    yt-dlp
   ];
 
   # Tailscale for secure networking
