@@ -4,7 +4,8 @@
 
 {
   imports = [
-    ../modules/servers/cam.nix,
-    ../modules/servers/fans.nix,
+    ../modules/servers/cam.nix
+    ../modules/servers/fans.nix
+    ../modules/servers/meshtastic.nix
   ];
 }

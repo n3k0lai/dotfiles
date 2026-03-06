@@ -1,14 +1,13 @@
-# Editor and development tool modules
-# Import what you need per-machine
+# CAD and hardware design tools
 { config, pkgs, lib, ... }:
 
 with lib;
 
 let
-  cfg = config.modules.desktop.editors;
+  cfg = config.modules.editors.cad;
 in
 {
-  options.modules.desktop.editors = {
+  options.modules.editors.cad = {
     kicad.enable = mkEnableOption "KiCad EDA suite for schematic/PCB design";
   };
 
