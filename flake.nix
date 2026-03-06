@@ -68,7 +68,7 @@
       artemis = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
-          ./hosts/ene-hardware.nix  # TODO: swap for artemis-hardware.nix once provisioned
+          ./hosts/artemis-hardware.nix
           ./configuration-server.nix
           ./hosts/artemis.nix
           agenix.nixosModules.default
