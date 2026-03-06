@@ -64,6 +64,20 @@
         ];
       };
 
+      # Artemis telemetry server
+      artemis = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./hosts/ene-hardware.nix  # TODO: swap for artemis-hardware.nix once provisioned
+          ./configuration-server.nix
+          ./hosts/artemis.nix
+          agenix.nixosModules.default
+          {
+            nixpkgs.overlays = [ agenix.overlays.default ];
+          }
+        ];
+      };
+
       # Home server
       chat = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
