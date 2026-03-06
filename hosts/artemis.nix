@@ -7,6 +7,10 @@
     ../modules/servers/web.nix
   ];
 
+  # Boot loader
+  boot.loader.grub.enable = true;
+  boot.loader.grub.device = "/dev/vda";
+
   # Machine hostname
   networking.hostName = "artemis";
 
