@@ -248,13 +248,6 @@ in
     packages = with pkgs; [
       fish
       fortune-zh-module.fortune-with-zh
-      firefox
-      brave # for usevia.app
-      discord
-      obs-studio 
-      obsidian
-      protonmail-desktop
-      prismlauncher # minecraft
     ];
   };
 
@@ -266,8 +259,6 @@ in
     wget
     git
     age
-    # Zed
-    zed-editor
     # audio
     alsa-utils
     usbutils
@@ -276,15 +267,6 @@ in
     kitty
     ranger
     fastfetch
-    # Qt6 dependencies for PrismLauncher
-    qt6.qtwayland
-    qt6.qtbase
-    qt6.qt5compat
-    qt6.qtimageformats
-    qt6.qtsvg
-    libGL
-    mesa
-    libxkbcommon
   ];
 
   # Some programs need SUID wrappers, can be configured further or are

@@ -38,7 +38,32 @@ with lib;
   config = {
     # Agenix CLI for managing encrypted secrets
     # Moonlight for streaming from Rook (League, etc)
-    environment.systemPackages = [ pkgs.agenix pkgs.moonlight-qt ];
+    environment.systemPackages = with pkgs; [
+      agenix
+      moonlight-qt
+      zed-editor
+      # Qt6 dependencies for PrismLauncher
+      qt6.qtwayland
+      qt6.qtbase
+      qt6.qt5compat
+      qt6.qtimageformats
+      qt6.qtsvg
+      libGL
+      mesa
+      libxkbcommon
+    ];
+
+    # Desktop UI applications
+    home-manager.users.nicho.home.packages = with pkgs; [
+      firefox
+      brave        # for usevia.app
+      discord
+      vesktop      # Discord alternative (no forced updates)
+      obs-studio
+      obsidian
+      protonmail-desktop
+      prismlauncher # minecraft
+    ];
 
     # Enable Scarlett audio interface
     hardware.scarlett.enable = true;
