@@ -14,10 +14,7 @@ in
   config = mkMerge [
     (mkIf cfg.kicad.enable {
       environment.systemPackages = with pkgs; [
-        kicad         # Schematic + PCB editor
-        kicad-symbols # Official symbol libraries
-        kicad-footprints
-        kicad-packages3d
+        kicad         # Schematic + PCB editor (libraries bundled)
       ];
     })
   ];
