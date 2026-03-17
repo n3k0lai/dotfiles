@@ -30,6 +30,10 @@
       prefixLength = 20;
     }
     {
+      address = "10.10.0.5";  # DO reserved IP anchor (routes 167.172.1.51 → here)
+      prefixLength = 16;
+    }
+    {
       address = "10.116.0.4";  # DO VPC private IP
       prefixLength = 20;
     }
