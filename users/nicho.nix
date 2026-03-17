@@ -50,6 +50,15 @@
       '';
     };
     
+    home.packages = with pkgs; [
+      zip
+      unzip
+      p7zip
+      gnutar
+      gzip
+      xz
+    ];
+
     home.stateVersion = "25.05";
   };
 }
