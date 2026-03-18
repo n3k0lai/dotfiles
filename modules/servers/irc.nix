@@ -42,9 +42,10 @@
           bcrypt-cost = 12;
         };
         authentication-enabled = true;
-        # No anonymous access
+        # SASL enforcement disabled — Chatterino's SASL is broken
+        # Auth enforced via NickServ + Tailscale network isolation
         require-sasl = {
-          enabled = true;
+          enabled = false;
         };
         multiclient = {
           enabled = true;
