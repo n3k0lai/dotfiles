@@ -11,6 +11,8 @@
     ../modules/servers/minecraft.nix
     # ProtonMail Bridge (ene@comfy.sh)
     ../modules/servers/proton.nix
+    # IRC server (Ergo) — Chatterino + OpenClaw agent mesh
+    ../modules/servers/irc.nix
     # TODO: enable when ready
     # ../modules/servers/git.nix
     # ../modules/servers/api.nix
