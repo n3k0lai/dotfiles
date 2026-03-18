@@ -130,6 +130,13 @@ in
       #   '';
       # };
 
+      # 7TV emote proxy — serves n3k0lai's emote collection
+      "emotes.comfy.sh" = {
+        extraConfig = ''
+          reverse_proxy localhost:9100
+        '';
+      };
+
       # "api.itsnicholai.fyi" = {
       #   extraConfig = ''
       #     reverse_proxy localhost:3000

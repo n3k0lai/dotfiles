@@ -73,6 +73,20 @@
   # DigitalOcean monitoring agent
   services.do-agent.enable = true;
 
+  # 7TV emote server (emotes.comfy.sh)
+  systemd.services.emote-server = {
+    description = "7TV Emote Server for comfy network";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.nodejs}/bin/node /home/nicho/bin/emote-server.js";
+      Restart = "on-failure";
+      RestartSec = 5;
+      User = "nicho";
+      Environment = "EMOTE_PORT=9100";
+    };
+  };
+
   # Memory optimization for low-RAM VPS
   zramSwap = {
     enable = true;
