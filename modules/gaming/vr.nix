@@ -87,8 +87,8 @@ in
       (pkgs.writeShellScriptBin "alcom" ''
         exec ${pkgs.alcom}/bin/alcom "$@"
       '')
-      # vrcx    # Not in nixpkgs 24.11 - install via Flatpak/AppImage
-      # slimevr # Not in nixpkgs 24.11 - install via Flatpak/AppImage
+      vrcx
+      slimevr
       sidequest
     ];
     
