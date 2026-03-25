@@ -311,7 +311,10 @@ in
     80 
     443
   ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
+  networking.firewall.allowedUDPPorts = [
+    6969    # SlimeVR tracker discovery
+    35903   # SlimeVR tracker data
+  ];
   # Or disable the firewall altogether.
   # networking.firewall.enable = false;
 
