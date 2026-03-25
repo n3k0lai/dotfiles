@@ -1,4 +1,4 @@
-{ config, lib, pkgs, pkgs-unstable ? pkgs, ... }:
+{ config, lib, pkgs, pkgs-unstable, ... }:
 
 with lib;
 
@@ -6,8 +6,7 @@ let
   cfg = config.modules.gaming.vr;
   
   # Use unstable WiVRn to match Quest store version (26.x)
-  # Fallback to stable if unstable not available
-  baseWivrn = pkgs-unstable.wivrn or pkgs.wivrn;
+  baseWivrn = pkgs-unstable.wivrn;
   
   # Override WiVRn with CUDA support if GPU supports it
   wivrnPackage = 
@@ -91,8 +90,8 @@ in
       (pkgs.writeShellScriptBin "alcom" ''
         exec ${pkgs.alcom}/bin/alcom "$@"
       '')
-      vrcx
-      slimevr
+      pkgs-unstable.vrcx
+      pkgs-unstable.slimevr
       sidequest
     ];
     
