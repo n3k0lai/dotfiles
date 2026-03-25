@@ -242,7 +242,7 @@ in
   programs.fish.enable = true;
   users.users.nicho = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" "audio" "input" ]; # Enable 'sudo' for the user.
+    extraGroups = [ "wheel" "networkmanager" "audio" "input" "dialout" ]; # Enable 'sudo' for the user.
     hashedPasswordFile = config.age.secrets.user_password.path;
     shell = pkgs.fish;
     packages = with pkgs; [
