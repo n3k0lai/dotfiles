@@ -5,8 +5,16 @@ with lib;
 let
   cfg = config.modules.gaming.vr;
   
-  # Use unstable WiVRn to match Quest store version (26.x)
-  baseWivrn = pkgs-unstable.wivrn;
+  # Pin WiVRn to v26.2.3 to match Quest store version
+  baseWivrn = pkgs-unstable.wivrn.overrideAttrs (old: rec {
+    version = "26.2.3";
+    src = pkgs.fetchFromGitHub {
+      owner = "WiVRn";
+      repo = "WiVRn";
+      rev = "v${version}";
+      hash = "";  # Will fail first build with correct hash
+    };
+  });
   
   # Override WiVRn with CUDA support if GPU supports it
   wivrnPackage = 
