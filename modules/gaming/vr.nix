@@ -12,7 +12,7 @@ let
       owner = "WiVRn";
       repo = "WiVRn";
       rev = "v${version}";
-      hash = "";  # Will fail first build with correct hash
+      hash = "sha256-pU7FYPp5wa0MK0ut/BfFlnUai8yMcylpWC0CoAExAio=";
     };
   });
   
