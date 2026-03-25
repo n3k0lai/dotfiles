@@ -65,13 +65,22 @@ in
       xorg.libXi
     ];
 
-    services.wivrn = {
-      enable = true;
-      openFirewall = true;
-      defaultRuntime = cfg.defaultRuntime;
-      autoStart = cfg.autoStart;
-      package = wivrnPackage;
+    # WiVRn — disabled, 26.2.3 segfaults on RTX 3070, Meta store fights sideloading
+    # services.wivrn = {
+    #   enable = true;
+    #   openFirewall = true;
+    #   defaultRuntime = cfg.defaultRuntime;
+    #   autoStart = cfg.autoStart;
+    #   package = wivrnPackage;
+    # };
+
+    # ALVR firewall ports
+    networking.firewall = {
+      allowedTCPPorts = [ 9943 9944 ];
+      allowedUDPPorts = [ 9943 9944 ];
     };
+
+
 
     # Avahi (mDNS) – required for Quest discovery
     services.avahi = {
@@ -98,6 +107,7 @@ in
     
     # ALCOM wrapper with environment variable
     environment.systemPackages = with pkgs; [
+      alvr
       (pkgs.writeShellScriptBin "ALCOM" ''
         export WEBKIT_DISABLE_DMABUF_RENDERER=1
         exec ${pkgs.alcom}/bin/alcom "$@"
