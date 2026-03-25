@@ -5,16 +5,8 @@ with lib;
 let
   cfg = config.modules.gaming.vr;
   
-  # Pin WiVRn to v26.2.3 to match Quest store version
-  baseWivrn = pkgs-unstable.wivrn.overrideAttrs (old: rec {
-    version = "26.2.3";
-    src = pkgs.fetchFromGitHub {
-      owner = "WiVRn";
-      repo = "WiVRn";
-      rev = "v${version}";
-      hash = "sha256-pU7FYPp5wa0MK0ut/BfFlnUai8yMcylpWC0CoAExAio=";
-    };
-  });
+  # Use unstable WiVRn — sideload matching APK to Quest
+  baseWivrn = pkgs-unstable.wivrn;
   
   # Override WiVRn with CUDA support if GPU supports it
   wivrnPackage = 
