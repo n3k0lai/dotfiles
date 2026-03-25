@@ -5,8 +5,9 @@ with lib;
 let
   cfg = config.modules.gaming.vr;
   
-  # Use unstable WiVRn — sideload matching APK to Quest
-  baseWivrn = pkgs-unstable.wivrn;
+  # Use stable WiVRn 0.23.2 — sideload matching APK to Quest
+  # 26.2.3 segfaults on RTX 3070 + NixOS, 25.12 has no Quest APK
+  baseWivrn = pkgs.wivrn;
   
   # Override WiVRn with CUDA support if GPU supports it
   wivrnPackage = 
