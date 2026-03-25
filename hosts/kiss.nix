@@ -30,7 +30,7 @@ with lib;
     
     driverPackage = mkOption {
       type = types.package;
-      default = config.boot.kernelPackages.nvidiaPackages.production;
+      default = config.boot.kernelPackages.nvidiaPackages.latest;
       description = "NVIDIA driver package";
     };
   };
@@ -144,7 +144,7 @@ with lib;
       modesetting.enable = true;
       open = false;
       nvidiaSettings = true;
-      package = config.boot.kernelPackages.nvidiaPackages.production;
+      package = config.boot.kernelPackages.nvidiaPackages.latest;
     };
   };
 }
