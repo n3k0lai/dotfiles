@@ -1,15 +1,19 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, pkgs-unstable ? pkgs, ... }:
 
 with lib;
 
 let
   cfg = config.modules.gaming.vr;
   
+  # Use unstable WiVRn to match Quest store version (26.x)
+  # Fallback to stable if unstable not available
+  baseWivrn = pkgs-unstable.wivrn or pkgs.wivrn;
+  
   # Override WiVRn with CUDA support if GPU supports it
   wivrnPackage = 
     if (config.hardware.tr1ste.gpu.cudaSupport or false)
-    then pkgs.wivrn.override { cudaSupport = true; }
-    else pkgs.wivrn;
+    then baseWivrn.override { cudaSupport = true; }
+    else baseWivrn;
 in
 {
   options.modules.gaming.vr = {
