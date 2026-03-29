@@ -80,8 +80,10 @@ with lib;
     # Input method (fcitx5 with Pinyin)
     modules.desktop.fcitx5.enable = true;
 
-    # KiCad for Artemis hardware design
+    # Artemis hardware design & prototyping tools
     modules.editors.cad.kicad.enable = true;
+    modules.editors.cad.diylc.enable = true;
+    modules.editors.cad.hardware.enable = true;
 
     # Machine-specific hostname
     networking.hostName = "kiss";
