@@ -14,7 +14,7 @@ let
 
     src = pkgs.fetchurl {
       url = "https://github.com/bancika/diy-layout-creator/releases/download/v${version}/diylc-${version}-linux.zip";
-      hash = "sha256-0000000000000000000000000000000000000000000=";  # TODO: replace after first build
+      hash = "sha256-SBIMU6Ousa2mLgGLUb67NCqxUUoiBOyUXw0lfviuW4I=";
     };
 
     nativeBuildInputs = [ pkgs.unzip pkgs.makeWrapper ];
