@@ -61,7 +61,7 @@ in
     settings = {
       model = {
         base_url = "https://openrouter.ai/api/v1";
-        default = "anthropic/claude-sonnet-4";
+        default = "moonshotai/kimi-k2";
       };
       toolsets = [ "all" ];
       max_turns = 100;
