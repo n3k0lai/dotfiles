@@ -1,5 +1,5 @@
 {
-  description = "NixOS configurations for kiss (desktop), ene (server), chat (home server), and droid (Android)";
+  description = "NixOS configurations for kiss (desktop), ene (server), chat (home server), droid (Android), and waves (macOS)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
@@ -23,9 +23,22 @@
     nix-on-droid = {
       url = "github:nix-community/nix-on-droid/release-24.05";
     };
+
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent";
+    };
+
+    nix-homebrew = {
+      url = "github:zhaofengli-wip/nix-homebrew";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, agenix, emacs-overlay, nix-on-droid, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, ... }:
   let
     system = "x86_64-linux";
     pkgs-unstable = import nixpkgs-unstable { inherit system; config.allowUnfree = true; };
@@ -58,6 +71,7 @@
           ./configuration-server.nix
           ./hosts/ene.nix
           agenix.nixosModules.default
+          hermes-agent.nixosModules.default
           {
             nixpkgs.overlays = [ agenix.overlays.default ];
           }
@@ -88,11 +102,35 @@
           ./bin/default.nix
           home-manager.nixosModules.home-manager
           agenix.nixosModules.default
+          hermes-agent.nixosModules.default
           {
             nixpkgs.overlays = [ agenix.overlays.default ];
           }
         ];
       };
+    };
+
+    # M4 MacBook Air (nix-darwin)
+    darwinConfigurations.waves = nix-darwin.lib.darwinSystem {
+      system = "aarch64-darwin";
+      specialArgs = {
+        inherit self;
+        hostname = "waves";
+        username = "nicholai";
+        inputs = { inherit nixpkgs; };
+      };
+      modules = [
+        ./hosts/waves.nix
+        home-manager.darwinModules.home-manager
+        nix-homebrew.darwinModules.nix-homebrew
+        {
+          nix-homebrew = {
+            enable = true;
+            user = "nicholai";
+            autoMigrate = true;
+          };
+        }
+      ];
     };
 
     # Android phone (nix-on-droid)
