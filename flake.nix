@@ -20,6 +20,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent";
+    };
+
     nix-on-droid = {
       url = "github:nix-community/nix-on-droid/release-24.05";
     };
@@ -27,10 +31,6 @@
     nix-darwin = {
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    hermes-agent = {
-      url = "github:NousResearch/hermes-agent";
     };
 
     nix-homebrew = {
