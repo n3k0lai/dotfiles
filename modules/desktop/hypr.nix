@@ -29,6 +29,22 @@ in {
       GLFW_IM_MODULE = "ibus";  # Fallback for some games
     };
     
+    # Polkit authentication agent (needed for pkexec, e.g. SteamVR setcap)
+    security.polkit.enable = true;
+    systemd.user.services.polkit-gnome = {
+      description = "Polkit GNOME Authentication Agent";
+      wantedBy = [ "graphical-session.target" ];
+      wants = [ "graphical-session.target" ];
+      after = [ "graphical-session.target" ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+        Restart = "on-failure";
+        RestartSec = 1;
+        TimeoutStopSec = 10;
+      };
+    };
+
     # Hyprland ecosystem packages
     environment.systemPackages = with pkgs; [
       # Hyprland components
@@ -38,6 +54,7 @@ in {
       hyprpicker
       hyprcursor
       hyprlauncher
+      polkit_gnome
       # hyprtoolkit  # Not in nixpkgs 24.11
       
       # Animated wallpapers

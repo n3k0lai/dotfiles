@@ -182,28 +182,6 @@ in
   networking.networkmanager.enable = true;
   time.timeZone = "America/New_York";
   
-  #sops.secrets.surfshark-wg = {
-  #  sopsFile = ./.ssh/surfshark.yaml;
-  #  owner    = config.users.users.nicho.name;
-  #  mode     = "0400";
-  #};
-  
-  #networking.wg-quick.interfaces = {
-  #  surfshark = {
-  #    address = [ "10.14.0.2/16" ];
-  #    dns     = [ "162.252.172.57" "149.154.159.92" ];  # Surfshark leak-proof DNS
-
-  #    privateKeyFile = config.sops.secrets.surfshark-wg.path;
-
-  #    peers = [{
-  #      publicKey           = "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=";
-  #      allowedIPs          = [ "0.0.0.0/0" "::/0" ];
-  #      endpoint            = "162.252.175.111:51820";  # ← Hard-coded New York WireGuard gateway
-  #      persistentKeepalive = 25;
-  #    }];
-  #  };
-  #};
-
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
@@ -242,7 +220,7 @@ in
   programs.fish.enable = true;
   users.users.nicho = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" "audio" "input" "dialout" ]; # Enable 'sudo' for the user.
+    extraGroups = [ "wheel" "networkmanager" "audio" "video" "render" "input" "dialout" ];
     hashedPasswordFile = config.age.secrets.user_password.path;
     shell = pkgs.fish;
     packages = with pkgs; [

@@ -57,8 +57,7 @@ with lib;
     home-manager.users.nicho.home.packages = with pkgs; [
       firefox
       brave        # for usevia.app
-      discord
-      vesktop      # Discord alternative (no forced updates)
+      vesktop
       obs-studio
       obsidian
       protonmail-desktop
@@ -84,6 +83,11 @@ with lib;
     modules.editors.cad.kicad.enable = true;
     modules.editors.cad.diylc.enable = true;
     modules.editors.cad.hardware.enable = true;
+
+    # Mullvad VPN (GUI) — resolved required for DNS resolution
+    services.resolved.enable = true;
+    services.mullvad-vpn.enable = true;
+    services.mullvad-vpn.package = pkgs.mullvad-vpn;
 
     # Machine-specific hostname
     networking.hostName = "kiss";
