@@ -53,9 +53,7 @@ in {
       hyprlock
       hyprpicker
       hyprcursor
-      hyprlauncher
       polkit_gnome
-      # hyprtoolkit  # Not in nixpkgs 24.11
       
       # Animated wallpapers
       mpvpaper
@@ -120,7 +118,8 @@ in {
       enableDefaultPackages = true;
       packages = with pkgs; [
         martian-mono
-        (nerdfonts.override { fonts = [ "Hermit" "NerdFontsSymbolsOnly" ]; })
+        nerd-fonts.hurmit
+        nerd-fonts.symbols-only
         font-awesome
       ];
     };
