@@ -28,11 +28,25 @@ in
     programs.steam = {
       enable = true;
       remotePlay.openFirewall = cfg.enableRemotePlay;
+      # Force xcb for Qt apps inside Steam/SteamVR — the Hyprland env sets
+      # QT_QPA_PLATFORM=wayland;xcb but pressure-vessel only ships the xcb plugin,
+      # causing SteamVR to crash. This also fixes Steam failing to launch from
+      # desktop-file launchers (hyprlauncher) that inherit the Wayland env.
+      package = pkgs.steam.override {
+        extraEnv = {
+          QT_QPA_PLATFORM = "xcb";
+        };
+        # Add /run/wrappers/bin to PATH inside the sandbox so SteamVR's
+        # vrsetup.sh can find pkexec for RT scheduling caps.
+        extraProfile = ''
+          export PATH=/run/wrappers/bin:$PATH
+        '';
+      };
     };
-    
+
     programs.gamemode.enable = true;
     hardware.steam-hardware.enable = true;
-    
+
     # Steam and gaming-related packages for users
     environment.systemPackages = with pkgs; [
       gamescope

@@ -8,7 +8,7 @@ let
 
   # DIY Layout Creator — perfboard/stripboard/chassis layout tool
   # Java app from https://github.com/bancika/diy-layout-creator
-  diylc = pkgs.stdenv.mkDerivation rec {
+  diylc-appimage = pkgs.stdenv.mkDerivation rec {
     pname = "diylc";
     version = "5.12.0";
 
@@ -17,26 +17,28 @@ let
       hash = "sha256-SBIMU6Ousa2mLgGLUb67NCqxUUoiBOyUXw0lfviuW4I=";
     };
 
-    nativeBuildInputs = [ pkgs.unzip pkgs.makeWrapper ];
-    buildInputs = [ pkgs.jdk17 ];
-
+    nativeBuildInputs = [ pkgs.unzip ];
+    sourceRoot = ".";
     dontBuild = true;
 
     installPhase = ''
-      mkdir -p $out/share/diylc $out/bin
-      cp -r * $out/share/diylc/
-
-      # Find the main jar
-      makeWrapper ${pkgs.jdk17}/bin/java $out/bin/diylc \
-        --add-flags "-jar $out/share/diylc/diylc.jar" \
-        --set _JAVA_AWT_WM_NONREPARENTING 1
+      mkdir -p $out
+      cp DIYLayoutCreator-${version}-x86_64.AppImage $out/diylc.AppImage
+      chmod +x $out/diylc.AppImage
     '';
+  };
+
+  diylc = pkgs.appimageTools.wrapType2 {
+    pname = "diylc";
+    version = "5.12.0";
+
+    src = "${diylc-appimage}/diylc.AppImage";
 
     meta = with lib; {
       description = "DIY Layout Creator — perfboard, stripboard, and chassis layout editor";
       homepage = "https://github.com/bancika/diy-layout-creator";
       license = licenses.gpl3;
-      platforms = platforms.linux;
+      platforms = [ "x86_64-linux" ];
     };
   };
 in
