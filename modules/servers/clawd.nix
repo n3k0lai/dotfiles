@@ -61,7 +61,7 @@ in
     settings = {
       model = {
         base_url = "https://openrouter.ai/api/v1";
-        default = "moonshotai/kimi-k2";
+        default = "moonshotai/kimi-k2.5";
       };
       toolsets = [ "all" ];
       max_turns = 100;
