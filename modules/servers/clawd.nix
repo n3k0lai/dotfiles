@@ -24,6 +24,50 @@ in
   environment.systemPackages = with pkgs; [
     nodePkg
     gh
+    # Browser automation dependencies
+    chromium
+    patchelf
+    # Required for headless browser operation
+    nss
+    nspr
+    alsa-lib
+    cups
+    libdrm
+    mesa
+    xorg.libXcomposite
+    xorg.libXdamage
+    xorg.libXrandr
+    xorg.libXScrnSaver
+    xorg.libxshmfence
+    libxkbcommon
+    pango
+    cairo
+    gdk-pixbuf
+    glib
+    gtk3
+    at-spi2-atk
+    at-spi2-core
+    dbus
+    expat
+    xorg.libxcb
+    xorg.libX11
+    xorg.libXext
+    xorg.libXfixes
+    xorg.libXrender
+    xorg.libXcursor
+    xorg.libXi
+    xorg.libXinerama
+    xorg.libXtst
+    xorg.libxkbfile
+    fontconfig
+    freetype
+    lcms
+    libpng
+    libjpeg
+    libwebp
+    libxml2
+    libxslt
+    sqlite
   ];
 
   systemd.services.openclaw-gateway = {
@@ -69,6 +113,18 @@ in
     };
     environmentFiles = [ config.age.secrets.hermes-env.path ];
     addToSystemPackages = true;
+    # Browser automation support
+    extraPackages = with pkgs; [
+      chromium
+      patchelf
+    ];
+  };
+  
+  # Environment for browser tools to find Chromium
+  environment.variables = {
+    PUPPETEER_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
+    PLAYWRIGHT_BROWSERS_PATH = "${pkgs.chromium}";
+    CHROME_BIN = "${pkgs.chromium}/bin/chromium";
   };
 
   # Cost-effective Grok fallback — Claude primary, Grok for bulk/cheap tasks
