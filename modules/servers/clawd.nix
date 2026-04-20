@@ -72,19 +72,41 @@ in
     enable = true;
     settings = {
       model = {
-        base_url = "https://openrouter.ai/api/v1";
+        # Primary: Nous Portal (Kimi K2.5)
+        base_url = "https://api.nousresearch.com/v1";
         default = "moonshotai/kimi-k2.5";
+        # Fallback to OpenRouter configured via env vars
       };
       toolsets = [ "all" ];
       max_turns = 100;
       memory = { memory_enabled = true; user_profile_enabled = true; };
-      # OpenCode delegation support
+      # OpenCode delegation with model-specific subagents
       delegation = {
         enabled = true;
         agents = {
+          # Fast/cheap tasks (K2.5 via OpenRouter free tier)
+          "opencode-fast" = {
+            command = "opencode";
+            workdir = "/var/lib/hermes/workspace";
+            args = [ "-m" "openrouter/nousresearch/hermes-3-llama-3.1-405b:free" ];
+          };
+          # Reasoning tasks (Hermes 4)
+          "opencode-reasoning" = {
+            command = "opencode";
+            workdir = "/var/lib/hermes/workspace";
+            args = [ "-m" "openrouter/nousresearch/hermes-4-405b" ];
+          };
+          # Coding tasks (Codestral)
+          "opencode-code" = {
+            command = "opencode";
+            workdir = "/var/lib/hermes/workspace";
+            args = [ "-m" "openrouter/mistralai/codestral-2508" ];
+          };
+          # General purpose (K2.6 via OpenRouter)
           opencode = {
             command = "opencode";
             workdir = "/var/lib/hermes/workspace";
+            args = [ "-m" "openrouter/moonshotai/kimi-k2.6" ];
           };
         };
       };
