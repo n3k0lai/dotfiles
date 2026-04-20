@@ -75,6 +75,7 @@ in
         # Primary: Nous Portal (Kimi K2.5)
         base_url = "https://api.nousresearch.com/v1";
         default = "moonshotai/kimi-k2.5";
+        provider = "nous";
         # Fallback to OpenRouter configured via env vars
       };
       toolsets = [ "all" ];
