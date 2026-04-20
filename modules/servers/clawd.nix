@@ -24,6 +24,10 @@ in
   environment.systemPackages = with pkgs; [
     nodePkg
     gh
+    # OpenCode CLI for agent delegation
+    (pkgs.writeShellScriptBin "opencode" ''
+      exec ${nodePkg}/bin/npx -y opencode@latest "$@"
+    '')
     # Browser automation dependencies
     chromium
     patchelf
@@ -110,6 +114,16 @@ in
       toolsets = [ "all" ];
       max_turns = 100;
       memory = { memory_enabled = true; user_profile_enabled = true; };
+      # OpenCode delegation support
+      delegation = {
+        enabled = true;
+        agents = {
+          opencode = {
+            command = "opencode";
+            workdir = "/var/lib/hermes/workspace";
+          };
+        };
+      };
     };
     environmentFiles = [ config.age.secrets.hermes-env.path ];
     addToSystemPackages = true;
@@ -117,6 +131,7 @@ in
     extraPackages = with pkgs; [
       chromium
       patchelf
+      git
     ];
   };
   
