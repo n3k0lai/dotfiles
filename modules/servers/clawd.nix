@@ -18,9 +18,7 @@ in
     nodePkg
     gh
     # OpenCode CLI for agent delegation
-    (pkgs.writeShellScriptBin "opencode" ''
-      exec ${nodePkg}/bin/npx -y opencode@latest "$@"
-    '')
+    opencode
     # Browser automation dependencies
     chromium
     patchelf
