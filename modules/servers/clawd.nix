@@ -19,6 +19,10 @@ in
     gh
     # OpenCode CLI for agent delegation
     opencode
+  ];
+
+  # Hermes user-specific packages (browser automation)
+  users.users.hermes.packages = with pkgs; [
     # Browser automation dependencies
     chromium
     patchelf
