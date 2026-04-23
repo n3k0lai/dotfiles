@@ -74,9 +74,9 @@ in
     enable = true;
     settings = {
       model = {
-        # Primary: Nous Portal (Kimi K2.5)
+        # Primary: Nous Portal (Kimi K2.6)
         base_url = "https://api.nousresearch.com/v1";
-        default = "moonshotai/kimi-k2.5";
+        default = "moonshotai/kimi-k2.6";
         provider = "nous";
         # Fallback to OpenRouter configured via env vars
       };
