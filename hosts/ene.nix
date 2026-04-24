@@ -17,26 +17,10 @@
     # ../modules/servers/git.nix
     # ../modules/servers/api.nix
     # ../modules/servers/wiki.nix
-  ];
+  ] ++ lib.optional (builtins.pathExists ./ene-local.nix) ./ene-local.nix;
 
   # Machine hostname
   networking.hostName = "ene";
-
-  # Networking - static IP for DigitalOcean
-  # Update these values when migrating to a new droplet
-  networking.useDHCP = false;
-  networking.interfaces.eth0.ipv4.addresses = [
-    {
-      address = "198.199.80.235";  # Droplet public IP
-      prefixLength = 24;
-    }
-    {
-      address = "10.10.0.6";  # DO reserved IP anchor
-      prefixLength = 16;
-    }
-  ];
-  networking.defaultGateway = "198.199.80.1";
-  networking.nameservers = [ "67.207.67.2" "67.207.67.3" ];
 
   networking.firewall = {
     enable = true;

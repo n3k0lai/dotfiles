@@ -305,9 +305,16 @@ in
       log_min_duration_statement = 1000;  # Log slow queries >1s
     };
     # pg_hba: mesh agent access rules loaded from local file at build time
-    # Deploy /etc/postgresql/pg_hba_mesh.conf on Chat before rebuild
-    # Contains: IP-locked role→schema mappings for Tailscale mesh agents
-    authentication = lib.mkForce (builtins.readFile ../modules/servers/pg_hba_mesh.conf);
+    # Base rules are in pg_hba_mesh.conf (committed, no specific IPs)
+    # Per-host specific IPs can be added in pg_hba_mesh.local.conf (gitignored)
+    authentication = lib.mkForce (
+      let
+        baseFile = ../modules/servers/pg_hba_mesh.conf;
+        localFile = ../modules/servers/pg_hba_mesh.local.conf;
+        base = builtins.readFile baseFile;
+        local = if builtins.pathExists localFile then builtins.readFile localFile else "";
+      in base + "\n" + local
+    );
     # Create databases and roles on first boot
     ensureDatabases = [ "svalbard" ];
     ensureUsers = [

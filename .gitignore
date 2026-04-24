@@ -13,6 +13,10 @@ modules/editors/config/emacs/
 # Work repo (private, not tracked in dotfiles)
 modules/work/zoomph/
 
+# Local-only config files (contain IPs, secrets, per-host overrides)
+hosts/ene-local.nix
+modules/servers/pg_hba_mesh.local.conf
+
 # Editor files
 .vscode/
 .idea/
