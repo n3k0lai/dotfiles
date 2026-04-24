@@ -87,7 +87,7 @@ in
   #   after = [ "meshtastic.service" "network-online.target" ];
   #   wantedBy = [ "multi-user.target" ];
   #   serviceConfig = {
-  #     ExecStart = "${meshtastic}/bin/meshtastic --port /dev/meshtastic --mqtt-server mqtt://203.0.113.11:1883 --mqtt-topic meshtastic/";
+  #      ExecStart = "${meshtastic}/bin/meshtastic --port /dev/meshtastic --mqtt-server mqtt://<CHAT_TAILSCALE_IP>:1883 --mqtt-topic meshtastic/";
   #     Restart = "always";
   #     RestartSec = 30;
   #     User = "meshtastic";

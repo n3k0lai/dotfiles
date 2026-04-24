@@ -4,7 +4,7 @@
 #
 # Hardware: i5-6600K, 16GB DDR4, 256GB NVMe, Svalbard USB RAID
 # GPU: None currently (GTX 970 removed due to boot issues — may return)
-# Tailscale: "chat", 203.0.113.11
+# Tailscale: "chat", <CHAT_TAILSCALE_IP>
 # Agent: Chat (OpenClaw instance)
 # Scope: Obsidian vault, journaling, location, banking, home automation,
 #         Svalbard storage, CouchDB sync
