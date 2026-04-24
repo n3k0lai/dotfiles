@@ -2,7 +2,7 @@
 # Not a NixOS host (yet), but documents the machine's role and Rook's setup.
 # Rook is an OpenClaw AI instance managing the work environment.
 #
-# Machine: Windows workstation (Tailscale: "work", 100.95.242.40)
+# Machine: Windows workstation (Tailscale: "work", <ROOK_TAILSCALE_IP>)
 # WSL:     Tailscale: "work-wsl" (when active)
 # Agent:   Rook (OpenClaw instance)
 # Scope:   Work tasks, coding agents, CI/CD, dev environment

@@ -194,23 +194,25 @@
     };
     programs.fzf.enable = true;
 
+    # SSH aliases for Tailscale mesh hosts
+    # Replace placeholders with real IPs in ~/.ssh/config or waves-local.nix
     programs.ssh = {
       enable = true;
       matchBlocks = {
         "ene" = {
-          hostname = "100.111.1.42";
+          hostname = "<ENE_TAILSCALE_IP>";
           user = "nicho";
         };
         "chat" = {
-          hostname = "100.114.138.5";
+          hostname = "<CHAT_TAILSCALE_IP>";
           user = "nicho";
         };
         "kiss" = {
-          hostname = "100.76.133.110";
+          hostname = "<KISS_TAILSCALE_IP>";
           user = "nicho";
         };
         "artemis" = {
-          hostname = "100.75.158.50";
+          hostname = "<ARTEMIS_TAILSCALE_IP>";
           user = "nicho";
         };
       };

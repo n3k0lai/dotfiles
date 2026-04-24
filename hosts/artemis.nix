@@ -16,30 +16,13 @@
 { config, pkgs, lib, ... }:
 
 {
-  imports = [];
+  imports = [] ++ lib.optional (builtins.pathExists ./artemis-local.nix) ./artemis-local.nix;
 
   # --- Identity ---
   networking.hostName = "artemis";
 
   # --- Networking ---
-  # DigitalOcean static IP
-  networking.useDHCP = false;
-  networking.interfaces.ens3.ipv4.addresses = [
-    {
-      address = "137.184.149.221";
-      prefixLength = 20;
-    }
-    {
-      address = "10.10.0.5";  # DO reserved IP anchor (routes 167.172.1.51 → here)
-      prefixLength = 16;
-    }
-    {
-      address = "10.116.0.4";  # DO VPC private IP
-      prefixLength = 20;
-    }
-  ];
-  networking.defaultGateway = "137.184.144.1";
-  networking.nameservers = [ "67.207.67.2" "67.207.67.3" ];
+  # Static IP config is in artemis-local.nix (gitignored, contains DO IPs)
 
   networking.firewall = {
     enable = true;
@@ -145,8 +128,9 @@
       }
     ];
     settings = {
-      # Listen on localhost + Tailscale for mesh access
-      listen_addresses = lib.mkForce "localhost,100.75.158.50";
+      # Listen on localhost by default. Override in artemis-local.nix for Tailscale:
+      # listen_addresses = lib.mkForce "localhost,<ARTEMIS_TAILSCALE_IP>";
+      listen_addresses = lib.mkForce "localhost";
       # Tuned for 2GB RAM VPS
       shared_buffers = "256MB";
       effective_cache_size = "1GB";
@@ -158,8 +142,8 @@
       local all all trust
       host  all all 127.0.0.1/32 trust
       host  all all ::1/128      trust
-      # Tailscale mesh (ene agent)
-      host  artemis artemis 100.111.1.42/32 md5
+      # Tailscale mesh access — add specific agent IPs in artemis-local.nix
+      # host  artemis artemis <ENE_TAILSCALE_IP>/32 md5
     '';
   };
 

@@ -52,14 +52,14 @@ in
       "rook.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy 100.95.242.40:18789
+          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:18789
         '';
       };
 
       "chat.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy 100.114.138.5:18789
+          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:18789
         '';
       };
 
@@ -67,7 +67,7 @@ in
       "home.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy 100.114.138.5:8123 {
+          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:8123 {
             header_up Host {host}
             header_up X-Forwarded-Proto {scheme}
           }
@@ -78,7 +78,7 @@ in
       "lib.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy 100.114.138.5:8083
+          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:8083
         '';
       };
 
@@ -86,7 +86,7 @@ in
       "wiki.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy 100.114.138.5:5984 {
+          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:5984 {
             header_up Host {host}
             header_up X-Forwarded-Proto {scheme}
           }
@@ -101,7 +101,7 @@ in
       "factory.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy 100.114.138.5:5000 {
+          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:5000 {
             header_up Host {host}
             header_up X-Forwarded-Proto https
             header_up X-Forwarded-Host {host}
