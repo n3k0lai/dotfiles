@@ -7,7 +7,7 @@ via OpenClaw gateway APIs over the tailnet.
 
 ### Ene (Project Manager)
 - **Host:** DigitalOcean VPS (NixOS)
-- **Tailscale:** ene-1 / 100.111.1.42
+- **Tailscale:** ene-1 / `<ENE_TAILSCALE_IP>`
 - **Gateway:** port 18789
 - **Always-on:** Yes (VPS)
 - **Scope:** Public infrastructure, email (ene@comfy.sh), Google Calendar,
@@ -17,7 +17,7 @@ via OpenClaw gateway APIs over the tailnet.
 
 ### Rook (Work)
 - **Host:** Windows workstation
-- **Tailscale:** work / 100.95.242.40
+- **Tailscale:** work / `<ROOK_TAILSCALE_IP>`
 - **Gateway:** port TBD
 - **Always-on:** During work hours (machine may sleep)
 - **Scope:** Day job, coding agents, CI/CD, confidential work projects
@@ -26,7 +26,7 @@ via OpenClaw gateway APIs over the tailnet.
 
 ### Chat (Home)
 - **Host:** Home Linux machine
-- **Tailscale:** chat / 100.114.138.5
+- **Tailscale:** chat / `<CHAT_TAILSCALE_IP>`
 - **Gateway:** port TBD
 - **Always-on:** When home machine is on
 - **Scope:** Obsidian vault, home automation, physical location data, local files
@@ -63,8 +63,8 @@ each other's sessions via HTTP.
 
 ```bash
 # Ene sends a message to Rook's main session
-curl -X POST http://100.95.242.40:<port>/api/sessions/send \
-  -H "Authorization: Bearer <rook-token>" \
+curl -X POST http://<ROOK_TAILSCALE_IP>:<port>/api/sessions/send \
+  -H "Authorization: Bearer *** \
   -d '{"sessionKey":"agent:main:main","message":"Hey Rook, status update?"}'
 ```
 
