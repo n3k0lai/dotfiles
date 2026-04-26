@@ -4,7 +4,7 @@ let
   # ===========================================
   kiss = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ5xQ12AZjr/B7nwR4xQwtnh7g/4PlBMoiZ3MsTLoInK root@tr1ste";
   ene = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDJVEWuJ9zhai0WJm3j90jOps4KIOiG8JITvoOcJ4hrA root@test";
-  chat = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKc43hg3+7eZ8JUTNNi+F0k2fjs8nVusG8wcLCj8Xc4A root@chateau";
+  rook = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKc43hg3+7eZ8JUTNNi+F0k2fjs8nVusG8wcLCj8Xc4A root@chateau";
 
   # ===========================================
   # USER KEY - for editing secrets from any machine
@@ -14,10 +14,10 @@ let
   # ===========================================
   # HOST GROUPS - organize by access level
   # ===========================================
-  allHosts = [ kiss ene chat ];
+  allHosts = [ kiss ene rook ];
   desktops = [ kiss ];           # desktop machines only
-  servers = [ ene chat ];        # server machines only
-  streaming = [ chat ];          # stream bouncer
+  servers = [ ene rook ];        # server machines only
+  streaming = [ rook ];          # stream bouncer
 
 in
 {
@@ -46,21 +46,21 @@ in
   "modules/servers/secrets/gemini_api_key.age".publicKeys = servers ++ [ nicho ];
 
   # ===========================================
-  # STREAMING SECRETS (chat — stream bouncer)
+  # STREAMING SECRETS (rook — stream bouncer)
   # ===========================================
   "modules/servers/secrets/twitch_stream_key.age".publicKeys = streaming ++ [ nicho ];
   "modules/servers/secrets/x_stream_key.age".publicKeys = streaming ++ [ nicho ];
 
   # ===========================================
-  # MESH DB SECRETS (agent → Postgres on Chat)
+  # MESH DB SECRETS (agent → Postgres on Rook)
   # ===========================================
   # Ene's read-only credentials (decrypted on ene)
   "modules/servers/secrets/ene_pg_finance_reader.age".publicKeys = [ ene nicho ];
   "modules/servers/secrets/ene_pg_personal_reader.age".publicKeys = [ ene nicho ];
-  # Chat's Postgres role passwords (decrypted on chat, applied via activation script)
-  "modules/servers/secrets/pg_mesh_password.age".publicKeys = [ chat nicho ];
-  "modules/servers/secrets/pg_mesh_reader_password.age".publicKeys = [ chat nicho ];
-  "modules/servers/secrets/pg_finance_admin_password.age".publicKeys = [ chat nicho ];
-  "modules/servers/secrets/pg_personal_admin_password.age".publicKeys = [ chat nicho ];
-  "modules/servers/secrets/pg_work_admin_password.age".publicKeys = [ chat nicho ];
+  # Rook's Postgres role passwords (decrypted on rook, applied via activation script)
+  "modules/servers/secrets/pg_mesh_password.age".publicKeys = [ rook nicho ];
+  "modules/servers/secrets/pg_mesh_reader_password.age".publicKeys = [ rook nicho ];
+  "modules/servers/secrets/pg_finance_admin_password.age".publicKeys = [ rook nicho ];
+  "modules/servers/secrets/pg_personal_admin_password.age".publicKeys = [ rook nicho ];
+  "modules/servers/secrets/pg_work_admin_password.age".publicKeys = [ rook nicho ];
 }

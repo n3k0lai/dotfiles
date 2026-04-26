@@ -1,5 +1,5 @@
-# Caddy for Chat's home server
-# Proxies CouchDB (Obsidian sync) and OpenClaw dashboard
+# Caddy for Rook's home server
+# Proxies CouchDB (Obsidian sync) and Hermes gateway
 { config, pkgs, lib, ... }:
 
 {
@@ -7,7 +7,7 @@
     enable = true;
     virtualHosts = {
       # CouchDB reverse proxy (Obsidian LiveSync)
-      # Access via Tailscale: http://chat:5984
+      # Access via Tailscale: http://rook:5984
       ":80" = {
         extraConfig = ''
           reverse_proxy /db/* localhost:5984

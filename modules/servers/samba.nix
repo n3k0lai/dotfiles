@@ -31,8 +31,8 @@ in {
       settings = {
         global = {
           workgroup = "WORKGROUP";
-          "server string" = "chat";
-          "netbios name" = "chat";
+          "server string" = "rook";
+          "netbios name" = "rook";
           security = "user";  # Replaces deprecated securityType
           "invalid users" = [ "root" ];
           "guest account" = "nobody";
