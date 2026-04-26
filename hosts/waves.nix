@@ -203,10 +203,6 @@
           hostname = "<ENE_TAILSCALE_IP>";
           user = "nicho";
         };
-        "chat" = {
-          hostname = "<CHAT_TAILSCALE_IP>";
-          user = "nicho";
-        };
         "kiss" = {
           hostname = "<KISS_TAILSCALE_IP>";
           user = "nicho";
