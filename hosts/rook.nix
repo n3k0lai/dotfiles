@@ -134,37 +134,38 @@ in
   # Additional CouchDB config beyond what the wiki module sets
   services.couchdb = {
     package = pkgs.couchdb3;
-    extraConfig = ''
-      [couchdb]
-      single_node = true
-
-      [chttpd]
-      bind_address = 0.0.0.0
-      port = 5984
-      max_dbs_open = 100
-
-      [httpd]
-      enable_cors = true
-      bind_address = 0.0.0.0
-      port = 5984
-
-      [cors]
-      origins = *
-      credentials = true
-      methods = GET, PUT, POST, HEAD, DELETE
-      headers = accept, authorization, content-type, origin, referer, x-csrf-token
-
-      [cluster]
-      n = 1
-      q = 1
-
-      [chttpd_auth]
-      timeout = 600
-      require_valid_user = true
-
-      [couch_httpd_auth]
-      require_valid_user = true
-    '';
+    extraConfig = {
+      couchdb = {
+        single_node = true;
+      };
+      chttpd = {
+        bind_address = "0.0.0.0";
+        port = 5984;
+        max_dbs_open = 100;
+      };
+      httpd = {
+        enable_cors = true;
+        bind_address = "0.0.0.0";
+        port = 5984;
+      };
+      cors = {
+        origins = "*";
+        credentials = true;
+        methods = "GET, PUT, POST, HEAD, DELETE";
+        headers = "accept, authorization, content-type, origin, referer, x-csrf-token";
+      };
+      cluster = {
+        n = 1;
+        q = 1;
+      };
+      chttpd_auth = {
+        timeout = 600;
+        require_valid_user = true;
+      };
+      couch_httpd_auth = {
+        require_valid_user = true;
+      };
+    };
   };
 
   # === HOME AUTOMATION ===
