@@ -1,5 +1,5 @@
 {
-  description = "NixOS configurations for kiss (desktop), ene (server), chat (home server), droid (Android), and waves (macOS)";
+  description = "NixOS configurations for kiss (desktop), ene (server), rook (work agent server), droid (Android), and waves (macOS)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
@@ -92,13 +92,13 @@
         ];
       };
 
-      # Home server
-      chat = nixpkgs.lib.nixosSystem {
+      # Work agent server (formerly Chat)
+      rook = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
-          ./hosts/chat-hardware.nix
+          ./hosts/rook-hardware.nix
           ./configuration-server.nix
-          ./hosts/chat.nix
+          ./hosts/rook.nix
           ./bin/default.nix
           home-manager.nixosModules.home-manager
           agenix.nixosModules.default

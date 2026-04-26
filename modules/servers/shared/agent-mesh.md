@@ -1,7 +1,7 @@
 # Agent Mesh Architecture
 
-Three peer agents on a Tailscale mesh. Each owns a domain and communicates
-via OpenClaw gateway APIs over the tailnet.
+Two peer agents on a Tailscale mesh. Each owns a domain and communicates
+via Hermes gateway APIs over the tailnet.
 
 ## Agents
 
@@ -15,43 +15,34 @@ via OpenClaw gateway APIs over the tailnet.
 - **Role:** Secretary/PM. Knows about everything, delegates to specialists.
   Does NOT hold confidential work data or local home data.
 
-### Rook (Work)
-- **Host:** Windows workstation
-- **Tailscale:** work / `<ROOK_TAILSCALE_IP>`
-- **Gateway:** port TBD
-- **Always-on:** During work hours (machine may sleep)
-- **Scope:** Day job, coding agents, CI/CD, confidential work projects
-- **Role:** Work specialist. Handles everything money-making and employer-related.
-  Confidential by default — doesn't share work details unless Nicholai asks.
-
-### Chat (Home)
-- **Host:** Home Linux machine
-- **Tailscale:** chat / `<CHAT_TAILSCALE_IP>`
-- **Gateway:** port TBD
-- **Always-on:** When home machine is on
-- **Scope:** Obsidian vault, home automation, physical location data, local files
-- **Role:** Home specialist. Owns the knowledge base (Obsidian), location context,
-  and anything tied to physical space.
+### Rook (Work + Home)
+- **Host:** Home Linux machine (NixOS, formerly Chat)
+- **Tailscale:** rook / `<ROOK_TAILSCALE_IP>`
+- **Gateway:** port 18789
+- **Always-on:** Yes (home server)
+- **Scope:** Work tasks, coding agents, Slack/ADO integration, confidential work
+  projects, Obsidian vault, home automation, physical location data, local files
+- **Role:** Work specialist and home guardian. Handles everything money-making
+  and employer-related, plus owns the knowledge base (Obsidian), location context,
+  and anything tied to physical space. Confidential by default.
 
 ## Communication Model
 
 ```
         Ene (PM/coordinator)
-       /         \
-    Rook         Chat
-   (work)       (home)
+              /         \
+       Personal       Work/Home
+      (questions)    (Rook)
 ```
 
 - **Ene ↔ Rook:** Ene can ask Rook for work status updates, delegate coding tasks.
   Rook reports progress. Rook does NOT share confidential details unprompted.
-- **Ene ↔ Chat:** Ene can query Chat for Obsidian notes, location context, home status.
-  Chat provides data for Ene's scheduling/calendar decisions.
-- **Rook ↔ Chat:** Rarely direct. Usually coordinated through Ene.
-  Exception: Rook may query Chat for personal notes relevant to work.
+  Ene can also query Rook for Obsidian notes, location context, home status.
+  Rook provides data for Ene's scheduling/calendar decisions.
 
 ## Transport
 
-Each agent runs an OpenClaw gateway. Communication options:
+Each agent runs a Hermes gateway. Communication options:
 
 ### Option A: Node Pairing (subordinate)
 One gateway registers as a node of another. Gives command execution
@@ -69,7 +60,7 @@ curl -X POST http://<ROOK_TAILSCALE_IP>:<port>/api/sessions/send \
 ```
 
 ### Option C: Shared Discord Channel (simple)
-All three agents in a Discord channel. Mention-based responses only.
+Both agents in a Discord channel. Mention-based responses only.
 Simplest but least structured. Good for casual coordination.
 
 ## Recommended: Hybrid
@@ -81,7 +72,7 @@ Simplest but least structured. Good for casual coordination.
 ## Security Boundaries
 
 - **Rook** never leaks work data to Discord or other agents without explicit ask
-- **Chat** owns personal/home data — Ene queries but doesn't store
+- **Rook** owns personal/home data — Ene queries but doesn't store
 - **Ene** is the public face — handles all external communication
 - **API tokens** are per-agent, stored in each host's agenix secrets
 - **Tailscale ACLs** can restrict which agents talk to which (future)
@@ -89,8 +80,7 @@ Simplest but least structured. Good for casual coordination.
 ## Implementation Status
 
 - [x] Ene: Running, gateway on 18789, Tailscale Serve enabled
-- [x] Rook: Running on Windows, gateway port TBD
-- [ ] Chat: Offline (home machine), needs OpenClaw setup
+- [x] Rook: Running on home server, gateway on 18789, Hermes Agent
 - [ ] Inter-agent API communication
 - [ ] Shared Discord channel with loop prevention
 - [ ] Tailscale ACLs for agent-to-agent access

@@ -39,7 +39,7 @@ in
         '';
       };
 
-      # OpenClaw dashboards + private services
+      # Hermes dashboards + private services
       # Basic auth with password hash loaded from agenix secret at runtime
       # TODO: migrate to agenix secret file — for now use import from local file
       "ene.comfy.sh" = {
@@ -56,37 +56,30 @@ in
         '';
       };
 
-      "chat.comfy.sh" = {
-        extraConfig = ''
-          import /etc/caddy/auth.conf
-          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:18789
-        '';
-      };
-
-      # Home Assistant — proxied to Chat via Tailscale
+      # Home Assistant — proxied to Rook via Tailscale
       "home.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:8123 {
+          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:8123 {
             header_up Host {host}
             header_up X-Forwarded-Proto {scheme}
           }
         '';
       };
 
-      # Calibre-Web (lib) — proxied to Chat via Tailscale
+      # Calibre-Web (lib) — proxied to Rook via Tailscale
       "lib.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:8083
+          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:8083
         '';
       };
 
-      # Obsidian LiveSync (wiki) — CouchDB on Chat via Tailscale
+      # Obsidian LiveSync (wiki) — CouchDB on Rook via Tailscale
       "wiki.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:5984 {
+          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:5984 {
             header_up Host {host}
             header_up X-Forwarded-Proto {scheme}
           }
@@ -97,11 +90,11 @@ in
         '';
       };
 
-      # OctoPrint — proxied to Chat via Tailscale
+      # OctoPrint — proxied to Rook via Tailscale
       "factory.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy {$CHAT_TAILSCALE_IP:127.0.0.1}:5000 {
+          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:5000 {
             header_up Host {host}
             header_up X-Forwarded-Proto https
             header_up X-Forwarded-Host {host}
