@@ -22,6 +22,8 @@
   # Machine hostname
   networking.hostName = "ene";
 
+  modules.servers.clawd.enable = true;
+
   networking.firewall = {
     enable = true;
     allowedTCPPorts = [

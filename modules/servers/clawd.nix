@@ -4,15 +4,26 @@
 let
   nodePkg = pkgs.nodejs_22;
   grokPython = pkgs.python3.withPackages (ps: [ ps.aiohttp ]);
+  cfg = config.modules.servers.clawd;
 in
 {
-  # Secrets (decrypted at activation by agenix)
-  age.secrets.hermes-env = {
-    file = ./secrets/hermes_env.age;
-    owner = "nicho";
-    group = "users";
-    mode = "0400";
+  options.modules.servers.clawd = {
+    enable = lib.mkEnableOption "Hermes Agent (Clawd)";
+    envFile = lib.mkOption {
+      type = lib.types.path;
+      default = ./secrets/hermes_env.age;
+      description = "Path to the agenix-encrypted env file for Hermes";
+    };
   };
+
+  config = lib.mkIf cfg.enable {
+    # Secrets (decrypted at activation by agenix)
+    age.secrets.hermes-env = {
+      file = cfg.envFile;
+      owner = "nicho";
+      group = "users";
+      mode = "0400";
+    };
 
   environment.systemPackages = with pkgs; [
     nodePkg
@@ -146,5 +157,6 @@ in
       RestartSec = 5;
       EnvironmentFile = "/home/nicho/.config/grok-proxy.env";
     };
+  };
   };
 }
