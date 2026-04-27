@@ -52,6 +52,11 @@ in
   "modules/servers/secrets/x_stream_key.age".publicKeys = streaming ++ [ nicho ];
 
   # ===========================================
+  # ROOK AGENT SECRETS (migrated from Windows OpenClaw)
+  # ===========================================
+  "modules/servers/secrets/rook_env.age".publicKeys = [ rook nicho ];
+
+  # ===========================================
   # MESH DB SECRETS (agent → Postgres on Rook)
   # ===========================================
   # Ene's read-only credentials (decrypted on ene)

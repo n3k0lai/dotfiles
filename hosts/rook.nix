@@ -55,6 +55,11 @@ in
 
   networking.hostName = "rook";
 
+  modules.servers.clawd = {
+    enable = true;
+    envFile = ../modules/servers/secrets/rook_env.age;
+  };
+
   # Home-manager state version
   home-manager.users.nicho.home.stateVersion = "24.11";
 
