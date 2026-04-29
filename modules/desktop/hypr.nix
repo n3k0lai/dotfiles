@@ -76,6 +76,9 @@ in {
       wtype  # Key simulation for fcitx5 emoji picker
       swaylock
       
+      # Launcher
+      wofi
+
       # File manager
       kdePackages.dolphin
     ];
