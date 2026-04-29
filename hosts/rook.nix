@@ -85,7 +85,45 @@ in
     chromium
     # X11 forwarding for headful browser sessions from Kiss
     xorg.xauth
+    # Python with Slack SDK — used by AI agent scripts for Slack API access
+    (python3.withPackages (ps: [ ps.slack-sdk ]))
+    openvpn
   ];
+
+  # === OPENVPN — Zoomph Staging ===
+  # VPN for staging database access, Graylog, and internal services.
+  # Credentials: /var/lib/hermes/.hermes/vpn/staging/auth.txt
+  # (user must populate with username + password if server requires it)
+  services.openvpn.servers = {
+    staging = {
+      config = ''
+        remote openvpn.zoomph-staging.com 1194 udp
+        remote openvpn.zoomph-staging.com 1194 udp
+        remote openvpn.zoomph-staging.com 443 tcp-client
+        nobind
+        dev tun
+        pull
+        auth-user-pass /var/lib/hermes/.hermes/vpn/staging/auth.txt
+        tls-client
+        ca /var/lib/hermes/.hermes/vpn/staging/ca.crt
+        cert /var/lib/hermes/.hermes/vpn/staging/cert.crt
+        key /var/lib/hermes/.hermes/vpn/staging/key.key
+        tls-auth /var/lib/hermes/.hermes/vpn/staging/ta.key 1
+        verb 3
+        comp-lzo no
+        rcvbuf 0
+        sndbuf 0
+        reneg-sec 604800
+        ns-cert-type server
+        server-poll-timeout 4
+        setenv FORWARD_COMPATIBLE 1
+        setenv opt tls-version-min 1.0 or-highest
+        setenv PUSH_PEER_INFO
+        cipher AES-256-CBC
+      '';
+      autoStart = true;
+    };
+  };
 
   # === NETWORK SECURITY ===
   # Tailscale is the ONLY way in. No public ports except SSH on LAN.
