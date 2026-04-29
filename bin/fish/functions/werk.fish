@@ -13,7 +13,7 @@ function werk --argument-names cmd
     
     set -l clip_opts \
         +clipboard \
-        /kbd-remap:0x5B=0x0,0x5C=0x0 \
+        /kbd:remap:0x5B=0x0,remap:0x5C=0x0 \
         /cert:ignore \
         +home-drive \
         /dynamic-resolution \
