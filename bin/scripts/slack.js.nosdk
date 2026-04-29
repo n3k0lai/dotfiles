@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+/**
+ * Slack helper for Rook — quick CLI for common Slack operations.
+ * Runs against the SLACK_USER_TOKEN env variable.
+ *
+ * Usage:
+ *   slack_history.js history <channel_id> [limit]
+ *   slack_history.js info <channel_id>
+ *   slack_history.js users [query]
+ */
+const { WebClient } = require('@slack/web-api');
+
+const TOKEN = process.env.SLACK_USER_TOKEN;
+if (!TOKEN) {
+  console.error('SLACK_USER_TOKEN not set');
+  process.exit(1);
+}
+
+const client = new WebClient(TOKEN);
+
+async function getHistory(channel, limit = 20) {
+  const resp = await client.conversations.history({ channel, limit });
+  const msgs = (resp.messages || []).filter(m => !m.subtype);
+  for (const m of msgs) {
+    const ts = new Date(parseFloat(m.ts) * 1000).toISOString();
+    const text = (m.text || '').replace(/\n+/g, ' ');
+    console.log(`[${ts}] ${text.substring(0, 300)}${text.length > 300 ? '...' : ''}`);
+    if (m.attachments) {
+      for (const a of m.attachments) {
+        const t = (a.title || a.text || a.fallback || '').replace(/\n+/g, ' ');
+        console.log(`  [attach] ${t.substring(0, 200)}${t.length > 200 ? '...' : ''}`);
+      }
+    }
+  }
+}
+
+async function getInfo(channel) {
+  const resp = await client.conversations.info({ channel });
+  const c = resp.channel;
+  console.log(JSON.stringify({
+    id: c.id,
+    name: c.name,
+    is_im: c.is_im,
+    user: c.user,
+    num_members: c.num_members,
+  }, null, 2));
+}
+
+async function listUsers(query = '') {
+  const resp = await client.users_list({ limit: 200 });
+  const members = (resp.members || []).filter(m =>
+    !query ||
+    m.real_name?.toLowerCase().includes(query.toLowerCase()) ||
+    m.name?.toLowerCase().includes(query.toLowerCase())
+  );
+  for (const m of members) {
+    console.log(`${m.id.padEnd(15)} @${(m.name || '').padEnd(15)} ${m.real_name || ''}`);
+  }
+}
+
+async function main() {
+  const cmd = process.argv[2] || 'help';
+  if (cmd === 'history') {
+    await getHistory(process.argv[3], parseInt(process.argv[4]) || 20);
+  } else if (cmd === 'info') {
+    await getInfo(process.argv[3]);
+  } else if (cmd === 'users') {
+    await listUsers(process.argv[3] || '');
+  } else {
+    console.log('Usage: slack.js <history|info|users> [args]');
+    console.log('  history <channel> [limit]  — fetch channel history');
+    console.log('  info <channel>             — channel metadata');
+    console.log('  users [query]              — list users (filter optional)');
+  }
+}
+
+main().catch(e => { console.error(e.message || e); process.exit(1); });
