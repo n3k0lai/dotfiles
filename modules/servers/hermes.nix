@@ -4,11 +4,11 @@
 let
   nodePkg = pkgs.nodejs_22;
   grokPython = pkgs.python3.withPackages (ps: [ ps.aiohttp ]);
-  cfg = config.modules.servers.clawd;
+  cfg = config.modules.servers.hermes;
 in
 {
-  options.modules.servers.clawd = {
-    enable = lib.mkEnableOption "Hermes Agent (Clawd)";
+  options.modules.servers.hermes = {
+    enable = lib.mkEnableOption "Hermes Agent";
     envFile = lib.mkOption {
       type = lib.types.path;
       default = ./secrets/hermes_env.age;
@@ -28,8 +28,6 @@ in
   environment.systemPackages = with pkgs; [
     nodePkg
     gh
-    # OpenCode CLI for agent delegation
-    opencode
   ];
 
   # Hermes user-specific packages (browser automation)

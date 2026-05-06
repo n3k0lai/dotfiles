@@ -36,8 +36,9 @@ let
 in
 {
   imports = [
-    # Hermes Agent + Grok fallback proxy
-    ../modules/servers/clawd.nix
+    # Hermes Agent
+    ../modules/servers/hermes.nix
+    ../modules/editors/opencode.nix
     # Svalbard RAID storage
     ../modules/hardware/svalbard.nix
     # Home automation (lights, IoT)
@@ -55,10 +56,12 @@ in
 
   networking.hostName = "rook";
 
-  modules.servers.clawd = {
+  modules.servers.hermes = {
     enable = true;
     envFile = ../modules/servers/secrets/rook_env.age;
   };
+
+  modules.editors.opencode.enable = true;
 
   # Home-manager state version
   home-manager.users.nicho.home.stateVersion = "24.11";

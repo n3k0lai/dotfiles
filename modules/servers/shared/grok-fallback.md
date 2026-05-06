@@ -5,7 +5,7 @@ Shared config for OpenClaw instances (Ene, Rook, future agents).
 ## 1. Run the proxy
 
 ### Linux (NixOS/systemd)
-Handled by `clawd.nix` — grok-proxy.service runs automatically.
+Handled by `hermes.nix` — grok-proxy.service runs automatically.
 
 ### Windows (Rook)
 ```powershell

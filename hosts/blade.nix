@@ -10,9 +10,12 @@ with lib;
   imports = [
     # Desktop input method (Chinese study)
     ../modules/desktop/fcitx5.nix
+    ../modules/editors/opencode.nix
   ];
 
   config = {
+    modules.editors.opencode.enable = true;
+
     ##################################################################################
     #                        Machine Identity
     networking.hostName = "dao";
