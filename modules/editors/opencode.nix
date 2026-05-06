@@ -13,19 +13,16 @@
 let
   cfg = config.modules.editors.opencode;
 
-  # Shell script that patches the Bun cache on first login
-  cacheFixScript = pkgs.writeShellScript "opencode-cache-fix" ''
-    export PATH="${lib.makeBinPath [ pkgs.nodejs_22 pkgs.coreutils pkgs.gnugrep ]}"
-    CACHE_DIR="$HOME/.cache/opencode"
-    mkdir -p "$CACHE_DIR"
-
-    # Only run if the missing dep isn't already present
-    if [ ! -d "$CACHE_DIR/node_modules/@ai-sdk/openai-compatible" ] && \
-       [ ! -d "$CACHE_DIR/node_modules/@ai-sdk/openai-compatible@beta" ]; then
-      echo "[opencode] Seeding NixOS cache fix for @ai-sdk/openai-compatible..."
-      ${pkgs.nodejs_22}/bin/npm install --prefix "$CACHE_DIR" @ai-sdk/openai-compatible@beta 2>/dev/null || true
-    fi
-  '';
+  # Wrapper overlay: before every opencode invocation, ensure the Bun
+  # runtime cache has the provider SDK dep that NixOS's read-only store
+  # + Bun's installer can't resolve on its own.
+  opencodeWrapped = pkgs.opencode.overrideAttrs (old: {
+    nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.makeWrapper ];
+    postInstall = ''
+      wrapProgram $out/bin/opencode \
+        --run 'CACHE="$HOME/.cache/opencode"; mkdir -p "$CACHE"; if [ ! -d "$CACHE/node_modules/@ai-sdk/openai-compatible" ]; then ${pkgs.nodejs_22}/bin/npm install --prefix "$CACHE" @ai-sdk/openai-compatible@beta >/dev/null 2>&1 || true; fi'
+    '';
+  });
 in
 {
   options.modules.editors.opencode = {
@@ -33,19 +30,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Make the CLI available globally
-    environment.systemPackages = with pkgs; [ opencode ];
-
-    # NixOS-only: systemd user service auto-fixes the Bun cache on login.
-    # Non-Linux hosts (Darwin, nix-on-droid) just get the package — they
-    # don't hit this dynamically-linked-Bun issue.
-    systemd.user.services.opencode-cache-fix = lib.mkIf pkgs.stdenv.isLinux {
-      description = "Fix OpenCode npm cache for NixOS";
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = cacheFixScript;
-      };
-      wantedBy = [ "default.target" ];
-    };
+    # Install the cache-seeding wrapper instead of the stock binary
+    environment.systemPackages = [ opencodeWrapped ];
   };
 }
