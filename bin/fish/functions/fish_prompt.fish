@@ -19,6 +19,10 @@ function fish_prompt --description 'Write out the prompt'
       case 'chateau' 'chat'
           set host_icon '🍹'
       case 'kiss'
+          set host_icon '吻吻'
+      case 'artemis'
+          set host_icon '🌌'
+      case '*'
           set host_icon '鱼'
   end
 
