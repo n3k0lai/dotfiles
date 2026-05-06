@@ -92,6 +92,10 @@ in
       toolsets = [ "all" ];
       max_turns = 100;
       memory = { memory_enabled = true; user_profile_enabled = true; };
+      browser = {
+        cloud_provider = "browser-use";
+        use_gateway = true;
+      };
       # OpenCode delegation with model-specific subagents
       delegation = {
         enabled = true;
