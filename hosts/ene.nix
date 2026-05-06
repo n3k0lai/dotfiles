@@ -5,8 +5,9 @@
   imports = [
     # Web server (Caddy)
     ../modules/servers/web.nix
-    # Clawd chatbot/AI (Ene)
-    ../modules/servers/clawd.nix
+    # Hermes Agent (Ene)
+    ../modules/servers/hermes.nix
+    ../modules/editors/opencode.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
     # ProtonMail Bridge (ene@comfy.sh)
@@ -22,7 +23,8 @@
   # Machine hostname
   networking.hostName = "ene";
 
-  modules.servers.clawd.enable = true;
+  modules.servers.hermes.enable = true;
+  modules.editors.opencode.enable = true;
 
   networking.firewall = {
     enable = true;

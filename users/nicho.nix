@@ -58,7 +58,6 @@
       gzip
       xz
       mullvad-vpn
-      opencode
     ];
 
     home.stateVersion = "25.05";

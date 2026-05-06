@@ -13,6 +13,7 @@ with lib;
     ../modules/servers/garmin.nix
     ../modules/desktop/fcitx5.nix
     ../modules/editors/cad.nix
+    ../modules/editors/opencode.nix
   ];
 
   options.hardware.kiss.gpu = {
@@ -36,6 +37,8 @@ with lib;
   };
 
   config = {
+    modules.editors.opencode.enable = true;
+
     # Agenix CLI for managing encrypted secrets
     # Moonlight for streaming from Rook (League, etc)
     environment.systemPackages = with pkgs; [
