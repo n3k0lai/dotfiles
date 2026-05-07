@@ -7,7 +7,7 @@
     ../modules/servers/web.nix
     # Hermes Agent (Ene)
     ../modules/servers/hermes.nix
-    ../modules/editors/opencode.nix
+    # ../modules/editors/opencode.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
     # ProtonMail Bridge (ene@comfy.sh)
@@ -24,7 +24,7 @@
   networking.hostName = "ene";
 
   modules.servers.hermes.enable = true;
-  modules.editors.opencode.enable = true;
+  # modules.editors.opencode.enable = true;
 
   networking.firewall = {
     enable = true;
