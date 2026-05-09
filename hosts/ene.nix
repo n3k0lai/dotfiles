@@ -34,6 +34,17 @@
     ];
   };
 
+  # Prevent dhcpcd from falling back to APIPA (169.254.x.x) on DO.
+  # If DHCP takes >10s, dhcpcd defaults to IPv4LL which leaves the droplet offline.
+  networking.dhcpcd.extraConfig = ''
+    noipv4ll
+    timeout 30
+  '';
+
+  # Fallback: use systemd-networkd instead of dhcpcd if issues persist.
+  # networking.useNetworkd = true;
+  # services.resolved.enable = true;
+
   # SSH hardening
   services.openssh = {
     enable = true;
