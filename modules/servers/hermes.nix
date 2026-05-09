@@ -1,9 +1,8 @@
-# Hermes Agent + Grok fallback proxy
+# Hermes Agent — Nous Research autonomous agent
 { config, pkgs, lib, ... }:
 
 let
   nodePkg = pkgs.nodejs_22;
-  grokPython = pkgs.python3.withPackages (ps: [ ps.aiohttp ]);
   cfg = config.modules.servers.hermes;
 in
 {
@@ -144,21 +143,5 @@ in
     CHROME_BIN = "${pkgs.chromium}/bin/chromium";
   };
 
-  # Cost-effective Grok fallback — Claude primary, Grok for bulk/cheap tasks
-  systemd.services.grok-proxy = {
-    description = "Grok API Proxy for OpenClaw";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
-
-    serviceConfig = {
-      User = "nicho";
-      Group = "users";
-      ExecStart = "${grokPython}/bin/python3 /home/nicho/bin/grok-proxy.py";
-      Restart = "always";
-      RestartSec = 5;
-      EnvironmentFile = "/home/nicho/.config/grok-proxy.env";
-    };
-  };
   };
 }
