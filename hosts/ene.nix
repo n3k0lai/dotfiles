@@ -34,16 +34,11 @@
     ];
   };
 
-  # Prevent dhcpcd from falling back to APIPA (169.254.x.x) on DO.
-  # If DHCP takes >10s, dhcpcd defaults to IPv4LL which leaves the droplet offline.
-  networking.dhcpcd.extraConfig = ''
-    noipv4ll
-    timeout 30
-  '';
-
-  # Fallback: use systemd-networkd instead of dhcpcd if issues persist.
-  # networking.useNetworkd = true;
-  # services.resolved.enable = true;
+  # Use systemd-networkd for reliable cloud VPS DHCP.
+  # dhcpcd in NixOS 25.05 falls back to APIPA (169.254.x.x) too aggressively
+  # on DigitalOcean, leaving the droplet offline after reboot.
+  networking.useNetworkd = true;
+  services.resolved.enable = true;
 
   # SSH hardening
   services.openssh = {
@@ -76,10 +71,10 @@
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${pkgs.nodejs}/bin/node /var/lib/hermes/bin/emote-server.js";
+      ExecStart = "${pkgs.nodejs}/bin/node /home/nicho/bin/emote-server.js";
       Restart = "on-failure";
       RestartSec = 5;
-      User = "hermes";
+      User = "nicho";
       Environment = "EMOTE_PORT=9100";
     };
   };
