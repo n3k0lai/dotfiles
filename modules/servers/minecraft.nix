@@ -25,7 +25,7 @@
       User = "minecraft";
       Group = "minecraft";
       WorkingDirectory = "/opt/minecraft/server";
-      ExecStart = "${pkgs.jdk21}/bin/java -Xmx2G -jar ../fabric-server-launch.jar nogui";
+      ExecStart = "${pkgs.jdk21}/bin/java -Xmx1536M -Xms1536M -jar ../fabric-server-launch.jar nogui";
       Restart = "on-failure";
       RestartSec = 30;
       SuccessExitStatus = "0 143";

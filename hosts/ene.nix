@@ -10,8 +10,6 @@
     # ../modules/editors/opencode.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
-    # ProtonMail Bridge (ene@comfy.sh)
-    ../modules/servers/proton.nix
     # IRC server (Ergo) — Chatterino + OpenClaw agent mesh
     ../modules/servers/irc.nix
     # TODO: enable when ready
@@ -67,19 +65,16 @@
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${pkgs.nodejs}/bin/node /home/nicho/bin/emote-server.js";
+      ExecStart = "${pkgs.nodejs}/bin/node /var/lib/hermes/bin/emote-server.js";
       Restart = "on-failure";
       RestartSec = 5;
-      User = "nicho";
+      User = "hermes";
       Environment = "EMOTE_PORT=9100";
     };
   };
 
-  # Memory optimization for low-RAM VPS
-  zramSwap = {
-    enable = true;
-    memoryPercent = 50;
-  };
+  # Disk swap — 80GB drive, use it
+  swapDevices = [ { device = "/swapfile"; size = 8192; } ];
 
   system.stateVersion = "23.11";
 }
