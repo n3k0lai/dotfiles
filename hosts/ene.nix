@@ -38,6 +38,7 @@
   # dhcpcd in NixOS 25.05 falls back to APIPA (169.254.x.x) too aggressively
   # on DigitalOcean, leaving the droplet offline after reboot.
   networking.useNetworkd = true;
+  networking.useDHCP = true;
   services.resolved.enable = true;
 
   # SSH hardening
@@ -64,6 +65,12 @@
 
   # DigitalOcean monitoring agent
   services.do-agent.enable = true;
+
+  # Fix DO metadata service to wait for network before querying metadata API
+  systemd.services.digitalocean-metadata = {
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+  };
 
   # 7TV emote server (emotes.comfy.sh)
   systemd.services.emote-server = {
