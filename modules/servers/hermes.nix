@@ -181,6 +181,43 @@ in
     ];
   };
 
+  # Hermes dashboard — web UI for managing agent config, sessions, logs
+  systemd.services.hermes-dashboard = {
+    description = "Hermes Agent Dashboard";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" "hermes-agent.service" ];
+    wants = [ "network-online.target" "hermes-agent.service" ];
+
+    environment = {
+      HOME = cfg.stateDir;
+      HERMES_HOME = "${cfg.stateDir}/.hermes";
+      HERMES_MANAGED = "true";
+      MESSAGING_CWD = cfg.workingDirectory;
+    };
+
+    serviceConfig = {
+      User = cfg.user;
+      Group = cfg.group;
+      WorkingDirectory = cfg.workingDirectory;
+      ExecStart = "${config.services.hermes-agent.package}/bin/hermes dashboard --no-open --port 9119 --host 127.0.0.1";
+      Restart = "always";
+      RestartSec = 5;
+      UMask = "0007";
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = false;
+      ReadWritePaths = [ cfg.stateDir cfg.workingDirectory ];
+      PrivateTmp = true;
+    };
+
+    path = [
+      config.services.hermes-agent.package
+      pkgs.bash
+      pkgs.coreutils
+      pkgs.git
+    ] ++ cfg.extraPackages;
+  };
+
   # Environment for browser tools to find Chromium
   environment.variables = {
     PUPPETEER_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
