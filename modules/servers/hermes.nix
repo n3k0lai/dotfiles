@@ -29,11 +29,60 @@ in
     gh
   ];
 
+  # Browser automation fix: patch agent-browser ELF interpreter for NixOS
+  let
+    agentBrowserFix = pkgs.writeShellScriptBin "hermes-browser-fix" ''
+      set -e
+      INTERPRETER="${pkgs.glibc}/lib/ld-linux-x86-64.so.2"
+      
+      # Patch any agent-browser binaries found in hermes npx cache
+      if [ -d /var/lib/hermes/.npm/_npx ]; then
+        find /var/lib/hermes/.npm/_npx -name "agent-browser-linux-x64" -type f 2>/dev/null | while read -r binary; do
+          current_interp=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$binary" 2>/dev/null || true)
+          if [ "$current_interp" != "$INTERPRETER" ]; then
+            ${pkgs.patchelf}/bin/patchelf --set-interpreter "$INTERPRETER" "$binary"
+            echo "Patched: $binary"
+          fi
+        done
+      fi
+      
+      # Ensure agent-browser config points to NixOS chromium
+      mkdir -p /var/lib/hermes/.agent-browser
+      ${pkgs.jq}/bin/jq -n \
+        --arg chromium "${pkgs.chromium}/bin/chromium" \
+        '{executablePath: $chromium}' \
+        > /var/lib/hermes/.agent-browser/config.json
+      
+      # Fix ownership
+      chown -R hermes:users /var/lib/hermes/.agent-browser 2>/dev/null || true
+    '';
+  in
+
+  # Run fix on every activation (nixos-rebuild switch)
+  system.activationScripts.hermes-browser-fix = lib.stringAfter [ "users" "groups" ] ''
+    ${agentBrowserFix}/bin/hermes-browser-fix
+  '';
+
+  # Also run fix automatically when hermes-agent starts/restarts
+  systemd.services.hermes-agent-browser-fix = {
+    description = "Patch Hermes agent-browser binary for NixOS";
+    after = [ "hermes-agent.service" ];
+    wants = [ "hermes-agent.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${agentBrowserFix}/bin/hermes-browser-fix";
+      User = "root";
+    };
+  };
+
   # Hermes user-specific packages (browser automation)
   users.users.hermes.packages = with pkgs; [
     # Browser automation dependencies
     chromium
     patchelf
+    jq
     # Required for headless browser operation
     nss
     nspr
