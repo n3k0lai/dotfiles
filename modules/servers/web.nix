@@ -45,14 +45,14 @@ in
       "ene.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy localhost:18789
+          reverse_proxy localhost:9119
         '';
       };
 
       "rook.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf
-          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:18789
+          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:9119
         '';
       };
 

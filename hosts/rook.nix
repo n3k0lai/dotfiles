@@ -245,10 +245,10 @@ in
   services.caddy = {
     enable = true;
     virtualHosts = {
-      # Hermes gateway dashboard — Tailscale only
+      # Hermes dashboard — Tailscale only
       ":18780" = {
         extraConfig = ''
-          reverse_proxy localhost:18789
+          reverse_proxy localhost:9119
         '';
       };
     };
