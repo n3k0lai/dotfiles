@@ -69,6 +69,16 @@
       ${pkgs.iproute2}/bin/ip addr add "$IP/$NETMASK" dev "$INTERFACE"
       ${pkgs.iproute2}/bin/ip link set "$INTERFACE" up
       ${pkgs.iproute2}/bin/ip route add default via "$GATEWAY" dev "$INTERFACE" onlink || true
+
+      # Assign floating IP if one is active (queried from DO metadata)
+      FLOATING_IP=$(${pkgs.curl}/bin/curl -sf http://169.254.169.254/metadata/v1/floating_ip/ipv4/ip_address || true)
+      if [ -n "$FLOATING_IP" ]; then
+        echo "Assigning floating IP: $FLOATING_IP"
+        ${pkgs.iproute2}/bin/ip addr add "$FLOATING_IP"/32 dev "$INTERFACE"
+        # Loose mode rp_filter for proper floating IP routing
+        echo 2 > /proc/sys/net/ipv4/conf/all/rp_filter
+        echo 2 > /proc/sys/net/ipv4/conf/"$INTERFACE"/rp_filter
+      fi
     '';
   };
 
