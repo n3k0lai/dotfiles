@@ -48,6 +48,21 @@ in
       default = ./secrets/hermes_env.age;
       description = "Path to the agenix-encrypted env file for Hermes";
     };
+    stateDir = lib.mkOption {
+      type = lib.types.path;
+      default = "/var/lib/hermes";
+      description = "State directory for Hermes";
+    };
+    workingDirectory = lib.mkOption {
+      type = lib.types.path;
+      default = "/var/lib/hermes";
+      description = "Working directory for Hermes";
+    };
+    extraPackages = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = [];
+      description = "Extra packages available to the Hermes service";
+    };
   };
 
   config = lib.mkIf cfg.enable {
