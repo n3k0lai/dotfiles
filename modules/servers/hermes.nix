@@ -152,9 +152,9 @@ in
     enable = true;
     settings = {
       model = {
-        # Primary: Nous Portal (Kimi K2.6)
+        # Primary: Nous Portal (Qwen 3.6 Plus — free for limited time)
         base_url = "https://api.nousresearch.com/v1";
-        default = "moonshotai/kimi-k2.6";
+        default = "qwen/qwen-3.6-plus";
         provider = "nous";
         # Fallback to OpenRouter configured via env vars
       };
@@ -187,11 +187,11 @@ in
             workdir = "/var/lib/hermes/workspace";
             args = [ "-m" "openrouter/mistralai/codestral-2508" ];
           };
-          # General purpose (K2.6 via OpenRouter)
+          # General purpose (Qwen 3.6 Plus via OpenRouter)
           opencode = {
             command = "opencode";
             workdir = "/var/lib/hermes/workspace";
-            args = [ "-m" "openrouter/moonshotai/kimi-k2.6" ];
+            args = [ "-m" "openrouter/qwen/qwen-3.6-plus" ];
           };
         };
       };
