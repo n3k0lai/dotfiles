@@ -33,6 +33,16 @@ in
 {
   options.modules.servers.hermes = {
     enable = lib.mkEnableOption "Hermes Agent";
+    user = lib.mkOption {
+      type = lib.types.str;
+      default = "hermes";
+      description = "User to run the Hermes dashboard under";
+    };
+    group = lib.mkOption {
+      type = lib.types.str;
+      default = "users";
+      description = "Group to run the Hermes dashboard under";
+    };
     envFile = lib.mkOption {
       type = lib.types.path;
       default = ./secrets/hermes_env.age;
