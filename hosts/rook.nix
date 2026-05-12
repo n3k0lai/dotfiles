@@ -90,8 +90,30 @@ in
     xorg.xauth
     # Python with Slack SDK — used by AI agent scripts for Slack API access
     (python3.withPackages (ps: [ ps.slack-sdk ]))
-    # jackchuka/slackcli v0.3.10 installed via `go install` to ~/.local/bin/slackcli
-    # --read-only flag blocks writes at CLI level; used for DM history monitoring only
+    # jackchuka/slackcli v0.3.10 — read-only Slack DM monitoring
+    # Built declaratively with Go 1.25 (go.mod patched from 1.26.1)
+    # Requires SLACK_USER_TOKEN env var. --read-only flag blocks writes.
+    (let
+      buildGoModule' = pkgs.buildGoModule.override { go = pkgs.go_1_25; };
+    in buildGoModule' {
+      pname = "slackcli";
+      version = "0.3.10";
+      src = pkgs.fetchFromGitHub {
+        owner = "jackchuka";
+        repo = "slackcli";
+        rev = "v0.3.10";
+        hash = "sha256-tWNv4HLf9vviKr8LJGBNSMQ/SVCjPd1Pe5XTPzz/BhM=";
+      };
+      overrideModAttrs = old: {
+        preConfigure = (old.preConfigure or "") + ''
+          sed -i 's/go 1.26.1/go 1.25.5/' go.mod
+        '';
+      };
+      postPatch = ''
+        sed -i 's/go 1.26.1/go 1.25.5/' go.mod
+      '';
+      vendorHash = "sha256-EGDCn9yYgGKlBMLripo5k2HtjTD8CB9JVE4T18CAtZI=";
+    })
     openvpn
     # Azure CLI + DevOps extension — replaces raw curl + PAT for ADO operations
     (azure-cli.withExtensions [ azure-cli.extensions."azure-devops" ])
