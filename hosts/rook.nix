@@ -90,7 +90,8 @@ in
     xorg.xauth
     # Python with Slack SDK — used by AI agent scripts for Slack API access
     (python3.withPackages (ps: [ ps.slack-sdk ]))
-    slack-cli
+    # jackchuka/slackcli v0.3.10 installed via `go install` to ~/.local/bin/slackcli
+    # --read-only flag blocks writes at CLI level; used for DM history monitoring only
     openvpn
     # Azure CLI + DevOps extension — replaces raw curl + PAT for ADO operations
     (azure-cli.withExtensions [ azure-cli.extensions."azure-devops" ])
