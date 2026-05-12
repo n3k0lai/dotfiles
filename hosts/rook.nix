@@ -91,6 +91,8 @@ in
     # Python with Slack SDK — used by AI agent scripts for Slack API access
     (python3.withPackages (ps: [ ps.slack-sdk ]))
     openvpn
+    # Azure CLI + DevOps extension — replaces raw curl + PAT for ADO operations
+    (azure-cli.withExtensions [ azure-cli.extensions."azure-devops" ])
   ];
 
   # === OPENVPN — Zoomph Staging ===
