@@ -154,7 +154,7 @@ in
       model = {
         # Primary: Nous Portal (Qwen 3.6 Plus — free for limited time)
         base_url = "https://api.nousresearch.com/v1";
-        default = "qwen/qwen-3.6-plus";
+        default = "qwen/qwen3.6-plus";
         provider = "nous";
         # Fallback to OpenRouter configured via env vars
       };
