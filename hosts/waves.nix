@@ -19,6 +19,9 @@
 #   4. Tailscale: brew install tailscale && tailscale up
 { pkgs, lib, inputs, hostname, username, ... }:
 
+let
+  fortune-zh-module = import ../modules/core/fortune-zh.nix { inherit pkgs; };
+in
 {
   # ── System ─────────────────────────────────────────────
   networking.hostName = "waves";
@@ -135,6 +138,10 @@
   home-manager.users.nicho = { pkgs, ... }: {
     home.stateVersion = "24.11";
 
+    home.packages = with pkgs; [
+      fortune-zh-module.fortune-with-zh
+    ];
+
     programs.git = {
       enable = true;
       userName = "Nicholai";
@@ -157,9 +164,17 @@
         cat = "bat";
         rebuild = "darwin-rebuild switch --flake ~/Developer/dotfiles#waves";
       };
+      shellInit = ''
+        # Ensure nix paths are available early (before interactive integrations run)
+        fish_add_path /run/current-system/sw/bin /etc/profiles/per-user/nicho/bin
+      '';
       interactiveShellInit = ''
         if functions -q set_profile
             set_profile
+        end
+        # fzf key bindings (guarded because nix-darwin PATH may not be ready at startup)
+        if type -q fzf
+          ${pkgs.fzf}/bin/fzf --fish | source
         end
       '';
     };
@@ -168,7 +183,10 @@
       enable = true;
       nix-direnv.enable = true;
     };
-    programs.fzf.enable = true;
+    programs.fzf = {
+      enable = true;
+      enableFishIntegration = false;
+    };
 
     # Symlink fish functions, completions, themes, and conf.d from the repo
     xdg.configFile."fish/functions" = {
