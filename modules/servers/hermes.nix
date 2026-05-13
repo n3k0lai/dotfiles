@@ -204,6 +204,7 @@ in
       patchelf
       git
     ];
+    extraDependencyGroups = [ "messaging" "edge-tts" ];
   };
 
   # Hermes dashboard — web UI for managing agent config, sessions, logs
