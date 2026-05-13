@@ -29,7 +29,7 @@
     };
 
     nix-darwin = {
-      url = "github:LnL7/nix-darwin";
+      url = "github:LnL7/nix-darwin/nix-darwin-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -114,21 +114,16 @@
     darwinConfigurations.waves = nix-darwin.lib.darwinSystem {
       system = "aarch64-darwin";
       specialArgs = {
-        inherit self;
+        inherit self agenix;
         hostname = "waves";
-        username = "nicholai";
-        inputs = { inherit nixpkgs; };
+        username = "nicho";
+        inputs = { inherit nixpkgs agenix; };
       };
       modules = [
         ./hosts/waves.nix
         home-manager.darwinModules.home-manager
-        nix-homebrew.darwinModules.nix-homebrew
         {
-          nix-homebrew = {
-            enable = true;
-            user = "nicholai";
-            autoMigrate = true;
-          };
+          nixpkgs.overlays = [ agenix.overlays.default ];
         }
       ];
     };

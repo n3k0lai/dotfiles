@@ -14,8 +14,8 @@
 #
 # Bootstrap:
 #   1. Install Determinate Nix: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh
-#   2. Clone dotfiles: git clone https://github.com/n3k0lai/dotfiles ~/Code/nix
-#   3. First build: darwin-rebuild switch --flake ~/Code/nix#waves
+#   2. Clone dotfiles: git clone https://github.com/n3k0lai/dotfiles ~/Developer/dotfiles
+#   3. First build: darwin-rebuild switch --flake ~/Developer/dotfiles#waves
 #   4. Tailscale: brew install tailscale && tailscale up
 { pkgs, lib, inputs, hostname, username, ... }:
 
@@ -23,17 +23,18 @@
   # ── System ─────────────────────────────────────────────
   networking.hostName = "waves";
   system.stateVersion = 6;  # nix-darwin state version
+  system.primaryUser = "nicho";
 
   # ── Nix settings ───────────────────────────────────────
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
-    trusted-users = [ "nicholai" ];
+    trusted-users = [ "nicho" ];
   };
   nixpkgs.config.allowUnfree = true;
 
   # ── Users ──────────────────────────────────────────────
-  users.users.nicholai = {
-    home = "/Users/nicholai";
+  users.users.nicho = {
+    home = "/Users/nicho";
     shell = pkgs.fish;
   };
   programs.fish.enable = true;
@@ -75,51 +76,20 @@
   security.pam.services.sudo_local.touchIdAuth = true;
 
   # ── Homebrew (GUI apps via casks) ──────────────────────
-  homebrew = {
-    enable = true;
-    onActivation = {
-      autoUpdate = true;
-      cleanup = "zap";             # remove anything not declared here
-    };
-    casks = [
-      # Browsers
-      "firefox"
-      "zen-browser"
-
-      # Dev
-      "visual-studio-code"
-      "unity-hub"
-      "blender"
-      "iterm2"
-
-      # Chat & Social
-      "discord"
-      "slack"
-
-      # Productivity
-      "obsidian"
-      "raycast"
-
-      # Media
-      "vlc"
-      "spotify"
-
-      # Utilities
-      "tailscale"
-      "rectangle"                  # window management
-      "stats"                      # menubar system monitor
-      "the-unarchiver"
-      "1password"                  # or whatever password manager
-    ];
-    brews = [
-      # CLI tools that are better from brew on macOS
-      "mas"                        # Mac App Store CLI
-    ];
-    masApps = {
-      # Mac App Store apps (need to be signed in)
-      # "Xcode" = 497799835;       # uncomment if needed for Unity iOS builds
-    };
-  };
+  # NOTE: Disabled due to nix-darwin 25.05 incompatibility with Homebrew's
+  # Ruby 4.0 requirement. Install casks manually with `brew install --cask`.
+  # Casks to install: firefox, zen-browser, visual-studio-code, unity-hub,
+  # blender, iterm2, discord, slack, obsidian, raycast, vlc, spotify,
+  # tailscale, rectangle, stats, the-unarchiver, 1password
+  #
+  # homebrew = {
+  #   enable = true;
+  #   onActivation = {
+  #     autoUpdate = true;
+  #     cleanup = "zap";
+  #   };
+  #   casks = [ ... ];
+  # };
 
   # ── CLI packages (from Nix) ────────────────────────────
   environment.systemPackages = with pkgs; [
@@ -128,7 +98,6 @@
     git-lfs
     fish
     tmux
-    starship
     direnv
 
     # Dev tools
@@ -150,6 +119,8 @@
     # Nix tools
     nixfmt-rfc-style
     nil                            # nix LSP
+    agenix                         # secrets decryption CLI
+    age                            # encryption tool
 
     # Network
     curl
@@ -160,7 +131,8 @@
   # ── home-manager ───────────────────────────────────────
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
-  home-manager.users.nicholai = { pkgs, ... }: {
+  home-manager.backupFileExtension = "hm-bak";
+  home-manager.users.nicho = { pkgs, ... }: {
     home.stateVersion = "24.11";
 
     programs.git = {
@@ -183,35 +155,40 @@
         ls = "eza --icons";
         ll = "eza -la --icons";
         cat = "bat";
-        rebuild = "darwin-rebuild switch --flake ~/Code/nix#waves";
+        rebuild = "darwin-rebuild switch --flake ~/Developer/dotfiles#waves";
       };
+      interactiveShellInit = ''
+        if functions -q set_profile
+            set_profile
+        end
+      '';
     };
 
-    programs.starship.enable = true;
     programs.direnv = {
       enable = true;
       nix-direnv.enable = true;
     };
     programs.fzf.enable = true;
 
-    # SSH aliases for Tailscale mesh hosts
-    # Replace placeholders with real IPs in ~/.ssh/config or waves-local.nix
-    programs.ssh = {
-      enable = true;
-      matchBlocks = {
-        "ene" = {
-          hostname = "<ENE_TAILSCALE_IP>";
-          user = "nicho";
-        };
-        "kiss" = {
-          hostname = "<KISS_TAILSCALE_IP>";
-          user = "nicho";
-        };
-        "artemis" = {
-          hostname = "<ARTEMIS_TAILSCALE_IP>";
-          user = "nicho";
-        };
-      };
+    # Symlink fish functions, completions, themes, and conf.d from the repo
+    xdg.configFile."fish/functions" = {
+      source = ../bin/fish/functions;
+      recursive = true;
     };
+    xdg.configFile."fish/conf.d" = {
+      source = ../bin/fish/conf.d;
+      recursive = true;
+    };
+    xdg.configFile."fish/completions" = {
+      source = ../bin/fish/completions;
+      recursive = true;
+    };
+    xdg.configFile."fish/themes" = {
+      source = ../bin/fish/themes;
+      recursive = true;
+    };
+
+    # SSH config is kept as-is from existing ~/.ssh/config
+    # (managed manually to avoid leaking Tailscale IPs in the repo)
   };
 }
