@@ -1,34 +1,9 @@
-# Rook's domain — Nicholai's work agent server.
-# Runs on the former Chat hardware. A dedicated NixOS host for Hermes Agent,
-# managing work tasks, coding agents, Slack/ADO integration, and the home
-# infrastructure that previously lived under Chat's identity.
+# NixOS host: rook
+# Personal infrastructure box. Tailscale-only access.
 #
-# Hardware: i5-6600K, 16GB DDR4, 256GB NVMe, Svalbard USB RAID
-# GPU: None currently (GTX 970 removed due to boot issues — may return)
-# Tailscale: "rook", <ROOK_TAILSCALE_IP>
-# Agent: Rook (Hermes instance)
-# Scope: Work tasks, coding agents, CI/CD, dev environment orchestration,
-#         Obsidian vault, journaling, location, banking, home automation,
-#         Svalbard storage, CouchDB sync
-#
-# SECURITY MODEL:
-#   Rook holds work data and the crown jewels. Every design decision here
-#   prioritizes data protection over convenience.
-#   - NO public internet exposure (Tailscale-only access)
-#   - NO email capability (Ene relays if needed)
-#   - NO outbound messaging to strangers
-#   - Minimal attack surface (Ene runs Caddy public, not us)
-#   - CouchDB on all interfaces but firewall blocks public; Tailscale is perimeter
-#
-# Network topology:
-#   Ene (VPS, public Caddy) → Tailscale → Rook (services on Tailscale interface)
-#   Obsidian LiveSync (phone) → Ene's Caddy → Tailscale → CouchDB :5984
-#
-# Boot checklist:
+# Boot:
 #   1. sudo nixos-rebuild switch --flake ~/Code/nix#rook
 #   2. sudo tailscale up
-#   3. Hermes gateway auto-starts via systemd
-#   4. Discord bot (app id TBD) → join wavy gang
 { config, pkgs, lib, ... }:
 
 let
@@ -119,10 +94,9 @@ in
     (azure-cli.withExtensions [ azure-cli.extensions."azure-devops" ])
   ];
 
-  # === OPENVPN — Zoomph Staging ===
-  # VPN for staging database access, Graylog, and internal services.
+  # === OPENVPN ===
+  # Staging VPN for internal services.
   # Credentials: /var/lib/hermes/.hermes/vpn/staging/auth.txt
-  # (user must populate with username + password if server requires it)
   services.openvpn.servers = {
     staging = {
       config = ''
