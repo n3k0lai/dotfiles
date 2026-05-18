@@ -184,26 +184,6 @@ in
           };
         };
       };
-          # Reasoning tasks (Hermes 4)
-          "opencode-reasoning" = {
-            command = "opencode";
-            workdir = "/var/lib/hermes/workspace";
-            args = [ "-m" "openrouter/nousresearch/hermes-4-405b" ];
-          };
-          # Coding tasks (Codestral)
-          "opencode-code" = {
-            command = "opencode";
-            workdir = "/var/lib/hermes/workspace";
-            args = [ "-m" "openrouter/mistralai/codestral-2508" ];
-          };
-          # General purpose (K2.6 via OpenRouter)
-          opencode = {
-            command = "opencode";
-            workdir = "/var/lib/hermes/workspace";
-            args = [ "-m" "openrouter/moonshotai/kimi-k2.6" ];
-          };
-        };
-      };
     };
     environmentFiles = [ config.age.secrets.hermes-env.path ];
     addToSystemPackages = true;
