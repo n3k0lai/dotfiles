@@ -164,16 +164,26 @@ in
         cloud_provider = "browser-use";
         use_gateway = true;
       };
-      # OpenCode delegation with model-specific subagents
+      # Grok Build delegation (preferred over OpenCode)
       delegation = {
         enabled = true;
         agents = {
-          # Fast/cheap tasks (K2.5 via OpenRouter free tier)
-          "opencode-fast" = {
-            command = "opencode";
+          grok-build = {
+            command = "grok";
             workdir = "/var/lib/hermes/workspace";
-            args = [ "-m" "openrouter/nousresearch/hermes-3-llama-3.1-405b:free" ];
           };
+          "grok-build-code" = {
+            command = "grok";
+            workdir = "/var/lib/hermes/workspace";
+            args = [ "--agent" "code" ];
+          };
+          "grok-build-research" = {
+            command = "grok";
+            workdir = "/var/lib/hermes/workspace";
+            args = [ "--agent" "research" ];
+          };
+        };
+      };
           # Reasoning tasks (Hermes 4)
           "opencode-reasoning" = {
             command = "opencode";
