@@ -41,25 +41,31 @@ let
     echo "Run 'grok' or 'agent' to start."
   '';
 
+  hmConfig = {
+    home.sessionPath = [ "$HOME/.grok/bin" ];
+
+    programs.fish = {
+      interactiveShellInit = ''
+        # Grok CLI
+        fish_add_path --prepend --move $HOME/.grok/bin
+      '';
+    };
+  };
+
 in
 {
   options.modules.editors.grokbuild = {
     enable = lib.mkEnableOption "Grok CLI build tool (grok + agent) from x.ai";
   };
 
-  config = lib.mkIf cfg.enable {
-    environment.systemPackages = [ updateScript ];
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      environment.systemPackages = [ updateScript ];
+    })
 
-    # Proper Fish + general shell integration via home-manager
-    home-manager.users.${config.user.name or config.system.primaryUser or "nicho"} = {
-      home.sessionPath = [ "$HOME/.grok/bin" ];
-
-      programs.fish = {
-        interactiveShellInit = ''
-          # Grok CLI
-          fish_add_path --prepend --move $HOME/.grok/bin
-        '';
-      };
-    };
-  };
+    # Only apply home-manager config if home-manager is present
+    (lib.mkIf (cfg.enable && config ? home-manager) {
+      home-manager.users.${config.user.name or config.system.primaryUser or "nicho"} = hmConfig;
+    })
+  ];
 }
