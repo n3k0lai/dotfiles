@@ -7,6 +7,7 @@
     ../modules/servers/web.nix
     # Hermes Agent (Ene)
     ../modules/servers/hermes.nix
+    ../modules/editors/grokbuild.nix
     # ../modules/editors/opencode.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
@@ -22,6 +23,7 @@
   networking.hostName = "ene";
 
   modules.servers.hermes.enable = true;
+  modules.editors.grokbuild.enable = true;
   # modules.editors.opencode.enable = true;
 
   networking.firewall = {
