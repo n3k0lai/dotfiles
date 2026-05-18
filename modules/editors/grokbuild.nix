@@ -5,7 +5,7 @@
 # The official installer lives at https://x.ai/cli/install.sh.
 # This module provides:
 #   - A `grok-update` command that safely re-runs the installer
-#   - Proper PATH handling for ~/.grok/bin
+#   - Proper PATH handling for ~/.grok/bin (works on both NixOS and nix-darwin)
 #   - Channel selection (stable / alpha / enterprise)
 #
 # Usage:
@@ -58,9 +58,10 @@ in
     # Provide the update command
     environment.systemPackages = [ updateScript ];
 
-    # Ensure ~/.grok/bin is on PATH
-    environment.sessionVariables = {
-      PATH = [ "$HOME/.grok/bin" ];
+    # Add ~/.grok/bin to PATH in a cross-platform way
+    # Works on both NixOS and nix-darwin (when using home-manager)
+    home-manager.users.${config.user.name or config.system.primaryUser or "nicho"} = {
+      home.sessionPath = [ "$HOME/.grok/bin" ];
     };
   };
 }
