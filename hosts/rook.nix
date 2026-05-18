@@ -14,6 +14,7 @@ in
     # Hermes Agent
     ../modules/servers/hermes.nix
     ../modules/editors/opencode.nix
+    ../modules/editors/grokbuild.nix
     # Svalbard RAID storage
     ../modules/hardware/svalbard.nix
     # Home automation (lights, IoT)
@@ -37,6 +38,7 @@ in
   };
 
   modules.editors.opencode.enable = true;
+  modules.editors.grokbuild.enable = true;
 
   # Home-manager state version
   home-manager.users.nicho.home.stateVersion = "24.11";
