@@ -58,15 +58,9 @@ in
     # Provide the update command
     environment.systemPackages = [ updateScript ];
 
-    # Ensure ~/.grok/bin is on PATH for the user
-    # (works for both system and home-manager contexts)
+    # Ensure ~/.grok/bin is on PATH
     environment.sessionVariables = {
       PATH = [ "$HOME/.grok/bin" ];
-    };
-
-    # Also add to home-manager if available (common pattern)
-    home-manager.users.${config.user.name or "hermes"} = lib.mkIf (config ? home-manager) {
-      home.sessionPath = [ "$HOME/.grok/bin" ];
     };
   };
 }
