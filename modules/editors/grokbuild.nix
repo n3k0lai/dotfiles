@@ -5,12 +5,11 @@
 # The official installer lives at https://x.ai/cli/install.sh.
 # This module provides:
 #   - A `grok-update` command that safely re-runs the installer
-#   - Proper PATH handling for ~/.grok/bin (works on both NixOS and nix-darwin)
-#   - Channel selection (stable / alpha / enterprise)
+#   - Proper PATH + shell integration for Fish (and other shells)
+#   - Works on both NixOS and nix-darwin
 #
 # Usage:
 #   modules.editors.grokbuild.enable = true;
-#   modules.editors.grokbuild.channel = "stable";   # or "alpha"
 #
 # After enabling, run `grok-update` to install or upgrade.
 
@@ -22,7 +21,7 @@ let
   updateScript = pkgs.writeShellScriptBin "grok-update" ''
     set -euo pipefail
 
-    CHANNEL="''${GROK_CHANNEL:-${cfg.channel}}"
+    CHANNEL="''${GROK_CHANNEL:-stable}"
     echo "Updating Grok CLI (channel: $CHANNEL)..."
 
     if [ -n "''${GROK_DEPLOYMENT_KEY:-}" ]; then
@@ -46,22 +45,21 @@ in
 {
   options.modules.editors.grokbuild = {
     enable = lib.mkEnableOption "Grok CLI build tool (grok + agent) from x.ai";
-
-    channel = lib.mkOption {
-      type = lib.types.enum [ "stable" "alpha" "enterprise" ];
-      default = "stable";
-      description = "Release channel to install from (stable, alpha, or enterprise).";
-    };
   };
 
   config = lib.mkIf cfg.enable {
-    # Provide the update command
     environment.systemPackages = [ updateScript ];
 
-    # Add ~/.grok/bin to PATH in a cross-platform way
-    # Works on both NixOS and nix-darwin (when using home-manager)
+    # Proper Fish + general shell integration via home-manager
     home-manager.users.${config.user.name or config.system.primaryUser or "nicho"} = {
       home.sessionPath = [ "$HOME/.grok/bin" ];
+
+      programs.fish = {
+        interactiveShellInit = ''
+          # Grok CLI
+          fish_add_path --prepend --move $HOME/.grok/bin
+        '';
+      };
     };
   };
 }
