@@ -153,9 +153,9 @@ in
     settings = {
       model = {
         # Primary: Nous Portal (Qwen 3.6 Plus — free for limited time)
-        provider = "xai";
+        provider = "xai-oauth";
         default = "grok-4.3";
-        # Using xai-oauth credential (SuperGrok Heavy)
+        # Using xai-oauth "supergrok" credential (SuperGrok Heavy)
       toolsets = [ "all" ];
       max_turns = 100;
       memory = { memory_enabled = true; user_profile_enabled = true; };
