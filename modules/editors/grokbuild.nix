@@ -34,7 +34,7 @@ let
     fi
 
     curl -fsSL https://x.ai/cli/install.sh | \
-      GROK_CHANNEL="$CHANNEL" bash
+      SHELL=/bin/bash GROK_CHANNEL="$CHANNEL" bash
 
     echo ""
     echo "Grok CLI updated. Binaries are in ~/.grok/bin/"
