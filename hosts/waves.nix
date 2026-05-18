@@ -24,7 +24,11 @@ let
 in
 {
   # ── System ─────────────────────────────────────────────
+  imports = [
+    ../modules/editors/grokbuild.nix
+  ];
   networking.hostName = "waves";
+  modules.editors.grokbuild.enable = true;
   system.stateVersion = 6;  # nix-darwin state version
   system.primaryUser = "nicho";
 

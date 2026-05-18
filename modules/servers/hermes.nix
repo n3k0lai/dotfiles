@@ -153,11 +153,9 @@ in
     settings = {
       model = {
         # Primary: Nous Portal (Qwen 3.6 Plus — free for limited time)
-        base_url = "https://api.nousresearch.com/v1";
-        default = "moonshotai/kimi-k2.6";
-        provider = "nous";
-        # Fallback to OpenRouter configured via env vars
-      };
+        provider = "xai";
+        default = "grok-4.3";
+        # Using xai-oauth credential (SuperGrok Heavy)
       toolsets = [ "all" ];
       max_turns = 100;
       memory = { memory_enabled = true; user_profile_enabled = true; };
