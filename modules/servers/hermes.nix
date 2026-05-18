@@ -164,19 +164,45 @@ in
         cloud_provider = "browser-use";
         use_gateway = true;
       };
-      # Grok Build delegation (preferred over OpenCode)
+      # Grok Build delegation (preferred)
       delegation = {
         enabled = true;
         agents = {
+          # Default general-purpose Grok Build agent
           grok-build = {
             command = "grok";
             workdir = "/var/lib/hermes/workspace";
           };
+
+          # Quick iteration / low effort
+          "grok-build-quick" = {
+            command = "grok";
+            workdir = "/var/lib/hermes/workspace";
+            args = [ "--effort" "1" ];
+          };
+
+          # Balanced implementation with review (recommended)
+          "grok-build-implement" = {
+            command = "grok";
+            workdir = "/var/lib/hermes/workspace";
+            args = [ "--effort" "3" ];
+          };
+
+          # High rigor implementation (complex or sensitive work)
+          "grok-build-thorough" = {
+            command = "grok";
+            workdir = "/var/lib/hermes/workspace";
+            args = [ "--effort" "5" ];
+          };
+
+          # Specialized code-focused agent
           "grok-build-code" = {
             command = "grok";
             workdir = "/var/lib/hermes/workspace";
-            args = [ "--agent" "code" ];
+            args = [ "--agent" "code" "--effort" "3" ];
           };
+
+          # Research / exploration focused
           "grok-build-research" = {
             command = "grok";
             workdir = "/var/lib/hermes/workspace";
