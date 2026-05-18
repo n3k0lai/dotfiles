@@ -1,17 +1,11 @@
 # -*- mode: nix -*-
 # modules/editors/grokbuild.nix
-# Grok CLI (grok + agent) from x.ai — declarative installation & update wrapper.
-#
-# The official installer lives at https://x.ai/cli/install.sh.
-# This module provides:
-#   - A `grok-update` command that safely re-runs the installer
-#   - Proper PATH + shell integration for Fish (and other shells)
-#   - Works on both NixOS and nix-darwin
+# Grok CLI (grok + agent) from x.ai — simple update wrapper.
 #
 # Usage:
 #   modules.editors.grokbuild.enable = true;
 #
-# After enabling, run `grok-update` to install or upgrade.
+# After enabling, run `grok-update` to install or upgrade the Grok CLI.
 
 { config, pkgs, lib, ... }:
 
@@ -41,31 +35,13 @@ let
     echo "Run 'grok' or 'agent' to start."
   '';
 
-  hmConfig = {
-    home.sessionPath = [ "$HOME/.grok/bin" ];
-
-    programs.fish = {
-      interactiveShellInit = ''
-        # Grok CLI
-        fish_add_path --prepend --move $HOME/.grok/bin
-      '';
-    };
-  };
-
 in
 {
   options.modules.editors.grokbuild = {
     enable = lib.mkEnableOption "Grok CLI build tool (grok + agent) from x.ai";
   };
 
-  config = lib.mkMerge [
-    (lib.mkIf cfg.enable {
-      environment.systemPackages = [ updateScript ];
-    })
-
-    # Only apply home-manager config if home-manager is present
-    (lib.mkIf (cfg.enable && config ? home-manager) {
-      home-manager.users.${config.user.name or config.system.primaryUser or "nicho"} = hmConfig;
-    })
-  ];
+  config = lib.mkIf cfg.enable {
+    environment.systemPackages = [ updateScript ];
+  };
 }
