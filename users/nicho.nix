@@ -2,6 +2,9 @@
 # User-specific configuration for nicho
 { config, lib, pkgs, ... }:
 
+  imports = [ ../modules/editors/grokbuild.nix ];
+  modules.editors.grokbuild.enable = true;
+
 {
   home-manager.users.nicho = { pkgs, ... }: {
     # User environment variables
