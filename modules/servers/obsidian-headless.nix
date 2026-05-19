@@ -3,9 +3,9 @@
 let
   cfg = config.modules.servers.obsidian-headless;
 
-  # Practical wrapper using npx until we can lock a specific version with buildNpmPackage
+  # Wrapper that correctly invokes obsidian-headless via npx
   obsidianHeadless = pkgs.writeShellScriptBin "ob" ''
-    exec ${pkgs.nodejs}/bin/npx --yes obsidian-headless@latest ob "$@"
+    exec ${pkgs.nodejs}/bin/npx --yes obsidian-headless ob "$@"
   '';
 in
 {
@@ -15,8 +15,6 @@ in
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ obsidianHeadless ];
-
-    # Make the `ob` command available to the hermes user (the agent)
     users.users.hermes.packages = [ obsidianHeadless ];
   };
 }
