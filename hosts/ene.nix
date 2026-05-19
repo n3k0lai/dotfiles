@@ -13,6 +13,8 @@
     ../modules/servers/minecraft.nix
     # IRC server (Ergo) — Chatterino + OpenClaw agent mesh
     ../modules/servers/irc.nix
+    # Obsidian Headless Sync (for vault access + future MCP)
+    ../modules/servers/obsidian-headless.nix
     # TODO: enable when ready
     # ../modules/servers/git.nix
     # ../modules/servers/api.nix
@@ -24,7 +26,12 @@
 
   modules.servers.hermes.enable = true;
   modules.editors.grokbuild.enable = true;
+  modules.servers.obsidian-headless.enable = true;
   # modules.editors.opencode.enable = true;
+
+  environment.systemPackages = with pkgs; [
+    obsidian
+  ];
 
   networking.firewall = {
     enable = true;
