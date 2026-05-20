@@ -3,8 +3,9 @@
 let
   cfg = config.modules.servers.obsidian-headless;
 
-  # Wrapper that correctly invokes obsidian-headless via npx
+  # Wrapper that forces obsidian-headless to always operate inside the canonical vault
   obsidianHeadless = pkgs.writeShellScriptBin "ob" ''
+    cd ${config.users.users.hermes.home}/.hermes/workspace/vault && \
     exec ${pkgs.nodejs}/bin/npx --yes obsidian-headless "$@"
   '';
 in
