@@ -5,7 +5,7 @@ let
 
   # Wrapper that correctly invokes obsidian-headless via npx
   obsidianHeadless = pkgs.writeShellScriptBin "ob" ''
-    exec ${pkgs.nodejs}/bin/npx --yes obsidian-headless ob "$@"
+    exec ${pkgs.nodejs}/bin/npx --yes obsidian-headless "$@"
   '';
 in
 {
