@@ -24,6 +24,8 @@ in {
       LIBVA_DRIVER_NAME = "nvidia";
       GBM_BACKEND = "nvidia-drm";
       __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+      WLR_NO_HARDWARE_CURSORS = "1";
+      NVD_BACKEND = "direct";
       XMODIFIERS = "@im=fcitx";  # For XWayland apps
       SDL_IM_MODULE = "fcitx";
       GLFW_IM_MODULE = "ibus";  # Fallback for some games
