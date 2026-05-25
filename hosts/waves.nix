@@ -180,6 +180,10 @@ in
         if type -q fzf
           ${pkgs.fzf}/bin/fzf --fish | source
         end
+        # Pre-bake the chinese fortune file path so fish_greeting.fish has instant
+        # access with zero runtime /nix/store search. Critical for fast terminal
+        # startup on darwin (where the awk raw parse is required).
+        set -g CHINESE_FORTUNE_FILE "${fortune-zh-module.fortune-with-zh}/share/games/fortunes/chinese"
       '';
     };
 
