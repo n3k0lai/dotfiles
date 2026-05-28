@@ -50,7 +50,7 @@ in
     };
     stateDir = lib.mkOption {
       type = lib.types.path;
-      default = "/var/lib/hermes/.hermes/workspace";
+      default = "/var/lib/hermes";
       description = "State directory for Hermes";
     };
     workingDirectory = lib.mkOption {
@@ -158,15 +158,6 @@ in
         # Using xai-oauth "supergrok" credential (SuperGrok Heavy)
       };
       toolsets = [ "all" ];
-
-      # Explicit tool configuration (required for NixOS-managed Hermes)
-      tools = {
-        x_search = {
-          enabled = true;
-          provider = "xai-oauth";  # Uses SuperGrok OAuth
-        };
-      };
-
       max_turns = 100;
       memory = { memory_enabled = true; user_profile_enabled = true; };
       browser = {
