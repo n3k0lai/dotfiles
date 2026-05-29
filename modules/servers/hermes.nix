@@ -55,7 +55,7 @@ in
     };
     workingDirectory = lib.mkOption {
       type = lib.types.path;
-      default = "/var/lib/hermes";
+      default = "/var/lib/hermes/.hermes/workspace";
       description = "Working directory for Hermes";
     };
     extraPackages = lib.mkOption {
