@@ -1,4 +1,7 @@
 # a windows RDP wrapper
+# Uses sdl-freerdp (native Wayland via SDL3) instead of xfreerdp (XWayland) for
+# better stability on NVIDIA + Hyprland. The title: strings are matched by
+# windowrulev2 rules in hyprland.conf to auto-place + borderless the RDP windows.
 function werk --argument-names cmd
     # Force universal vars to be inherited even in non-login shells
     if not set -q WORK_IP
@@ -24,13 +27,13 @@ function werk --argument-names cmd
     switch "$cmd"
         # case for fullscreen (legacy behavior)
         case -l
-            xfreerdp /w:2560 /h:1440 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-fullscreen $clip_opts &
+            sdl-freerdp /w:2560 /h:1440 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-fullscreen $clip_opts &
         # case for small resolution
         case -s
-            xfreerdp /w:1920 /h:1080 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-small $clip_opts &
+            sdl-freerdp /w:1920 /h:1080 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-small $clip_opts &
         # default: respect hyprland tiling (no fixed size)
         case "*"
-            xfreerdp /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-tiled $clip_opts &
+            sdl-freerdp /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-tiled $clip_opts &
     end
     
     disown
