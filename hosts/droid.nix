@@ -39,6 +39,9 @@
 
     # node (for claude code)
     nodejs
+
+    # mosh client (for connecting to ene/rook from the phone)
+    mosh
   ];
 
   nix.extraOptions = ''

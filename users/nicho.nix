@@ -59,7 +59,6 @@
       gnutar
       gzip
       xz
-      mosh
       mullvad-vpn
     ];
 

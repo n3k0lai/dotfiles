@@ -133,6 +133,7 @@ in
     curl
     wget
     openssh
+    mosh
   ];
 
   # ── home-manager ───────────────────────────────────────

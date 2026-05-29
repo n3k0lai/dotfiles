@@ -246,6 +246,7 @@ in
     kitty
     ranger
     fastfetch
+    mosh
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
