@@ -16,7 +16,7 @@ with lib;
       zoom-us
       
       # Remote access
-      freerdp  # For werk command to connect to Windows PC
+      freerdp  # Provides sdl-freerdp (used by the `werk` fish function for native Wayland RDP), plus xfreerdp/wlfreerdp
       
       # Security
       yubikey-manager
