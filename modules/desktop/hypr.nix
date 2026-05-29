@@ -18,6 +18,9 @@ in {
       withUWSM = false;  # Disable UWSM systemd session wrapper (greetd launches Hyprland directly)
     };
 
+    # Required for hyprlock password authentication to work via PAM.
+    security.pam.services.hyprlock.enable = true;
+
     # Environment variables for Wayland/Hyprland
     environment.sessionVariables = {
       NIXOS_OZONE_WL = "1";
@@ -29,6 +32,11 @@ in {
       XMODIFIERS = "@im=fcitx";  # For XWayland apps
       SDL_IM_MODULE = "fcitx";
       GLFW_IM_MODULE = "ibus";  # Fallback for some games
+
+      # Firefox + NVIDIA + Wayland stability
+      # MOZ_DISABLE_RDD_SANDBOX=1 avoids RDD sandbox + VA-API presentation hangs
+      # that manifest as frozen fullscreen YouTube/video windows (common on this stack).
+      MOZ_DISABLE_RDD_SANDBOX = "1";
     };
     
     # Polkit authentication agent (needed for pkexec, e.g. SteamVR setcap)
