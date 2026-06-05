@@ -1,8 +1,8 @@
 # Hermes Agent — Nous Research autonomous agent
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, hermes-agent ? null, ... }:
 
 let
-  nodePkg = pkgs.nodejs_22;
+  nodePkg = pkgs.nodejs_24;
   cfg = config.modules.servers.hermes;
   agentBrowserFix = pkgs.writeShellScriptBin "hermes-browser-fix" ''
     set -e
@@ -150,6 +150,18 @@ in
   # Hermes Agent — Nous Research autonomous agent
   services.hermes-agent = {
     enable = true;
+    # Force Node 24 (instead of hermes-agent's internal nodejs_22 pin) so that
+    # npm install for ui-tui + web succeeds. The monorepo lockfile pulls in
+    # @icons-pack/react-simple-icons@13.13.0 (via @nous-research/ui) which
+    # declares engines: { node: ">=24", pnpm: ">=10" }.
+    package = lib.mkForce (
+      if hermes-agent != null then
+        hermes-agent.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
+          nodejs_22 = pkgs.nodejs_24;
+        }
+      else
+        throw "hermes-agent input must be passed as specialArg (see flake.nix) to allow nodejs override for builds"
+    );
     settings = {
       model = {
         # Primary: Nous Portal (Qwen 3.6 Plus — free for limited time)

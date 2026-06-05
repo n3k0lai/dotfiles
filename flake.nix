@@ -66,6 +66,7 @@
       # DigitalOcean server
       ene = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+        specialArgs = { inherit hermes-agent; };
         modules = [
           ./hosts/ene-hardware.nix
           ./configuration-server.nix
@@ -95,6 +96,7 @@
       # Work agent server (formerly Chat)
       rook = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+        specialArgs = { inherit hermes-agent; };
         modules = [
           ./hosts/rook-hardware.nix
           ./configuration-server.nix
