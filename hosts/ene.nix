@@ -24,6 +24,8 @@
   # Machine hostname
   networking.hostName = "ene";
 
+  nix.settings.build-dir = "/var/tmp/nix-build";
+
   modules.servers.hermes.enable = true;
   modules.editors.grokbuild.enable = true;
   modules.servers.obsidian-headless.enable = true;
@@ -79,11 +81,12 @@
       ${pkgs.iproute2}/bin/ip link set "$INTERFACE" up
       ${pkgs.iproute2}/bin/ip route add default via "$GATEWAY" dev "$INTERFACE" onlink || true
 
-      # Assign floating IP if one is active (queried from DO metadata)
+      # Configure anchor IP for Reserved IP (DigitalOcean requirement)
+      # See: https://docs.digitalocean.com/products/networking/reserved-ips/how-to/outbound-traffic/
       FLOATING_IP=$(${pkgs.curl}/bin/curl -sf http://169.254.169.254/metadata/v1/floating_ip/ipv4/ip_address || true)
       if [ -n "$FLOATING_IP" ]; then
-        echo "Assigning floating IP: $FLOATING_IP"
-        ${pkgs.iproute2}/bin/ip addr add "$FLOATING_IP"/32 dev "$INTERFACE"
+        echo "Reserved IP $FLOATING_IP active — configuring anchor IP 10.10.0.6/16"
+        ${pkgs.iproute2}/bin/ip addr add 10.10.0.6/16 dev "$INTERFACE" || true
         # Loose mode rp_filter for proper floating IP routing
         echo 2 > /proc/sys/net/ipv4/conf/all/rp_filter
         echo 2 > /proc/sys/net/ipv4/conf/"$INTERFACE"/rp_filter
