@@ -9,16 +9,24 @@ let
     set -e
     INTERPRETER="${pkgs.glibc}/lib/ld-linux-x86-64.so.2"
 
-    # Patch any agent-browser binaries found in hermes npx cache
-    if [ -d /var/lib/hermes/.npm/_npx ]; then
-      find /var/lib/hermes/.npm/_npx -name "agent-browser-linux-x64" -type f 2>/dev/null | while read -r binary; do
-        current_interp=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$binary" 2>/dev/null || true)
-        if [ "$current_interp" != "$INTERPRETER" ]; then
-          ${pkgs.patchelf}/bin/patchelf --set-interpreter "$INTERPRETER" "$binary"
-          echo "Patched: $binary"
-        fi
-      done
-    fi
+    # Patch any agent-browser binaries found in hermes npx / global npm caches.
+    # Covers both npx temporary installs and `npm install -g` (which land in
+    # .npm-global or .npm caches depending on prefix).
+    for base in \
+      /var/lib/hermes/.npm/_npx \
+      /var/lib/hermes/.npm-global \
+      /var/lib/hermes/.npm \
+      /var/lib/hermes/.local; do
+      if [ -d "$base" ]; then
+        find "$base" -name "agent-browser-linux-x64" -type f 2>/dev/null | while read -r binary; do
+          current_interp=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$binary" 2>/dev/null || true)
+          if [ "$current_interp" != "$INTERPRETER" ]; then
+            ${pkgs.patchelf}/bin/patchelf --set-interpreter "$INTERPRETER" "$binary"
+            echo "Patched: $binary"
+          fi
+        done
+      fi
+    done
 
     # Ensure agent-browser config points to NixOS chromium
     mkdir -p /var/lib/hermes/.agent-browser
@@ -64,6 +72,35 @@ let
       echo "[hermes-grok-provision] Grok CLI ready at $GROK_BIN"
     else
       echo "[hermes-grok-provision] Warning: grok still not present after attempt. The grok-build delegation agents will fail until it is installed and logged in."
+    fi
+  '';
+
+  # Ensure the agent-browser CLI is installed for the hermes user.
+  # This is required even for cloud browser providers (browser-use, etc.) because
+  # the browser tool surface and the Nous Tool Gateway status logic gate
+  # "browser automation" selection/availability on the presence of the agent-browser
+  # CLI (see _has_agent_browser and _resolve_browser_feature_state).
+  # The existing hermes-browser-fix activation will then patch the linux-x64 binary
+  # it finds (in .npm/_npx or global caches).
+  agentBrowserProvision = pkgs.writeShellScriptBin "hermes-agent-browser-provision" ''
+    set -e
+    export HOME=/var/lib/hermes
+    export USER=hermes
+
+    if ! command -v agent-browser >/dev/null 2>&1; then
+      echo "[hermes-agent-browser-provision] agent-browser CLI not found for hermes user; installing via npm..."
+      # Use a user-local prefix so it stays owned by hermes and doesn't require root.
+      export npm_config_prefix="$HOME/.npm-global"
+      mkdir -p "$npm_config_prefix"
+      npm install -g agent-browser 2>&1 | tail -5 || true
+    fi
+
+    # Ensure the bins are owned correctly.
+    if [ -d "$HOME/.npm-global" ]; then
+      chown -R hermes:hermes "$HOME/.npm-global" 2>/dev/null || true
+    fi
+    if [ -d "$HOME/.npm" ]; then
+      chown -R hermes:hermes "$HOME/.npm" 2>/dev/null || true
     fi
   '';
 in
@@ -136,6 +173,27 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = "${agentBrowserFix}/bin/hermes-browser-fix";
+      User = "root";
+    };
+  };
+
+  # Ensure agent-browser CLI is present (required for browser tool surface and for
+  # the "Browser automation" category to be marked selected in the Nous Tool Gateway
+  # status, even when using cloud_provider=browser-use + gateway).
+  system.activationScripts.hermes-agent-browser-provision = lib.stringAfter [ "users" "groups" "hermes-browser-fix" ] ''
+    ${agentBrowserProvision}/bin/hermes-agent-browser-provision
+  '';
+
+  # Also ensure it after service (re)start.
+  systemd.services.hermes-agent-browser-provision = {
+    description = "Install agent-browser CLI for hermes user (for cloud/local browser providers and gateway selection)";
+    after = [ "hermes-agent.service" ];
+    wants = [ "hermes-agent.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${agentBrowserProvision}/bin/hermes-agent-browser-provision";
       User = "root";
     };
   };
@@ -367,6 +425,22 @@ in
         echo "Try: sudo -u hermes HOME=/var/lib/hermes grok-update && sudo -u hermes HOME=/var/lib/hermes grok login" >&2
         exit 127
       '')
+      # Wrapper so `agent-browser` (and thus _has_agent_browser() / browser feature state)
+      # is visible to the gateway process even if installed via the user-local npm prefix.
+      (pkgs.writeShellScriptBin "agent-browser" ''
+        set -euo pipefail
+        for cand in \
+          "/var/lib/hermes/.npm-global/bin/agent-browser" \
+          "/var/lib/hermes/.local/bin/agent-browser" \
+          "/var/lib/hermes/.npm/_npx/$(ls /var/lib/hermes/.npm/_npx 2>/dev/null | head -1)/agent-browser" \
+          "$(command -v agent-browser 2>/dev/null || true)"; do
+          if [ -x "$cand" ]; then
+            exec "$cand" "$@"
+          fi
+        done
+        echo "agent-browser not found (provision should have installed it)." >&2
+        exit 127
+      '')
     ];
   };
 
@@ -406,6 +480,20 @@ in
       pkgs.coreutils
       pkgs.git
       grokProvision
+      agentBrowserProvision
+      (pkgs.writeShellScriptBin "agent-browser" ''
+        set -euo pipefail
+        for cand in \
+          "/var/lib/hermes/.npm-global/bin/agent-browser" \
+          "/var/lib/hermes/.local/bin/agent-browser" \
+          "$(command -v agent-browser 2>/dev/null || true)"; do
+          if [ -x "$cand" ]; then
+            exec "$cand" "$@"
+          fi
+        done
+        echo "agent-browser not found." >&2
+        exit 127
+      '')
     ] ++ cfg.extraPackages;
   };
 
