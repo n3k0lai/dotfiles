@@ -4,6 +4,7 @@
 let
   nodePkg = pkgs.nodejs_24;
   cfg = config.modules.servers.hermes;
+
   agentBrowserFix = pkgs.writeShellScriptBin "hermes-browser-fix" ''
     set -e
     INTERPRETER="${pkgs.glibc}/lib/ld-linux-x86-64.so.2"
@@ -28,6 +29,42 @@ let
 
     # Fix ownership
     chown -R hermes:users /var/lib/hermes/.agent-browser 2>/dev/null || true
+  '';
+
+  # Provision the official x.ai Grok CLI (grok + agent) for the hermes user so that
+  # delegation.agents.grok-build* (which shell out to "grok") can actually find it.
+  # The CLI is installed to $HOME/.grok/bin (with HOME=/var/lib/hermes for the service user).
+  # Auth is separate from Hermes' xai-oauth (it uses its own ~/.grok/auth.json); run
+  # `sudo -u hermes HOME=/var/lib/hermes grok login` (or grok-update first) if needed.
+  # We re-use the grok-update script from grokbuild when available.
+  grokProvision = pkgs.writeShellScriptBin "hermes-grok-provision" ''
+    set -e
+    export HOME=/var/lib/hermes
+    export USER=hermes
+
+    GROK_BIN="$HOME/.grok/bin/grok"
+    if [ ! -x "$GROK_BIN" ]; then
+      echo "[hermes-grok-provision] Grok CLI not found for hermes user; installing..."
+      if command -v grok-update >/dev/null 2>&1; then
+        # grok-update respects GROK_CHANNEL and existing auth.json
+        env HOME=$HOME USER=$USER grok-update || true
+      else
+        # Fallback to the official installer
+        ${pkgs.curl}/bin/curl -fsSL https://x.ai/cli/install.sh | \
+          SHELL=/bin/bash GROK_CHANNEL="''${GROK_CHANNEL:-stable}" bash || true
+      fi
+    fi
+
+    # Ensure correct ownership (the install may have run as root in some flows)
+    if [ -d "$HOME/.grok" ]; then
+      chown -R hermes:hermes "$HOME/.grok" 2>/dev/null || true
+    fi
+
+    if [ -x "$GROK_BIN" ]; then
+      echo "[hermes-grok-provision] Grok CLI ready at $GROK_BIN"
+    else
+      echo "[hermes-grok-provision] Warning: grok still not present after attempt. The grok-build delegation agents will fail until it is installed and logged in."
+    fi
   '';
 in
 {
@@ -56,7 +93,12 @@ in
     workingDirectory = lib.mkOption {
       type = lib.types.path;
       default = "/var/lib/hermes/.hermes/workspace";
-      description = "Working directory for Hermes";
+      description = "Working directory for the Hermes gateway/dashboard itself";
+    };
+    delegationWorkdir = lib.mkOption {
+      type = lib.types.path;
+      default = "/var/lib/hermes/.hermes/workspace";
+      description = "Working directory passed to delegated external agents (e.g. grok-build sub-processes). Unified with workingDirectory under .hermes/workspace.";
     };
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
@@ -164,60 +206,82 @@ in
     );
     settings = {
       model = {
-        # Primary: Nous Portal (Qwen 3.6 Plus — free for limited time)
+        # SuperGrok (xAI OAuth) — high-tier subscription (tier 5 / heavy).
+        # This gives the agent direct access to the strongest Grok models + higher
+        # limits via the stored xai-oauth credential (see hermes auth / auth.json).
+        # x_search (X/Twitter) and other xAI direct tools auto-prefer this path.
         provider = "xai-oauth";
         default = "grok-4.3";
-        # Using xai-oauth "supergrok" credential (SuperGrok Heavy)
       };
       toolsets = [ "all" ];
       max_turns = 100;
       memory = { memory_enabled = true; user_profile_enabled = true; };
+      # Bias the main agent (and many sub-flows) toward deeper reasoning by default.
+      # The supergrok subscription supports the higher effort levels well.
+      # Valid: none|minimal|low|medium|high|xhigh. Individual delegation agents
+      # below pass their own --effort to the external grok CLI.
+      agent = {
+        reasoning_effort = "high";
+      };
+      # Tool Gateway (Nous subscriber passthrough) for web + browser cloud tools.
+      # Without these, the agent falls back to suggesting `hermes tools` setup
+      # (bad advice on Nix) or fails to load SDKs.
+      web = {
+        use_gateway = true;
+        # Explicit backend is optional; use_gateway + paid Nous auth is sufficient
+        # to route web_search/web_extract through the managed firecrawl gateway.
+      };
       browser = {
         cloud_provider = "browser-use";
         use_gateway = true;
       };
-      # Grok Build delegation (preferred)
+      # Grok Build delegation (preferred for implementation-heavy work).
+      # These spawn the official x.ai "grok" CLI (the same one you get from grok-update)
+      # as a sub-agent. The CLI uses its own auth (~/.grok/auth.json) — ideally the
+      # same supergrok account so the delegated work also benefits from the heavy tier.
+      # The wrapper we inject into the hermes-agent unit PATH (below) makes "grok"
+      # resolvable even though the real binary lives in the hermes user's home.
       delegation = {
         enabled = true;
         agents = {
           # Default general-purpose Grok Build agent
           grok-build = {
             command = "grok";
-            workdir = "/var/lib/hermes/workspace";
+            workdir = cfg.delegationWorkdir;
           };
 
           # Quick iteration / low effort
           "grok-build-quick" = {
             command = "grok";
-            workdir = "/var/lib/hermes/workspace";
+            workdir = cfg.delegationWorkdir;
             args = [ "--effort" "1" ];
           };
 
           # Balanced implementation with review (recommended)
           "grok-build-implement" = {
             command = "grok";
-            workdir = "/var/lib/hermes/workspace";
+            workdir = cfg.delegationWorkdir;
             args = [ "--effort" "3" ];
           };
 
           # High rigor implementation (complex or sensitive work)
           "grok-build-thorough" = {
             command = "grok";
-            workdir = "/var/lib/hermes/workspace";
+            workdir = cfg.delegationWorkdir;
             args = [ "--effort" "5" ];
           };
 
           # Specialized code-focused agent
           "grok-build-code" = {
             command = "grok";
-            workdir = "/var/lib/hermes/workspace";
+            workdir = cfg.delegationWorkdir;
             args = [ "--agent" "code" "--effort" "3" ];
           };
 
           # Research / exploration focused
           "grok-build-research" = {
             command = "grok";
-            workdir = "/var/lib/hermes/workspace";
+            workdir = cfg.delegationWorkdir;
             args = [ "--agent" "research" ];
           };
         };
@@ -231,8 +295,73 @@ in
       patchelf
       git
     ];
-    extraDependencyGroups = [ "messaging" "edge-tts" ];
+    # Dependency groups for optional backends that are lazily imported at runtime.
+    # The hermes-agent package uses a sealed venv; missing groups cause lazy_deps.py
+    # "search.firecrawl" (and similar) to attempt `pip install` which fails on Nix,
+    # surfacing as "web tools are not configured" + unhelpful update advice even when
+    # the managed Tool Gateway (Nous) auth + use_gateway are ready.
+    extraDependencyGroups = [
+      "messaging"
+      "edge-tts"
+      "firecrawl" # web_search + web_extract via Tool Gateway (or direct)
+      # Add "fal" for image/video generation gateway, "exa"/"parallel-web" for other search
+      # backends, "modal"/"daytona" for sandboxed code execution delegation, etc. as needed.
+    ];
   };
+
+  # Ensure the (unified) workspace exists and is owned by the hermes user.
+  # Both the gateway/dashboard (workingDirectory) and delegated grok-build agents
+  # (delegationWorkdir) now use .hermes/workspace to avoid drift.
+  system.activationScripts.hermes-workspace = lib.stringAfter [ "users" "groups" ] ''
+    mkdir -p "${cfg.delegationWorkdir}"
+    chown hermes:hermes "${cfg.delegationWorkdir}" 2>/dev/null || true
+    chmod 2770 "${cfg.delegationWorkdir}" 2>/dev/null || true
+  '';
+
+  # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" ] ''
+    ${grokProvision}/bin/hermes-grok-provision
+  '';
+
+  # Also run it automatically when the hermes gateway (agent) starts/restarts.
+  systemd.services.hermes-agent-grok-provision = {
+    description = "Ensure x.ai Grok CLI is installed for hermes user (for grok-build delegation)";
+    after = [ "hermes-agent.service" ];
+    wants = [ "hermes-agent.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${grokProvision}/bin/hermes-grok-provision";
+      User = "root";
+    };
+  };
+
+  # Make the external "grok" command (used by all the grok-build-* delegation agents)
+  # resolvable inside the hermes-agent gateway process. The real binary lives in the
+  # hermes user's home after grok-update / the provision script above.
+  # This wrapper gives a clear error + hint if it is still missing.
+  systemd.services.hermes-agent = {
+    serviceConfig = {
+      # Unify the parent gateway process cwd into .hermes/workspace as well
+      # (delegation workdir controls the chdir for child grok processes).
+      WorkingDirectory = lib.mkForce cfg.workingDirectory;
+    };
+    path = lib.mkAfter [
+      (pkgs.writeShellScriptBin "grok" ''
+        set -euo pipefail
+        GROK_BIN="/var/lib/hermes/.grok/bin/grok"
+        if [ -x "$GROK_BIN" ]; then
+          exec "$GROK_BIN" "$@"
+        fi
+        echo "grok CLI not found at $GROK_BIN for the hermes service user." >&2
+        echo "It is normally installed by the hermes-grok-provision activation / service." >&2
+        echo "Try: sudo -u hermes HOME=/var/lib/hermes grok-update && sudo -u hermes HOME=/var/lib/hermes grok login" >&2
+        exit 127
+      '')
+    ];
+  };
+
 
   # Hermes dashboard — web UI for managing agent config, sessions, logs
   systemd.services.hermes-dashboard = {
@@ -268,6 +397,7 @@ in
       pkgs.bash
       pkgs.coreutils
       pkgs.git
+      grokProvision
     ] ++ cfg.extraPackages;
   };
 
