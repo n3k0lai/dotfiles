@@ -224,12 +224,12 @@ in
         reasoning_effort = "high";
       };
       # Tool Gateway (Nous subscriber passthrough) for web + browser cloud tools.
-      # Without these, the agent falls back to suggesting `hermes tools` setup
-      # (bad advice on Nix) or fails to load SDKs.
+      # These must be explicitly selected via backend/cloud_provider so that
+      # `hermes tools` / status / agent see "Web" and "Browser automation" as
+      # selected (use_gateway alone is not enough for the selection status).
       web = {
+        backend = "firecrawl";
         use_gateway = true;
-        # Explicit backend is optional; use_gateway + paid Nous auth is sufficient
-        # to route web_search/web_extract through the managed firecrawl gateway.
       };
       browser = {
         cloud_provider = "browser-use";
