@@ -390,13 +390,27 @@ in
       chromium
       patchelf
       git
+      python312
     ];
+    mcpServers.nous = {
+      command = "${cfg.delegationWorkdir}/mcp/nous/.venv/bin/python";
+      args = [ "${cfg.delegationWorkdir}/mcp/nous/server.py" ];
+      env = {
+        NOUS_DOCS_DB = "${cfg.delegationWorkdir}/mcp/nous/data/docs.db";
+        NOUS_DOCS_ROOT = "${cfg.delegationWorkdir}/mcp/nous/docs-source/website/docs";
+      };
+      tools = {
+        include = [ "search_docs" "get_doc_page" "list_doc_sections" ];
+      };
+      timeout = 60;
+    };
     # Dependency groups for optional backends that are lazily imported at runtime.
     # The hermes-agent package uses a sealed venv; missing groups cause lazy_deps.py
     # "search.firecrawl" (and similar) to attempt `pip install` which fails on Nix,
     # surfacing as "web tools are not configured" + unhelpful update advice even when
     # the managed Tool Gateway (Nous) auth + use_gateway are ready.
     extraDependencyGroups = [
+      "mcp"
       "messaging"
       "edge-tts"
       "firecrawl" # web_search + web_extract via Tool Gateway (or direct)
@@ -471,8 +485,20 @@ in
     fi
   '';
 
+  # Provision local Hermes Agent docs MCP (workspace/mcp/nous): venv + index on first boot.
+  system.activationScripts.hermes-nous-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" ] ''
+    NOUS_DIR="${cfg.delegationWorkdir}/mcp/nous"
+    if [ -f "$NOUS_DIR/install.sh" ]; then
+      chmod +x "$NOUS_DIR/install.sh" "$NOUS_DIR/update-docs.sh" 2>/dev/null || true
+      if [ ! -d "$NOUS_DIR/.venv" ] || [ ! -f "$NOUS_DIR/data/docs.db" ]; then
+        su -s /bin/sh hermes -c "cd '$NOUS_DIR' && ./install.sh" 2>&1 | tail -20 || \
+          echo "hermes-nous-mcp: install failed — run workspace/mcp/nous/update-docs.sh as hermes" >&2
+      fi
+    fi
+  '';
+
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 
