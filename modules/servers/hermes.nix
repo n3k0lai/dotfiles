@@ -235,6 +235,14 @@ in
         cloud_provider = "browser-use";
         use_gateway = true;
       };
+      # Explicitly opt the browser category into the managed Nous Tool Gateway.
+      # This is what makes "Browser automation" appear as "selected" in the
+      # Nous Tool Gateway status (separate from cloud_provider + use_gateway
+      # which control the actual routing). Web used the `backend` key for the
+      # same purpose.
+      tool_gateway = {
+        browser = "gateway";
+      };
       # Grok Build delegation (preferred for implementation-heavy work).
       # These spawn the official x.ai "grok" CLI (the same one you get from grok-update)
       # as a sub-agent. The CLI uses its own auth (~/.grok/auth.json) — ideally the
