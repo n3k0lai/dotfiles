@@ -1,10 +1,12 @@
 # ene - Build/deploy the Ene server configuration
 # On kiss: builds locally, deploys remotely to ene via SSH
-# On ene: builds and activates locally
+# On ene: hermes validates (build); nicho activates (switch/test) from shared tree
 function ene --argument-names cmd
     set -l hostname (uname -n)
-    set -l flake_dir (test -n "$ENE_FLAKE_DIR"; and echo "$ENE_FLAKE_DIR"; or echo "$HOME/dotfiles")
     set -l target "ene"
+    set -l ene_flake "/var/lib/hermes/dotfiles"
+    set -l flake_dir (test -n "$ENE_FLAKE_DIR"; and echo "$ENE_FLAKE_DIR"; or echo "$HOME/dotfiles")
+    set -l current_user (id -un)
 
     # Determine build mode based on hostname
     set -l rebuild_cmd
@@ -12,7 +14,16 @@ function ene --argument-names cmd
         case "kiss"
             set rebuild_cmd "nixos-rebuild --flake $flake_dir#$target --target-host nicho@$target --use-remote-sudo"
         case "ene"
-            set rebuild_cmd "sudo nixos-rebuild --flake $flake_dir#$target"
+            if test "$current_user" = "nicho"
+                set flake_dir $ene_flake
+                set rebuild_cmd "sudo nixos-rebuild --flake $flake_dir#$target"
+            else if command -q sudo
+                and sudo -n true 2>/dev/null
+                set flake_dir $ene_flake
+                set rebuild_cmd "sudo nixos-rebuild --flake $flake_dir#$target"
+            else
+                set rebuild_cmd "nixos-rebuild --flake $flake_dir#$target"
+            end
         case "*"
             if test -n "$ENE_FLAKE_DIR"
                 echo "Unknown host '$hostname'. Using local rebuild because ENE_FLAKE_DIR is set."
@@ -22,6 +33,21 @@ function ene --argument-names cmd
                 echo "Set ENE_FLAKE_DIR to force a local rebuild, or run from kiss/ene."
                 return 1
             end
+    end
+
+    set -l needs_sudo false
+    switch "$cmd"
+        case test t switch s
+            set needs_sudo true
+    end
+
+    if test "$hostname" = "ene"
+        and test "$needs_sudo" = true
+        and test "$current_user" != "nicho"
+        and not sudo -n true 2>/dev/null
+        echo "ene: '$cmd' needs root on ene. Run as nicho:"
+        echo "  sudo nixos-rebuild $cmd --flake $ene_flake#$target"
+        return 1
     end
 
     switch "$cmd"
@@ -51,11 +77,16 @@ function ene --argument-names cmd
             echo "  ene update|u    update flake inputs"
             echo ""
             echo "  host:   $hostname"
+            echo "  user:   $current_user"
             echo "  target: #ene → flake: $flake_dir"
             if test "$hostname" = "kiss"
                 echo "  mode:   remote deploy (kiss → ene)"
             else if test "$hostname" = "ene"
-                echo "  mode:   local rebuild"
+                if test "$current_user" = "nicho"
+                    echo "  mode:   local switch (shared tree: $ene_flake)"
+                else
+                    echo "  mode:   hermes build-only; nicho runs switch on $ene_flake"
+                end
             end
         case "*"
             echo "unknown command: $cmd (try: test, switch, build, diff, update)"
