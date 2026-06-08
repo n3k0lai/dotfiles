@@ -167,6 +167,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # nicho needs group membership to read the canonical dotfiles checkout for
+    # nixos-rebuild switch (hermes edits without sudo; nicho activates).
+    users.users.nicho.extraGroups = lib.mkAfter [ "hermes" ];
+
     # Secrets (decrypted at activation by agenix)
     age.secrets.hermes-env = {
       file = cfg.envFile;
@@ -411,6 +415,14 @@ in
     chown hermes:hermes "${cfg.delegationWorkdir}" 2>/dev/null || true
     chmod 2770 "${cfg.delegationWorkdir}" 2>/dev/null || true
 
+    # Group traverse only: nicho (in hermes group) can reach workspace/dotfiles
+    # without listing other contents under .hermes (secrets, agent state, etc.).
+    HERMES_DIR="${cfg.stateDir}/.hermes"
+    if [ -d "$HERMES_DIR" ]; then
+      chown hermes:hermes "$HERMES_DIR" 2>/dev/null || true
+      chmod 2710 "$HERMES_DIR" 2>/dev/null || true
+    fi
+
     GHOST_WS="${cfg.stateDir}/workspace"
     CANON_WS="${cfg.delegationWorkdir}"
     if [ -e "$GHOST_WS" ] && [ ! -L "$GHOST_WS" ]; then
@@ -434,6 +446,10 @@ in
     DOTFILES_LINK="${cfg.stateDir}/dotfiles"
     mkdir -p "$DOTFILES_CANON"
     chown hermes:hermes "$DOTFILES_CANON" 2>/dev/null || true
+    chmod 2770 "$DOTFILES_CANON" 2>/dev/null || true
+    if [ -d "$DOTFILES_CANON/.git" ]; then
+      su -s /bin/sh hermes -c "git -C '$DOTFILES_CANON' config core.sharedRepository group" 2>/dev/null || true
+    fi
     if [ -e "$DOTFILES_LINK" ] && [ ! -L "$DOTFILES_LINK" ]; then
       if [ -d "$DOTFILES_LINK/.git" ] && [ ! -d "$DOTFILES_CANON/.git" ]; then
         rm -rf "$DOTFILES_CANON"
