@@ -427,6 +427,32 @@ in
         chown -h hermes:hermes "$GHOST_WS" 2>/dev/null || true
       fi
     fi
+
+    # Dotfiles live inside the workspace tree; keep ~/dotfiles as a stable alias
+    # for fish helpers (ene.fish) and nixos-rebuild --flake ~/dotfiles#ene.
+    DOTFILES_CANON="${cfg.delegationWorkdir}/dotfiles"
+    DOTFILES_LINK="${cfg.stateDir}/dotfiles"
+    mkdir -p "$DOTFILES_CANON"
+    chown hermes:hermes "$DOTFILES_CANON" 2>/dev/null || true
+    if [ -e "$DOTFILES_LINK" ] && [ ! -L "$DOTFILES_LINK" ]; then
+      if [ -d "$DOTFILES_LINK/.git" ] && [ ! -d "$DOTFILES_CANON/.git" ]; then
+        rm -rf "$DOTFILES_CANON"
+        mv "$DOTFILES_LINK" "$DOTFILES_CANON"
+      else
+        echo "hermes-workspace: refusing to replace non-symlink $DOTFILES_LINK" >&2
+      fi
+    fi
+    if [ ! -e "$DOTFILES_LINK" ]; then
+      ln -s "$DOTFILES_CANON" "$DOTFILES_LINK"
+      chown -h hermes:hermes "$DOTFILES_LINK" 2>/dev/null || true
+    elif [ -L "$DOTFILES_LINK" ]; then
+      CURRENT_DF=$(readlink "$DOTFILES_LINK" || true)
+      if [ "$CURRENT_DF" != "$DOTFILES_CANON" ]; then
+        rm -f "$DOTFILES_LINK"
+        ln -s "$DOTFILES_CANON" "$DOTFILES_LINK"
+        chown -h hermes:hermes "$DOTFILES_LINK" 2>/dev/null || true
+      fi
+    fi
   '';
 
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
