@@ -84,24 +84,46 @@ let
   # it finds (in .npm/_npx or global caches).
   agentBrowserProvision = pkgs.writeShellScriptBin "hermes-agent-browser-provision" ''
     set -e
-    export HOME=/var/lib/hermes
-    export USER=hermes
+    # Run the install as the hermes user so npm prefix and ownership are correct.
+    ${pkgs.su}/bin/su -l hermes -c '
+      export HOME=/var/lib/hermes
+      export USER=hermes
+      if ! command -v agent-browser >/dev/null 2>&1; then
+        echo "[hermes-agent-browser-provision] agent-browser CLI not found for hermes user; installing via npm..."
+        export npm_config_prefix="$HOME/.npm-global"
+        mkdir -p "$npm_config_prefix"
+        npm install -g agent-browser 2>&1 | tail -5 || true
+      fi
+      # Ensure bins owned.
+      if [ -d "$HOME/.npm-global" ]; then
+        chown -R hermes:hermes "$HOME/.npm-global" 2>/dev/null || true
+      fi
+      if [ -d "$HOME/.npm" ]; then
+        chown -R hermes:hermes "$HOME/.npm" 2>/dev/null || true
+      fi
+      # Add to PATH for the user (for interactive hermes status etc.)
+      if ! grep -q ".npm-global/bin" "$HOME/.profile" 2>/dev/null; then
+        echo "export PATH=\"\$HOME/.npm-global/bin:\$PATH\"" >> "$HOME/.profile"
+      fi
+    ' || true
+  '';
 
-    if ! command -v agent-browser >/dev/null 2>&1; then
-      echo "[hermes-agent-browser-provision] agent-browser CLI not found for hermes user; installing via npm..."
-      # Use a user-local prefix so it stays owned by hermes and doesn't require root.
-      export npm_config_prefix="$HOME/.npm-global"
-      mkdir -p "$npm_config_prefix"
-      npm install -g agent-browser 2>&1 | tail -5 || true
-    fi
-
-    # Ensure the bins are owned correctly.
-    if [ -d "$HOME/.npm-global" ]; then
-      chown -R hermes:hermes "$HOME/.npm-global" 2>/dev/null || true
-    fi
-    if [ -d "$HOME/.npm" ]; then
-      chown -R hermes:hermes "$HOME/.npm" 2>/dev/null || true
-    fi
+  # Static wrapper so which("agent-browser") succeeds for hermes user commands
+  # (interactive hermes status, doctor, etc.) and for the gateway process.
+  # It delegates to the user-installed location (populated by the provision).
+  agentBrowserWrapper = pkgs.writeShellScriptBin "agent-browser" ''
+    set -euo pipefail
+    for cand in \
+      "/var/lib/hermes/.npm-global/bin/agent-browser" \
+      "/var/lib/hermes/.local/bin/agent-browser" \
+      "/var/lib/hermes/.npm/_npx/$(ls /var/lib/hermes/.npm/_npx 2>/dev/null | head -1 2>/dev/null || echo 'dummy')/agent-browser" \
+      "$(command -v agent-browser 2>/dev/null || true)"; do
+      if [ -x "$cand" ]; then
+        exec "$cand" "$@"
+      fi
+    done
+    echo "agent-browser not found (the provision script should install it on activation)." >&2
+    exit 127
   '';
 in
 {
@@ -245,6 +267,10 @@ in
     libxml2
     libxslt
     sqlite
+    # The wrapper makes `agent-browser` appear in the hermes user's profile PATH
+    # so that `hermes status` / doctor etc. (run as hermes) see the CLI for the
+    # browser feature state check.
+    agentBrowserWrapper
   ];
 
   # Hermes Agent — Nous Research autonomous agent
@@ -425,22 +451,7 @@ in
         echo "Try: sudo -u hermes HOME=/var/lib/hermes grok-update && sudo -u hermes HOME=/var/lib/hermes grok login" >&2
         exit 127
       '')
-      # Wrapper so `agent-browser` (and thus _has_agent_browser() / browser feature state)
-      # is visible to the gateway process even if installed via the user-local npm prefix.
-      (pkgs.writeShellScriptBin "agent-browser" ''
-        set -euo pipefail
-        for cand in \
-          "/var/lib/hermes/.npm-global/bin/agent-browser" \
-          "/var/lib/hermes/.local/bin/agent-browser" \
-          "/var/lib/hermes/.npm/_npx/$(ls /var/lib/hermes/.npm/_npx 2>/dev/null | head -1)/agent-browser" \
-          "$(command -v agent-browser 2>/dev/null || true)"; do
-          if [ -x "$cand" ]; then
-            exec "$cand" "$@"
-          fi
-        done
-        echo "agent-browser not found (provision should have installed it)." >&2
-        exit 127
-      '')
+      agentBrowserWrapper
     ];
   };
 
@@ -481,19 +492,7 @@ in
       pkgs.git
       grokProvision
       agentBrowserProvision
-      (pkgs.writeShellScriptBin "agent-browser" ''
-        set -euo pipefail
-        for cand in \
-          "/var/lib/hermes/.npm-global/bin/agent-browser" \
-          "/var/lib/hermes/.local/bin/agent-browser" \
-          "$(command -v agent-browser 2>/dev/null || true)"; do
-          if [ -x "$cand" ]; then
-            exec "$cand" "$@"
-          fi
-        done
-        echo "agent-browser not found." >&2
-        exit 127
-      '')
+      agentBrowserWrapper
     ] ++ cfg.extraPackages;
   };
 
