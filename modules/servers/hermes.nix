@@ -404,10 +404,29 @@ in
   # Ensure the (unified) workspace exists and is owned by the hermes user.
   # Both the gateway/dashboard (workingDirectory) and delegated grok-build agents
   # (delegationWorkdir) now use .hermes/workspace to avoid drift.
+  # Also symlink ${cfg.stateDir}/workspace -> .hermes/workspace so ~/workspace
+  # (when HOME=${cfg.stateDir}) resolves to the canonical tree, not a ghost copy.
   system.activationScripts.hermes-workspace = lib.stringAfter [ "users" "groups" ] ''
     mkdir -p "${cfg.delegationWorkdir}"
     chown hermes:hermes "${cfg.delegationWorkdir}" 2>/dev/null || true
     chmod 2770 "${cfg.delegationWorkdir}" 2>/dev/null || true
+
+    GHOST_WS="${cfg.stateDir}/workspace"
+    CANON_WS="${cfg.delegationWorkdir}"
+    if [ -e "$GHOST_WS" ] && [ ! -L "$GHOST_WS" ]; then
+      rm -rf "$GHOST_WS"
+    fi
+    if [ ! -e "$GHOST_WS" ]; then
+      ln -s "$CANON_WS" "$GHOST_WS"
+      chown -h hermes:hermes "$GHOST_WS" 2>/dev/null || true
+    elif [ -L "$GHOST_WS" ]; then
+      CURRENT_TARGET=$(readlink "$GHOST_WS" || true)
+      if [ "$CURRENT_TARGET" != "$CANON_WS" ]; then
+        rm -f "$GHOST_WS"
+        ln -s "$CANON_WS" "$GHOST_WS"
+        chown -h hermes:hermes "$GHOST_WS" 2>/dev/null || true
+      fi
+    fi
   '';
 
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
