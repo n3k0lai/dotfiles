@@ -391,6 +391,7 @@ in
       patchelf
       git
       python312
+      tesseract5
     ];
     mcpServers.nous = {
       command = "${cfg.delegationWorkdir}/mcp/nous/.venv/bin/python";
@@ -403,6 +404,25 @@ in
         include = [ "search_docs" "get_doc_page" "list_doc_sections" ];
       };
       timeout = 60;
+    };
+    mcpServers.guns = {
+      command = "${cfg.delegationWorkdir}/mcp/guns/.venv/bin/python";
+      args = [ "${cfg.delegationWorkdir}/mcp/guns/server.py" ];
+      env = {
+        HERMES_GUNS_DB = "${cfg.delegationWorkdir}/mcp/guns/data/manuals.db";
+        HERMES_GUNS_VAULT = "/var/lib/hermes/vault/🚀projects/artemis";
+        HERMES_TESSERACT_CMD = "${pkgs.tesseract5}/bin/tesseract";
+      };
+      tools = {
+        include = [
+          "list_guns"
+          "get_gun_context"
+          "search_manual"
+          "get_manual_page"
+          "list_manual_pages"
+        ];
+      };
+      timeout = 90;
     };
     # Dependency groups for optional backends that are lazily imported at runtime.
     # The hermes-agent package uses a sealed venv; missing groups cause lazy_deps.py
@@ -497,8 +517,20 @@ in
     fi
   '';
 
+  # Provision Artemis gun manuals MCP (workspace/mcp/guns): venv + PDF index on first boot.
+  system.activationScripts.hermes-guns-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" ] ''
+    GUNS_DIR="${cfg.delegationWorkdir}/mcp/guns"
+    if [ -f "$GUNS_DIR/install.sh" ]; then
+      chmod +x "$GUNS_DIR/install.sh" "$GUNS_DIR/rebuild-manuals.sh" 2>/dev/null || true
+      if [ ! -d "$GUNS_DIR/.venv" ] || [ ! -f "$GUNS_DIR/data/manuals.db" ]; then
+        su -s /bin/sh hermes -c "cd '$GUNS_DIR' && ./install.sh" 2>&1 | tail -30 || \
+          echo "hermes-guns-mcp: install failed — run workspace/mcp/guns/rebuild-manuals.sh as hermes" >&2
+      fi
+    fi
+  '';
+
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 
