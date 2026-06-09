@@ -171,6 +171,18 @@ in
     # nixos-rebuild switch (hermes edits without sudo; nicho activates).
     users.users.nicho.extraGroups = lib.mkAfter [ "hermes" ];
 
+    # Dotfiles git repo is owned by hermes; nicho activates via nixos-rebuild.
+    # Git refuses foreign-owned repos unless listed in safe.directory (both paths:
+    # canonical checkout and ~/dotfiles symlink target).
+    # configuration-server.nix does not enable programs.git — turn it on here.
+    programs.git = {
+      enable = true;
+      config.safe.directory = [
+        "${cfg.delegationWorkdir}/dotfiles"
+        "${cfg.stateDir}/dotfiles"
+      ];
+    };
+
     # Secrets (decrypted at activation by agenix)
     age.secrets.hermes-env = {
       file = cfg.envFile;
