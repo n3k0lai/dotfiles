@@ -111,6 +111,21 @@ let
   # Static wrapper so which("agent-browser") succeeds for hermes user commands
   # (interactive hermes status, doctor, etc.) and for the gateway process.
   # It delegates to the user-installed location (populated by the provision).
+  # Hermes dashboard validates Host (127.0.0.1 only). Tailscale Serve forwards the
+  # MagicDNS hostname, so we rewrite Host on a localhost proxy before serve.
+  serveProxyPort = 9120;
+  serveProxyCaddyfile = pkgs.writeText "hermes-dashboard-serve-proxy.Caddyfile" ''
+    {
+      admin off
+    }
+    :${toString serveProxyPort} {
+      bind 127.0.0.1
+      reverse_proxy 127.0.0.1:9119 {
+        header_up Host 127.0.0.1
+      }
+    }
+  '';
+
   agentBrowserWrapper = pkgs.writeShellScriptBin "agent-browser" ''
     set -euo pipefail
     for cand in \
@@ -163,6 +178,17 @@ in
       type = lib.types.listOf lib.types.package;
       default = [];
       description = "Extra packages available to the Hermes service";
+    };
+    tailscaleServe = {
+      enable = lib.mkEnableOption ''
+        Expose the Hermes dashboard on the tailnet via Tailscale Serve (MagicDNS).
+        Access at https://<hostname>.<tailnet>.ts.net — not on the public internet.
+      '';
+      target = lib.mkOption {
+        type = lib.types.str;
+        default = toString serveProxyPort;
+        description = "Local port passed to tailscale serve (via Host-rewrite proxy, not dashboard directly).";
+      };
     };
   };
 
@@ -625,6 +651,43 @@ in
       agentBrowserProvision
       agentBrowserWrapper
     ] ++ cfg.extraPackages;
+  };
+
+  # Rewrites Host to 127.0.0.1 so the dashboard accepts Tailscale Serve traffic.
+  systemd.services.hermes-dashboard-serve-proxy = lib.mkIf cfg.tailscaleServe.enable {
+    description = "Host rewrite proxy for Tailscale Serve → Hermes dashboard";
+    after = [ "network-online.target" "hermes-dashboard.service" ];
+    wants = [ "network-online.target" "hermes-dashboard.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${pkgs.caddy}/bin/caddy run --config ${serveProxyCaddyfile}";
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+  };
+
+  # Tailnet-only HTTPS for the dashboard (MagicDNS). Replaces public Caddy + basic auth.
+  systemd.services.hermes-dashboard-tailscale-serve = lib.mkIf cfg.tailscaleServe.enable {
+    description = "Tailscale Serve: Hermes dashboard (tailnet only)";
+    after = [
+      "network-online.target"
+      "tailscaled.service"
+      "hermes-dashboard.service"
+      "hermes-dashboard-serve-proxy.service"
+    ];
+    wants = [
+      "network-online.target"
+      "hermes-dashboard.service"
+      "hermes-dashboard-serve-proxy.service"
+    ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --yes ${cfg.tailscaleServe.target}";
+      ExecStop = "${pkgs.tailscale}/bin/tailscale serve reset";
+    };
   };
 
   # Environment for browser tools to find Chromium
