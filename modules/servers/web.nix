@@ -39,16 +39,8 @@ in
         '';
       };
 
-      # Hermes dashboards + private services
-      # Basic auth with password hash loaded from agenix secret at runtime
-      # TODO: migrate to agenix secret file — for now use import from local file
-      "ene.comfy.sh" = {
-        extraConfig = ''
-          import /etc/caddy/auth.conf
-          reverse_proxy localhost:9119
-        '';
-      };
-
+      # Ene Hermes dashboard: Tailscale Serve on MagicDNS only (see hermes.nix).
+      # Private *.comfy.sh services proxied to Rook — basic auth via auth.conf
       "rook.comfy.sh" = {
         extraConfig = ''
           import /etc/caddy/auth.conf

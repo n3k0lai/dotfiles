@@ -65,7 +65,10 @@
   # The /var/nix/builds location is deliberately *not* under /var/tmp (which is 1777
   # world-writable); Nix rejects build-dir under world-writable parents for security.
 
-  modules.servers.hermes.enable = true;
+  modules.servers.hermes = {
+    enable = true;
+    tailscaleServe.enable = true;
+  };
   modules.editors.grokbuild.enable = true;
   modules.servers.obsidian-headless.enable = true;
   # modules.editors.opencode.enable = true;
