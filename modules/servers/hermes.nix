@@ -330,97 +330,10 @@ in
       else
         throw "hermes-agent input must be passed as specialArg (see flake.nix) to allow nodejs override for builds"
     );
-    settings = {
-      model = {
-        # SuperGrok (xAI OAuth) — high-tier subscription (tier 5 / heavy).
-        # This gives the agent direct access to the strongest Grok models + higher
-        # limits via the stored xai-oauth credential (see hermes auth / auth.json).
-        # x_search (X/Twitter) and other xAI direct tools auto-prefer this path.
-        provider = "xai-oauth";
-        default = "grok-4.3";
-      };
-      toolsets = [ "all" ];
-      max_turns = 100;
-      memory = { memory_enabled = true; user_profile_enabled = true; };
-      # Bias the main agent (and many sub-flows) toward deeper reasoning by default.
-      # The supergrok subscription supports the higher effort levels well.
-      # Valid: none|minimal|low|medium|high|xhigh. Individual delegation agents
-      # below pass their own --effort to the external grok CLI.
-      agent = {
-        reasoning_effort = "high";
-      };
-      # Tool Gateway (Nous subscriber passthrough) for web + browser cloud tools.
-      # These must be explicitly selected via backend/cloud_provider so that
-      # `hermes tools` / status / agent see "Web" and "Browser automation" as
-      # selected (use_gateway alone is not enough for the selection status).
-      web = {
-        backend = "firecrawl";
-        use_gateway = true;
-      };
-      browser = {
-        cloud_provider = "browser-use";
-        use_gateway = true;
-      };
-      # Explicitly opt the browser category into the managed Nous Tool Gateway.
-      # This is what makes "Browser automation" appear as "selected" in the
-      # Nous Tool Gateway status (separate from cloud_provider + use_gateway
-      # which control the actual routing). Web used the `backend` key for the
-      # same purpose.
-      tool_gateway = {
-        browser = "gateway";
-      };
-      # Grok Build delegation (preferred for implementation-heavy work).
-      # These spawn the official x.ai "grok" CLI (the same one you get from grok-update)
-      # as a sub-agent. The CLI uses its own auth (~/.grok/auth.json) — ideally the
-      # same supergrok account so the delegated work also benefits from the heavy tier.
-      # The wrapper we inject into the hermes-agent unit PATH (below) makes "grok"
-      # resolvable even though the real binary lives in the hermes user's home.
-      delegation = {
-        enabled = true;
-        agents = {
-          # Default general-purpose Grok Build agent
-          grok-build = {
-            command = "grok";
-            workdir = cfg.delegationWorkdir;
-          };
-
-          # Quick iteration / low effort
-          "grok-build-quick" = {
-            command = "grok";
-            workdir = cfg.delegationWorkdir;
-            args = [ "--effort" "1" ];
-          };
-
-          # Balanced implementation with review (recommended)
-          "grok-build-implement" = {
-            command = "grok";
-            workdir = cfg.delegationWorkdir;
-            args = [ "--effort" "3" ];
-          };
-
-          # High rigor implementation (complex or sensitive work)
-          "grok-build-thorough" = {
-            command = "grok";
-            workdir = cfg.delegationWorkdir;
-            args = [ "--effort" "5" ];
-          };
-
-          # Specialized code-focused agent
-          "grok-build-code" = {
-            command = "grok";
-            workdir = cfg.delegationWorkdir;
-            args = [ "--agent" "code" "--effort" "3" ];
-          };
-
-          # Research / exploration focused
-          "grok-build-research" = {
-            command = "grok";
-            workdir = cfg.delegationWorkdir;
-            args = [ "--agent" "research" ];
-          };
-        };
-      };
-    };
+    # Agent config (model, discord, delegation, MCP, profiles) lives in the soul
+    # repo at ~/.hermes/config.yaml — not here. Empty settings = activation merge
+    # is a no-op and soul config survives rebuilds.
+    settings = { };
     environmentFiles = [ config.age.secrets.hermes-env.path ];
     addToSystemPackages = true;
     # Browser automation support
@@ -431,37 +344,7 @@ in
       python312
       tesseract5
     ];
-    mcpServers.nous = {
-      command = "${cfg.delegationWorkdir}/mcp/nous/.venv/bin/python";
-      args = [ "${cfg.delegationWorkdir}/mcp/nous/server.py" ];
-      env = {
-        NOUS_DOCS_DB = "${cfg.delegationWorkdir}/mcp/nous/data/docs.db";
-        NOUS_DOCS_ROOT = "${cfg.delegationWorkdir}/mcp/nous/docs-source/website/docs";
-      };
-      tools = {
-        include = [ "search_docs" "get_doc_page" "list_doc_sections" ];
-      };
-      timeout = 60;
-    };
-    mcpServers.guns = {
-      command = "${cfg.delegationWorkdir}/mcp/guns/.venv/bin/python";
-      args = [ "${cfg.delegationWorkdir}/mcp/guns/server.py" ];
-      env = {
-        HERMES_GUNS_DB = "${cfg.delegationWorkdir}/mcp/guns/data/manuals.db";
-        HERMES_GUNS_VAULT = "/var/lib/hermes/vault/🚀projects/artemis";
-        HERMES_TESSERACT_CMD = "${pkgs.tesseract5}/bin/tesseract";
-      };
-      tools = {
-        include = [
-          "list_guns"
-          "get_gun_context"
-          "search_manual"
-          "get_manual_page"
-          "list_manual_pages"
-        ];
-      };
-      timeout = 90;
-    };
+
     # Dependency groups for optional backends that are lazily imported at runtime.
     # The hermes-agent package uses a sealed venv; missing groups cause lazy_deps.py
     # "search.firecrawl" (and similar) to attempt `pip install` which fails on Nix,
@@ -586,11 +469,22 @@ in
     };
   };
 
+  # Soul repo owns agent config. Upstream hermes-agent Nix module sets managed mode
+  # (HERMES_MANAGED + .managed marker) which blocks CLI/dashboard edits — lift it.
+  system.activationScripts.hermes-dynamic-config = lib.stringAfter [ "hermes-agent-setup" ] ''
+    rm -f ${cfg.stateDir}/.hermes/.managed
+  '';
+
   # Make the external "grok" command (used by all the grok-build-* delegation agents)
   # resolvable inside the hermes-agent gateway process. The real binary lives in the
   # hermes user's home after grok-update / the provision script above.
   # This wrapper gives a clear error + hint if it is still missing.
   systemd.services.hermes-agent = {
+    environment = lib.mkForce {
+      HOME = cfg.stateDir;
+      HERMES_HOME = "${cfg.stateDir}/.hermes";
+      MESSAGING_CWD = cfg.workingDirectory;
+    };
     serviceConfig = {
       # Unify the parent gateway process cwd into .hermes/workspace as well
       # (delegation workdir controls the chdir for child grok processes).
@@ -623,7 +517,6 @@ in
     environment = {
       HOME = cfg.stateDir;
       HERMES_HOME = "${cfg.stateDir}/.hermes";
-      HERMES_MANAGED = "true";
       MESSAGING_CWD = cfg.workingDirectory;
     };
 
