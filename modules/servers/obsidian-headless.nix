@@ -2,11 +2,25 @@
 
 let
   cfg = config.modules.servers.obsidian-headless;
+  nodePkg = pkgs.nodejs_24;
+  hermesHome = config.users.users.hermes.home;
 
-  # Wrapper that forces obsidian-headless to always operate inside the canonical vault
+  # Pin PATH so npx-installed bins (#!/usr/bin/env node) use the same Node ABI
+  # as npx itself. Without this, hermes' nodejs_24 profile shadows nodejs_22 npx
+  # and better-sqlite3 fails with NODE_MODULE_VERSION mismatch.
   obsidianHeadless = pkgs.writeShellScriptBin "ob" ''
-    cd ${config.users.users.hermes.home}/.hermes/workspace/vault && \
-    exec ${pkgs.nodejs}/bin/npx --yes obsidian-headless "$@"
+    export PATH="${nodePkg}/bin''${PATH:+:}$PATH"
+    cd ${hermesHome}/.hermes/workspace/vault && \
+    exec ${nodePkg}/bin/npx --yes obsidian-headless "$@"
+  '';
+
+  # Warm the npx cache on activation so the first real `ob sync` is not slow/broken.
+  obProvision = pkgs.writeShellScriptBin "ob-provision" ''
+    set -e
+    export HOME=${hermesHome}
+    export PATH="${nodePkg}/bin:$PATH"
+    cd ${hermesHome}/.hermes/workspace/vault
+    ${nodePkg}/bin/npx --yes obsidian-headless --help >/dev/null 2>&1 || true
   '';
 in
 {
@@ -17,5 +31,9 @@ in
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ obsidianHeadless ];
     users.users.hermes.packages = [ obsidianHeadless ];
+
+    system.activationScripts.ob-provision = lib.stringAfter [ "users" "groups" ] ''
+      ${obProvision}/bin/ob-provision
+    '';
   };
 }
