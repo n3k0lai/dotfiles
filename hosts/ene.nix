@@ -148,6 +148,9 @@
     };
   };
 
+  # Mosh server (UDP 60000–61000; initial handshake still uses SSH)
+  programs.mosh.enable = true;
+
   # Fail2ban for brute force protection
   services.fail2ban = {
     enable = true;
