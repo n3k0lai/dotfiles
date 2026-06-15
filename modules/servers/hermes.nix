@@ -8,10 +8,14 @@ let
   agentBrowserFix = pkgs.writeShellScriptBin "hermes-browser-fix" ''
     set -e
     INTERPRETER="${pkgs.glibc}/lib/ld-linux-x86-64.so.2"
+    FIND="${pkgs.findutils}/bin/find"
+    MKDIR="${pkgs.coreutils}/bin/mkdir"
+    CHOWN="${pkgs.coreutils}/bin/chown"
 
     # Patch every agent-browser native binary under the hermes home tree.
     # npm/npx refreshes can drop a new dynamically-linked binary at any time.
-    find /var/lib/hermes \
+    # Use store-pinned paths — ExecStartPre has no usable PATH on NixOS.
+    "$FIND" /var/lib/hermes \
       \( -path '/var/lib/hermes/.hermes-backup/*' -o -path '/var/lib/hermes/.cache/*' \) -prune \
       -o -name "agent-browser-linux-x64" -type f -print 2>/dev/null | while read -r binary; do
       current_interp=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$binary" 2>/dev/null || true)
@@ -22,14 +26,14 @@ let
     done
 
     # Ensure agent-browser config points to NixOS chromium
-    mkdir -p /var/lib/hermes/.agent-browser
+    "$MKDIR" -p /var/lib/hermes/.agent-browser
     ${pkgs.jq}/bin/jq -n \
       --arg chromium "${pkgs.chromium}/bin/chromium" \
       '{executablePath: $chromium}' \
       > /var/lib/hermes/.agent-browser/config.json
 
     # Fix ownership
-    chown -R hermes:users /var/lib/hermes/.agent-browser 2>/dev/null || true
+    "$CHOWN" -R hermes:users /var/lib/hermes/.agent-browser 2>/dev/null || true
   '';
 
   # Provision the official x.ai Grok CLI (grok + agent) for the hermes user so that
@@ -493,11 +497,8 @@ in
       # Unify the parent gateway process cwd into .hermes/workspace as well
       # (delegation workdir controls the chdir for child grok processes).
       WorkingDirectory = lib.mkForce cfg.workingDirectory;
-      # Re-patch agent-browser on every gateway start (npx cache can refresh).
-      ExecStartPre = lib.mkAfter [
-        "+${agentBrowserProvision}/bin/hermes-agent-browser-provision"
-        "+${agentBrowserFix}/bin/hermes-browser-fix"
-      ];
+      # Browser provision/fix run via requiredBy oneshot units (before=hermes-agent).
+      # Do not duplicate as ExecStartPre — systemd Pre hooks get no usable PATH on NixOS.
     };
     path = lib.mkAfter [
       (pkgs.writeShellScriptBin "grok" ''
