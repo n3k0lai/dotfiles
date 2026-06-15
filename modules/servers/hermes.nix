@@ -9,22 +9,15 @@ let
     set -e
     INTERPRETER="${pkgs.glibc}/lib/ld-linux-x86-64.so.2"
 
-    # Patch any agent-browser binaries found in hermes npx / global npm caches.
-    # Covers both npx temporary installs and `npm install -g` (which land in
-    # .npm-global or .npm caches depending on prefix).
-    for base in \
-      /var/lib/hermes/.npm/_npx \
-      /var/lib/hermes/.npm-global \
-      /var/lib/hermes/.npm \
-      /var/lib/hermes/.local; do
-      if [ -d "$base" ]; then
-        find "$base" -name "agent-browser-linux-x64" -type f 2>/dev/null | while read -r binary; do
-          current_interp=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$binary" 2>/dev/null || true)
-          if [ "$current_interp" != "$INTERPRETER" ]; then
-            ${pkgs.patchelf}/bin/patchelf --set-interpreter "$INTERPRETER" "$binary"
-            echo "Patched: $binary"
-          fi
-        done
+    # Patch every agent-browser native binary under the hermes home tree.
+    # npm/npx refreshes can drop a new dynamically-linked binary at any time.
+    find /var/lib/hermes \
+      \( -path '/var/lib/hermes/.hermes-backup/*' -o -path '/var/lib/hermes/.cache/*' \) -prune \
+      -o -name "agent-browser-linux-x64" -type f -print 2>/dev/null | while read -r binary; do
+      current_interp=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$binary" 2>/dev/null || true)
+      if [ "$current_interp" != "$INTERPRETER" ]; then
+        ${pkgs.patchelf}/bin/patchelf --set-interpreter "$INTERPRETER" "$binary"
+        echo "Patched: $binary"
       fi
     done
 
@@ -128,16 +121,26 @@ let
 
   agentBrowserWrapper = pkgs.writeShellScriptBin "agent-browser" ''
     set -euo pipefail
+    self=$(readlink -f "$0" 2>/dev/null || echo "$0")
+    # Prefer the patched native binary — avoids the Node shim and NixOS ld.so issues.
+    for base in /var/lib/hermes/.npm-global /var/lib/hermes/.npm/_npx /var/lib/hermes/.local; do
+      if [ -d "$base" ]; then
+        native=$(${pkgs.findutils}/bin/find "$base" -name 'agent-browser-linux-x64' -type f 2>/dev/null | ${pkgs.coreutils}/bin/head -1)
+        if [ -n "$native" ] && [ -x "$native" ]; then
+          exec "$native" "$@"
+        fi
+      fi
+    done
+    # Fall back to the global npm JS shim (spawns native binary internally).
     for cand in \
       "/var/lib/hermes/.npm-global/bin/agent-browser" \
-      "/var/lib/hermes/.local/bin/agent-browser" \
-      "/var/lib/hermes/.npm/_npx/$(ls /var/lib/hermes/.npm/_npx 2>/dev/null | head -1 2>/dev/null || echo 'dummy')/agent-browser" \
-      "$(command -v agent-browser 2>/dev/null || true)"; do
-      if [ -x "$cand" ]; then
+      "/var/lib/hermes/.local/bin/agent-browser"; do
+      cand_resolved=$(readlink -f "$cand" 2>/dev/null || echo "$cand")
+      if [ -x "$cand" ] && [ "$cand_resolved" != "$self" ]; then
         exec "$cand" "$@"
       fi
     done
-    echo "agent-browser not found (the provision script should install it on activation)." >&2
+    echo "agent-browser not found — run hermes-agent-browser-provision and hermes-browser-fix." >&2
     exit 127
   '';
 in
@@ -227,12 +230,12 @@ in
     ${agentBrowserFix}/bin/hermes-browser-fix
   '';
 
-  # Also run fix automatically when hermes-agent starts/restarts
+  # Patch before the gateway starts (npm/npx can refresh the binary anytime).
   systemd.services.hermes-agent-browser-fix = {
     description = "Patch Hermes agent-browser binary for NixOS";
-    after = [ "hermes-agent.service" ];
-    wants = [ "hermes-agent.service" ];
-    wantedBy = [ "multi-user.target" ];
+    before = [ "hermes-agent.service" ];
+    wantedBy = [ "hermes-agent.service" "multi-user.target" ];
+    requiredBy = [ "hermes-agent.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -248,12 +251,11 @@ in
     ${agentBrowserProvision}/bin/hermes-agent-browser-provision
   '';
 
-  # Also ensure it after service (re)start.
   systemd.services.hermes-agent-browser-provision = {
     description = "Install agent-browser CLI for hermes user (for cloud/local browser providers and gateway selection)";
-    after = [ "hermes-agent.service" ];
-    wants = [ "hermes-agent.service" ];
-    wantedBy = [ "multi-user.target" ];
+    before = [ "hermes-agent-browser-fix.service" "hermes-agent.service" ];
+    wantedBy = [ "hermes-agent.service" "multi-user.target" ];
+    requiredBy = [ "hermes-agent.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -484,11 +486,18 @@ in
       HOME = cfg.stateDir;
       HERMES_HOME = "${cfg.stateDir}/.hermes";
       MESSAGING_CWD = cfg.workingDirectory;
+      PUPPETEER_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
+      CHROME_BIN = "${pkgs.chromium}/bin/chromium";
     };
     serviceConfig = {
       # Unify the parent gateway process cwd into .hermes/workspace as well
       # (delegation workdir controls the chdir for child grok processes).
       WorkingDirectory = lib.mkForce cfg.workingDirectory;
+      # Re-patch agent-browser on every gateway start (npx cache can refresh).
+      ExecStartPre = lib.mkAfter [
+        "+${agentBrowserProvision}/bin/hermes-agent-browser-provision"
+        "+${agentBrowserFix}/bin/hermes-browser-fix"
+      ];
     };
     path = lib.mkAfter [
       (pkgs.writeShellScriptBin "grok" ''
