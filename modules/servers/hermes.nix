@@ -70,6 +70,11 @@ let
     else
       echo "[hermes-grok-provision] Warning: grok still not present after attempt. The grok-build delegation agents will fail until it is installed and logged in."
     fi
+
+    # Hermes uses bash (no fish dotfiles). Login shells read .profile only — mirror npm-global.
+    if ! grep -q ".grok/bin" "$HOME/.profile" 2>/dev/null; then
+      echo 'export PATH="$HOME/.grok/bin:$PATH"' >> "$HOME/.profile"
+    fi
   '';
 
   # Ensure the agent-browser CLI is installed for the hermes user.
@@ -145,6 +150,18 @@ let
       fi
     done
     echo "agent-browser not found — run hermes-agent-browser-provision and hermes-browser-fix." >&2
+    exit 127
+  '';
+
+  grokWrapper = pkgs.writeShellScriptBin "grok" ''
+    set -euo pipefail
+    GROK_BIN="/var/lib/hermes/.grok/bin/grok"
+    if [ -x "$GROK_BIN" ]; then
+      exec "$GROK_BIN" "$@"
+    fi
+    echo "grok CLI not found at $GROK_BIN for the hermes service user." >&2
+    echo "It is normally installed by the hermes-grok-provision activation / service." >&2
+    echo "Try: sudo -u hermes HOME=/var/lib/hermes grok-update && sudo -u hermes HOME=/var/lib/hermes grok login" >&2
     exit 127
   '';
 in
@@ -319,6 +336,8 @@ in
     # so that `hermes status` / doctor etc. (run as hermes) see the CLI for the
     # browser feature state check.
     agentBrowserWrapper
+    # Same for grok — hermes has no fish dotfiles; login shells need a store wrapper.
+    grokWrapper
   ];
 
   # Hermes Agent — Nous Research autonomous agent
@@ -501,17 +520,7 @@ in
       # Do not duplicate as ExecStartPre — systemd Pre hooks get no usable PATH on NixOS.
     };
     path = lib.mkAfter [
-      (pkgs.writeShellScriptBin "grok" ''
-        set -euo pipefail
-        GROK_BIN="/var/lib/hermes/.grok/bin/grok"
-        if [ -x "$GROK_BIN" ]; then
-          exec "$GROK_BIN" "$@"
-        fi
-        echo "grok CLI not found at $GROK_BIN for the hermes service user." >&2
-        echo "It is normally installed by the hermes-grok-provision activation / service." >&2
-        echo "Try: sudo -u hermes HOME=/var/lib/hermes grok-update && sudo -u hermes HOME=/var/lib/hermes grok login" >&2
-        exit 127
-      '')
+      grokWrapper
       agentBrowserWrapper
     ];
   };
@@ -551,6 +560,7 @@ in
       pkgs.coreutils
       pkgs.git
       grokProvision
+      grokWrapper
       agentBrowserProvision
       agentBrowserWrapper
     ] ++ cfg.extraPackages;
