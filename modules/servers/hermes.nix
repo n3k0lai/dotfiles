@@ -16,7 +16,7 @@ let
     # npm/npx refreshes can drop a new dynamically-linked binary at any time.
     # Use store-pinned paths — ExecStartPre has no usable PATH on NixOS.
     "$FIND" /var/lib/hermes \
-      \( -path '/var/lib/hermes/.hermes-backup/*' -o -path '/var/lib/hermes/.cache/*' \) -prune \
+      -path '/var/lib/hermes/.cache/*' -prune \
       -o -name "agent-browser-linux-x64" -type f -print 2>/dev/null | while read -r binary; do
       current_interp=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$binary" 2>/dev/null || true)
       if [ "$current_interp" != "$INTERPRETER" ]; then
@@ -447,6 +447,32 @@ in
         rm -f "$DOTFILES_LINK"
         ln -s "$DOTFILES_CANON" "$DOTFILES_LINK"
         chown -h hermes:hermes "$DOTFILES_LINK" 2>/dev/null || true
+      fi
+    fi
+
+    # Artemis code lives in workspace/artemis; keep ~/artemis as a stable alias.
+    ARTEMIS_CANON="${cfg.delegationWorkdir}/artemis"
+    ARTEMIS_LINK="${cfg.stateDir}/artemis"
+    mkdir -p "$ARTEMIS_CANON"
+    chown hermes:hermes "$ARTEMIS_CANON" 2>/dev/null || true
+    chmod 2770 "$ARTEMIS_CANON" 2>/dev/null || true
+    if [ -e "$ARTEMIS_LINK" ] && [ ! -L "$ARTEMIS_LINK" ]; then
+      if [ -d "$ARTEMIS_LINK/.git" ] && [ ! -d "$ARTEMIS_CANON/.git" ]; then
+        rm -rf "$ARTEMIS_CANON"
+        mv "$ARTEMIS_LINK" "$ARTEMIS_CANON"
+      else
+        echo "hermes-workspace: refusing to replace non-symlink $ARTEMIS_LINK" >&2
+      fi
+    fi
+    if [ ! -e "$ARTEMIS_LINK" ]; then
+      ln -s "$ARTEMIS_CANON" "$ARTEMIS_LINK"
+      chown -h hermes:hermes "$ARTEMIS_LINK" 2>/dev/null || true
+    elif [ -L "$ARTEMIS_LINK" ]; then
+      CURRENT_ART=$(readlink "$ARTEMIS_LINK" || true)
+      if [ "$CURRENT_ART" != "$ARTEMIS_CANON" ]; then
+        rm -f "$ARTEMIS_LINK"
+        ln -s "$ARTEMIS_CANON" "$ARTEMIS_LINK"
+        chown -h hermes:hermes "$ARTEMIS_LINK" 2>/dev/null || true
       fi
     fi
   '';
