@@ -15,6 +15,7 @@
     ../modules/servers/irc.nix
     # Obsidian Headless Sync (for vault access + future MCP)
     ../modules/servers/obsidian-headless.nix
+    ../modules/servers/even-g2.nix
     # TODO: enable when ready
     # ../modules/servers/git.nix
     # ../modules/servers/api.nix
@@ -71,6 +72,7 @@
   };
   modules.editors.grokbuild.enable = true;
   modules.servers.obsidian-headless.enable = true;
+  modules.servers.even-g2.enable = true;
   # modules.editors.opencode.enable = true;
 
   environment.systemPackages = with pkgs; [

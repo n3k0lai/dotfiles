@@ -501,8 +501,25 @@ in
     fi
   '';
 
+  # Provision Even Hub MCP (workspace/mcp/even): venv + skill corpus index on first boot.
+  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" ] ''
+    EVEN_DIR="${cfg.delegationWorkdir}/mcp/even"
+    if [ -f "$EVEN_DIR/install.sh" ]; then
+      chmod +x "$EVEN_DIR/install.sh" "$EVEN_DIR/rebuild-index.sh" "$EVEN_DIR/sync-even-skills.sh" 2>/dev/null || true
+      chmod +x "$EVEN_DIR/port_skills.py" "$EVEN_DIR/index_even.py" 2>/dev/null || true
+      if [ ! -d "$EVEN_DIR/.venv" ] || [ ! -f "$EVEN_DIR/data/even.db" ]; then
+        if [ -d "$EVEN_DIR/sources/everything-evenhub" ]; then
+          su -s /bin/sh hermes -c "cd '$EVEN_DIR' && ./install.sh" 2>&1 | tail -20 || \
+            echo "hermes-even-mcp: install failed — run workspace/mcp/even/sync-even-skills.sh as hermes" >&2
+        else
+          echo "hermes-even-mcp: run workspace/mcp/even/sync-even-skills.sh to fetch sources and build index" >&2
+        fi
+      fi
+    fi
+  '';
+
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-even-mcp" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 
