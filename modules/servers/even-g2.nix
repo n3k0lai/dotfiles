@@ -68,14 +68,14 @@ in
     environment.systemPackages = with pkgs; [
       nodePkg
       provisionScript
-      xorg.xvfbRun
+      xvfb-run
       tailscale
     ];
 
     users.users.hermes.packages = with pkgs; [
       nodePkg
       provisionScript
-      xorg.xvfbRun
+      xvfb-run
       tailscale
     ];
 
