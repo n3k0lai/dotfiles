@@ -14,6 +14,18 @@ let
   cfg = config.modules.servers.even-g2;
   nodePkg = pkgs.nodejs_24;
 
+  simRuntimeLibs = with pkgs; [
+    gtk3 webkitgtk_4_1 gdk-pixbuf cairo glib libsoup_3 alsa-lib
+    pango harfbuzz freetype fontconfig libepoxy at-spi2-atk libxkbcommon
+    xorg.libX11 xorg.libXext xorg.libXrender xorg.libXi xorg.libXcursor
+    xorg.libXrandr xorg.libXfixes xorg.libxcb patchelf
+    mesa libglvnd dbus at-spi2-core
+  ];
+
+  simLdPath = lib.makeLibraryPath simRuntimeLibs;
+
+  evenBin = "/var/lib/hermes/.hermes/workspace/even/bin";
+
   npmGlobals = [
     "@evenrealities/evenhub-cli@latest"
     "@evenrealities/evenhub-simulator@latest"
@@ -35,6 +47,18 @@ let
     if ! grep -q ".npm-global/bin" "$HOME/.profile" 2>/dev/null; then
       echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$HOME/.profile"
     fi
+
+    # Patch native simulator binary for NixOS (same pattern as agent-browser).
+    INTERPRETER="${pkgs.glibc}/lib/ld-linux-x86-64.so.2"
+    SIM_BIN="$HOME/.npm-global/lib/node_modules/@evenrealities/evenhub-simulator/node_modules/@evenrealities/sim-linux-x64/bin/evenhub-simulator"
+    if [ -f "$SIM_BIN" ]; then
+      current=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$SIM_BIN" 2>/dev/null || true)
+      if [ "$current" != "$INTERPRETER" ]; then
+        ${pkgs.patchelf}/bin/patchelf --set-interpreter "$INTERPRETER" "$SIM_BIN" 2>/dev/null || true
+      fi
+    fi
+    mkdir -p "$HOME"
+    echo "${simLdPath}" > "$HOME/.even-sim-ldpath"
 
     echo "[even-g2] Done."
     for bin in evenhub evenhub-simulator; do
@@ -70,14 +94,18 @@ in
       provisionScript
       xvfb-run
       tailscale
-    ];
+    ] ++ simRuntimeLibs;
 
     users.users.hermes.packages = with pkgs; [
       nodePkg
       provisionScript
       xvfb-run
       tailscale
-    ];
+    ] ++ simRuntimeLibs;
+
+    # even/bin helper scripts (even-dev.sh, even-sim.sh, even-smoke.sh, …)
+    environment.sessionVariables.EVEN_BIN = evenBin;
+    environment.sessionVariables.PATH = lib.mkAfter [ "${evenBin}" ];
 
     system.activationScripts.even-g2-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" ] ''
       mkdir -p "${cfg.workspace}/apps"
