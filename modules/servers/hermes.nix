@@ -533,8 +533,20 @@ in
     fi
   '';
 
+  # Provision loadout MCP (workspace/mcp/guns/loadout): venv on first boot.
+  system.activationScripts.hermes-loadout-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-law-mcp" ] ''
+    LOADOUT_DIR="${cfg.delegationWorkdir}/mcp/guns/loadout"
+    if [ -f "$LOADOUT_DIR/install.sh" ]; then
+      chmod +x "$LOADOUT_DIR/install.sh" "$LOADOUT_DIR/rebuild.sh" 2>/dev/null || true
+      if [ ! -d "$LOADOUT_DIR/.venv" ]; then
+        su -s /bin/sh hermes -c "cd '$LOADOUT_DIR' && ./install.sh" 2>&1 | tail -15 || \
+          echo "hermes-loadout-mcp: install failed — run workspace/mcp/guns/loadout/install.sh as hermes" >&2
+      fi
+    fi
+  '';
+
   # Provision Even Hub MCP (workspace/mcp/even): venv + skill corpus index on first boot.
-  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" ] ''
+  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" ] ''
     EVEN_DIR="${cfg.delegationWorkdir}/mcp/even"
     if [ -f "$EVEN_DIR/install.sh" ]; then
       chmod +x "$EVEN_DIR/install.sh" "$EVEN_DIR/rebuild-index.sh" "$EVEN_DIR/sync-even-skills.sh" 2>/dev/null || true
@@ -551,7 +563,7 @@ in
   '';
 
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-even-mcp" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-even-mcp" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 
