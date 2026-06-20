@@ -246,6 +246,13 @@ in
     gh
   ];
 
+  # kiss → ene file drops (rulebooks, cookies, etc.) via nicho@ene; hermes installs.
+  system.activationScripts.hermes-inbox = lib.stringAfter [ "users" "groups" ] ''
+    mkdir -p ${cfg.stateDir}/inbox
+    chown ${cfg.user}:${cfg.user} ${cfg.stateDir}/inbox
+    chmod 2775 ${cfg.stateDir}/inbox
+  '';
+
   # Run fix on every activation (nixos-rebuild switch)
   system.activationScripts.hermes-browser-fix = lib.stringAfter [ "users" "groups" ] ''
     ${agentBrowserFix}/bin/hermes-browser-fix
@@ -501,8 +508,20 @@ in
     fi
   '';
 
+  # Provision competition MCP (workspace/mcp/guns/competition): venv + event/doc index on first boot.
+  system.activationScripts.hermes-competition-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" ] ''
+    COMP_DIR="${cfg.delegationWorkdir}/mcp/guns/competition"
+    if [ -f "$COMP_DIR/install.sh" ]; then
+      chmod +x "$COMP_DIR/install.sh" "$COMP_DIR/rebuild.sh" 2>/dev/null || true
+      if [ ! -d "$COMP_DIR/.venv" ] || [ ! -f "$COMP_DIR/data/competition.db" ]; then
+        su -s /bin/sh hermes -c "cd '$COMP_DIR' && ./install.sh" 2>&1 | tail -30 || \
+          echo "hermes-competition-mcp: install failed — run workspace/mcp/guns/competition/rebuild.sh as hermes" >&2
+      fi
+    fi
+  '';
+
   # Provision Even Hub MCP (workspace/mcp/even): venv + skill corpus index on first boot.
-  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" ] ''
+  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" "hermes-competition-mcp" ] ''
     EVEN_DIR="${cfg.delegationWorkdir}/mcp/even"
     if [ -f "$EVEN_DIR/install.sh" ]; then
       chmod +x "$EVEN_DIR/install.sh" "$EVEN_DIR/rebuild-index.sh" "$EVEN_DIR/sync-even-skills.sh" 2>/dev/null || true
@@ -519,7 +538,7 @@ in
   '';
 
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-even-mcp" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-even-mcp" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 
@@ -651,6 +670,35 @@ in
     PUPPETEER_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
     PLAYWRIGHT_BROWSERS_PATH = "${pkgs.chromium}";
     CHROME_BIN = "${pkgs.chromium}/bin/chromium";
+  };
+
+  # IWLA Friday open practice — SignupGenius Playwright signup (Thu 5:59:55 PM ET pre-warm)
+  systemd.services.iwla-signup-friday = {
+    description = "IWLA Friday open practice SignupGenius automation";
+    serviceConfig = {
+      Type = "oneshot";
+      User = cfg.user;
+      Group = cfg.group;
+      WorkingDirectory = cfg.workingDirectory;
+      ExecStart = "${pkgs.bash}/bin/bash ${cfg.stateDir}/.hermes/skills/artemis/iwla-signupgenius/scripts/signup-friday.sh";
+      Environment = [
+        "CHROMIUM_PATH=${pkgs.chromium}/bin/chromium"
+        "HERMES_HOME=${cfg.stateDir}/.hermes"
+        "IWLA_SIGNUP_ENV_FILE=${cfg.stateDir}/.config/iwla-signupgenius.env"
+      ];
+      TimeoutStartSec = "10min";
+    };
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+  };
+
+  systemd.timers.iwla-signup-friday = {
+    description = "IWLA Friday SignupGenius signup timer (Thursday 5:59:55 PM ET)";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "Thu *-*-* 17:59:55 America/New_York";
+      Persistent = true;
+    };
   };
 
   };
