@@ -15,6 +15,7 @@ function ene-yt-transcripts --description "Fetch YouTube VTT on kiss → Hermes 
     set -l LIMIT 5
     set -l DRY_RUN 0
     set -l TARGET ""
+    set -l COOKIES_OUT ""
 
     set -l i 1
     while test $i -le (count $argv)
@@ -25,6 +26,9 @@ function ene-yt-transcripts --description "Fetch YouTube VTT on kiss → Hermes 
             case -c --cookies
                 set i (math $i + 1)
                 set YTDLP_COOKIES_BROWSER $argv[$i]
+            case --cookies-out
+                set i (math $i + 1)
+                set COOKIES_OUT $argv[$i]
             case --host
                 set i (math $i + 1)
                 set ENE_HOST $argv[$i]
@@ -125,22 +129,49 @@ function ene-yt-transcripts --description "Fetch YouTube VTT on kiss → Hermes 
         set -a UPLOADED $vid
     end
 
+    # Optional: also export + upload a cookies.txt for direct yt-dlp use on ene (avoids repeated kiss fetches for metadata).
+    # Uses the new refresh_yt_cookies.py (supports --from-firefox or expects prior browser_cdp via Hermes).
+    # This is the modern path leveraging nous portal Browser Use / local /browser connect + CDP Network.getAllCookies.
+    if test -n "$COOKIES_OUT"; and test (count $UPLOADED) -gt 0
+        set -l cookies_local "$WORK/youtube-cookies.txt"
+        set -l refresh_py "python3 skills/influencer/youtube-audit/scripts/refresh_yt_cookies.py"
+        if type -q python3; and test -f "skills/influencer/youtube-audit/scripts/refresh_yt_cookies.py"
+            echo "  exporting cookies via refresh_yt_cookies.py --from-firefox ..."
+            $refresh_py --from-firefox --out "$cookies_local" --test 2>&1 | tail -5
+        else
+            echo "  (refresh_yt_cookies.py not found in tree; falling back to note only)"
+            echo "  Use Hermes on this machine with browser tools (or /browser connect) + browser_cdp(Network.getAllCookies) then feed to the script."
+        end
+        if test -s "$cookies_local"
+            set -l remote_cookies "$ENE_DEST/cookies.txt"
+            scp -q "$cookies_local" "$ENE_USER@$ENE_HOST:/tmp/yt-cookies.$$" && \
+            ssh -q "$ENE_USER@$ENE_HOST" "sudo mkdir -p '$ENE_DEST' && sudo cp '/tmp/yt-cookies.$$' '$remote_cookies' && sudo chown hermes:hermes '$remote_cookies' && rm -f '/tmp/yt-cookies.$$'"
+            if test $status -eq 0
+                echo "  ✓ cookies.txt → $remote_cookies"
+            end
+        end
+    end
+
     if test $DRY_RUN -eq 1
         return 0
     end
 
     if test (count $UPLOADED) -gt 0
-        set -l manifest (string join ',' $UPLOADED)
         set -l now (date -u +%Y-%m-%dT%H:%M:%SZ)
-        ssh -q "$ENE_USER@$ENE_HOST" \
-            "echo '{\"uploaded_at\":\"$now\",\"video_ids\":[$(_ene_yt_json_ids $UPLOADED)],\"source\":\"kiss/ene-yt-transcripts\"}' | \
-             sudo tee '$ENE_DEST/manifest.json' >/dev/null && \
-             sudo chown hermes:hermes '$ENE_DEST/manifest.json'"
+        set -l json_ids (_ene_yt_json_ids $UPLOADED)
+        set -l manifest_json "{\"uploaded_at\":\"$now\",\"video_ids\":[$json_ids],\"source\":\"kiss/ene-yt-transcripts\"}"
+        printf '%s' "$manifest_json" | ssh -q "$ENE_USER@$ENE_HOST" \
+            "sudo tee '$ENE_DEST/manifest.json' >/dev/null && sudo chown hermes:hermes '$ENE_DEST/manifest.json'"
         echo ""
         echo "Done: "(count $UPLOADED)" uploaded, "(count $FAILED)" failed"
         echo "Hermes ingest:"
         for vid in $UPLOADED
             echo "  python3 skills/influencer/youtube-audit/scripts/ingest.py $vid --transcript-file x-context/audits/youtube/$vid.vtt"
+        end
+        if test -n "$COOKIES_OUT"
+            echo "  (with cookies for better metadata on ene):"
+            echo "  python3 skills/influencer/youtube-audit/scripts/ingest.py ... --cookies-file x-context/audits/youtube/cookies.txt"
+            echo "  # or set YTDLP_COOKIES_FILE before running ingest / yt-dlp"
         end
     else
         echo "ene-yt-transcripts: nothing uploaded"
@@ -157,13 +188,15 @@ function _ene_yt_transcripts_help
     echo "  ene-yt-transcripts sumito --limit 3"
     echo ""
     echo "Options:"
-    echo "  -l, --limit N    Channel mode: recent N videos (default 5)"
-    echo "  -c, --cookies B  yt-dlp browser for cookies (default: firefox)"
-    echo "  --host HOST      SSH host (default: ene, or \$ENE_HOST)"
-    echo "  -n, --dry-run    List targets only"
+    echo "  -l, --limit N       Channel mode: recent N videos (default 5)"
+    echo "  -c, --cookies B     yt-dlp browser for cookies (default: firefox)"
+    echo "  --cookies-out       Also export a Netscape cookies.txt (via refresh_yt_cookies.py --from-firefox or browser tools) and upload to ene as cookies.txt"
+    echo "  --host HOST         SSH host (default: ene, or \$ENE_HOST)"
+    echo "  -n, --dry-run       List targets only"
     echo ""
     echo "Env: ENE_HOST, ENE_USER (default nicho), YTDLP_COOKIES"
     echo "Dest: /var/lib/hermes/.hermes/x-context/audits/youtube/"
+    echo "See skills/influencer/youtube-audit/scripts/refresh_yt_cookies.py and SKILL.md for browser-use / CDP (nous portal) cookie extraction."
 end
 
 function _ene_yt_is_video_ref --argument-names ref
