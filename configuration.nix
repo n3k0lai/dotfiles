@@ -52,6 +52,8 @@ in
       ./modules/gaming/chatterino.nix
       ./modules/gaming/wine.nix
       ./modules/gaming/runescape.nix
+      ./modules/gaming/battlenet.nix
+      ./modules/gaming/riot.nix
 
       # Music
       ./modules/music/nanoloop.nix
@@ -59,6 +61,7 @@ in
 
       # Desktop environment
       ./modules/desktop/hypr.nix
+      ./modules/desktop/audio-idle-inhibit.nix
       ./modules/desktop/bspwm.nix
       ./modules/desktop/sddm.nix
       ./modules/desktop/greetd.nix
@@ -167,6 +170,7 @@ in
   ##################################################################################
   #                        Desktop
   modules.desktop.hyprland.enable = true;
+  modules.desktop.audioIdleInhibit.enable = true;
   modules.desktop.bspwm.enable = true;
   # modules.desktop.sddm.enable = true;  # Replaced by greetd
   modules.desktop.greetd.enable = true;

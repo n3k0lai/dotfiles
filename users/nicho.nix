@@ -59,7 +59,6 @@
       gnutar
       gzip
       xz
-      mullvad-vpn
     ];
 
     home.stateVersion = "25.05";
