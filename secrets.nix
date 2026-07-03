@@ -57,6 +57,12 @@ in
   "modules/servers/secrets/rook_env.age".publicKeys = [ rook nicho ];
 
   # ===========================================
+  # HOME ASSISTANT SECRETS (rook — Hermes + HA bridge)
+  # ===========================================
+  "modules/servers/secrets/ha_long_lived_token.age".publicKeys = [ rook nicho ];
+  "modules/servers/secrets/ha_webhook_secret.age".publicKeys = [ rook nicho ];
+
+  # ===========================================
   # MESH DB SECRETS (agent → Postgres on Rook)
   # ===========================================
   # Ene's read-only credentials (decrypted on ene)

@@ -5,6 +5,8 @@ with lib;
 
 let
   cfg = config.modules.servers.homeAssistant;
+  hermesCfg = config.modules.servers.hermes;
+  trustedProxies = [ "127.0.0.1" "::1" ] ++ cfg.trustedProxyCidrs;
 in {
   options.modules.servers.homeAssistant = {
     enable = mkEnableOption "Home Assistant automation server";
@@ -21,9 +23,37 @@ in {
       description = "Enable Mosquitto MQTT broker for IoT devices";
     };
 
+    enableWebhookBridge = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable HA alert webhook bridge to Hermes (requires Hermes on same host)";
+    };
+
+    longLivedTokenFile = mkOption {
+      type = types.path;
+      default = ../servers/secrets/ha_long_lived_token.age;
+      description = "Agenix file with Home Assistant long-lived access token";
+    };
+
+    trustedProxyCidrs = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Extra CIDRs/IPs trusted as reverse proxies";
+    };
   };
 
+  imports = [
+    ./ha-hermes-bridge.nix
+  ];
+
   config = mkIf cfg.enable {
+    age.secrets.ha-long-lived-token = {
+      file = cfg.longLivedTokenFile;
+      owner = "hermes";
+      group = "users";
+      mode = "0400";
+    };
+
     services.home-assistant = {
       enable = true;
       package = pkgs.home-assistant;
@@ -36,7 +66,11 @@ in {
         "cast"
         # IoT protocols
         "mqtt"
-        # Network
+        # Cameras
+        "generic"
+        "onvif"
+        "ffmpeg"
+        # Network discovery
         "zeroconf"
         "ssdp"
       ];
@@ -51,22 +85,23 @@ in {
           allowlist_external_dirs = [ "/tmp" ];
         };
 
-        # HTTP configuration for reverse proxy
         http = {
           server_port = cfg.port;
           use_x_forwarded_for = true;
-          trusted_proxies = [
-            "127.0.0.1"
-            "::1"
-          ];
+          trusted_proxies = trustedProxies;
         };
 
-        # Enable default integrations
+        mqtt = mkIf cfg.enableMqtt {
+          broker = "127.0.0.1";
+          port = 1883;
+          discovery = true;
+          discovery_prefix = "homeassistant";
+        };
+
         default_config = {};
       };
     };
 
-    # Mosquitto MQTT broker for IoT devices
     services.mosquitto = mkIf cfg.enableMqtt {
       enable = true;
       listeners = [
@@ -78,7 +113,6 @@ in {
       ];
     };
 
-    # Caddy reverse proxy for Home Assistant
     services.caddy.virtualHosts = {
       "${config.networking.hostName}" = {
         extraConfig = ''
@@ -87,7 +121,15 @@ in {
       };
     };
 
-    # Open MQTT port if enabled
     networking.firewall.allowedTCPPorts = mkIf cfg.enableMqtt [ 1883 ];
+
+    modules.servers.haHermesBridge.enable =
+      cfg.enableWebhookBridge && (config.modules.servers.hermes.enable or false);
+    systemd.services.hermes-agent = mkIf (hermesCfg.enable or false) {
+      environment = {
+        HA_URL = "http://127.0.0.1:${toString cfg.port}";
+        HA_TOKEN_FILE = config.age.secrets.ha-long-lived-token.path;
+      };
+    };
   };
 }
