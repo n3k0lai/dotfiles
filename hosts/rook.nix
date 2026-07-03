@@ -19,6 +19,8 @@ in
     ../modules/hardware/svalbard.nix
     # Home automation (lights, IoT)
     ../modules/servers/home.nix
+    # Droneforge Nimbus hangar (USB on Rook)
+    ../modules/servers/hangar.nix
     # Samba NAS sharing
     ../modules/servers/samba.nix
     # Calibre-Web ebook server
@@ -221,6 +223,13 @@ in
     enable = true;
     port = 8123;
     enableMqtt = true;
+    enableWebhookBridge = true;
+  };
+
+  # === DRONEFORGE HANGAR ===
+  modules.servers.hangar = {
+    enable = true;
+    requireConfirmation = true;
   };
   # NOTE: home.nix uses pkgs.home-assistant. Old config had unstable + custom
   # Python overrides for aiohue/aionanoleaf. Re-enable if integrations break.
