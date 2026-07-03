@@ -54,13 +54,6 @@ set -gx _JAVA_AWT_WM_NONREPARENTING 1 # android studio x11 ui fix
 set -gx XCURSOR_SIZE 24
 set -gx SXHKD_SHELL sh
 
-# wine
-set -gx WINEDEBUG fps
-set -gx FREETYPE_PROPERTIES "truetype:interpreter-version=35"
-set -gx WINEARCH "win64"
-set -gx WINEPREFIX "$HOME/.wine-battlenet"
-set -gx WINE_SIMULATE_WRITECOPY 1
-
 # obs game capture on x11 - needs yay -S obs-vkcapture-git
 set -gx OBS_USE_EGL 1
 # fixes
