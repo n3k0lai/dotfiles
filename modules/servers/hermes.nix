@@ -545,8 +545,20 @@ in
     fi
   '';
 
+  # Provision housing MCP (workspace/mcp/housing): venv + listing/zoning index on first boot.
+  system.activationScripts.hermes-housing-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-loadout-mcp" ] ''
+    HOUSING_DIR="${cfg.delegationWorkdir}/mcp/housing"
+    if [ -f "$HOUSING_DIR/install.sh" ]; then
+      chmod +x "$HOUSING_DIR/install.sh" "$HOUSING_DIR/rebuild.sh" "$HOUSING_DIR/rebuild-docs.sh" "$HOUSING_DIR/refresh-listings.sh" 2>/dev/null || true
+      if [ ! -d "$HOUSING_DIR/.venv" ] || [ ! -f "$HOUSING_DIR/data/housing.db" ]; then
+        su -s /bin/sh hermes -c "cd '$HOUSING_DIR' && ./install.sh" 2>&1 | tail -20 || \
+          echo "hermes-housing-mcp: install failed — run workspace/mcp/housing/rebuild.sh as hermes" >&2
+      fi
+    fi
+  '';
+
   # Provision Even Hub MCP (workspace/mcp/even): venv + skill corpus index on first boot.
-  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" ] ''
+  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-housing-mcp" ] ''
     EVEN_DIR="${cfg.delegationWorkdir}/mcp/even"
     if [ -f "$EVEN_DIR/install.sh" ]; then
       chmod +x "$EVEN_DIR/install.sh" "$EVEN_DIR/rebuild-index.sh" "$EVEN_DIR/sync-even-skills.sh" 2>/dev/null || true
@@ -563,7 +575,7 @@ in
   '';
 
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-even-mcp" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-housing-mcp" "hermes-even-mcp" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 
