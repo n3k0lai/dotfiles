@@ -4,7 +4,17 @@
 
 with lib;
 
-{
+let
+  # Mullvad's Electron GUI blanks on native Wayland when switching Hyprland
+  # workspaces on NVIDIA (renderer buffer lost). Force XWayland instead.
+  mullvad-vpn = pkgs.mullvad-vpn.overrideAttrs (oldAttrs: {
+    postInstall = (oldAttrs.postInstall or "") + ''
+      wrapProgram $out/bin/mullvad-vpn \
+        --set NIXOS_OZONE_WL 0 \
+        --add-flags "--ozone-platform=x11"
+    '';
+  });
+in {
   imports = [
     ../modules/hardware/scarlett.nix
     ../modules/hardware/unicorne.nix
@@ -40,10 +50,8 @@ with lib;
     modules.editors.opencode.enable = true;
 
     # Agenix CLI for managing encrypted secrets
-    # Moonlight for streaming from Rook (League, etc)
     environment.systemPackages = with pkgs; [
       agenix
-      moonlight-qt
       zed-editor
       # Qt6 dependencies for PrismLauncher
       qt6.qtwayland
@@ -84,26 +92,27 @@ with lib;
 
     # Artemis hardware design & prototyping tools
     modules.editors.cad.kicad.enable = true;
+    modules.editors.cad.openscad.enable = true;
+    modules.editors.cad.freecad.enable = true;
     modules.editors.cad.diylc.enable = true;
     modules.editors.cad.hardware.enable = true;
+
+    # Battle.net / WoW — Steam+Proton launcher, WowUp for Classic/Retail addons
+    modules.gaming.battlenet.enable = true;
+
+    # League of Legends — Moonlight client (Vanguard blocks native Linux; needs Windows Sunshine host)
+    modules.gaming.riot.enable = true;
 
     # Mullvad VPN (GUI) — resolved required for DNS resolution
     services.resolved.enable = true;
     services.mullvad-vpn.enable = true;
-    services.mullvad-vpn.package = pkgs.mullvad-vpn;
+    services.mullvad-vpn.package = mullvad-vpn;
 
     # Machine-specific hostname
     networking.hostName = "kiss";
 
     # Hardware-specific environment variables
     environment.sessionVariables = {
-      # Wine configuration for gaming on this machine
-      WINEDEBUG = "fps";
-      FREETYPE_PROPERTIES = "truetype:interpreter-version=35";
-      WINEARCH = "win64";
-      WINEPREFIX = "$HOME/.wine-battlenet";
-      WINE_SIMULATE_WRITECOPY = "1";
-      
       # NVIDIA shader cache — prevent driver from pruning fossilize_replay caches
       __GL_SHADER_DISK_CACHE = "1";
       __GL_SHADER_DISK_CACHE_SIZE = "10737418240";  # 10 GB

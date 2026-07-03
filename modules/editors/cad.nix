@@ -6,6 +6,20 @@ with lib;
 let
   cfg = config.modules.editors.cad;
 
+  # KiCad segfaults on startup when __GLX_VENDOR_LIBRARY_NAME=nvidia (set
+  # globally for Hyprland). Backtrace shows a null jump via libnvidia-tls.
+  # Mesa GL works fine for KiCad's wxWidgets/GTK stack and 3D viewer.
+  kicad = pkgs.kicad.overrideAttrs (old: {
+    nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.makeWrapper ];
+    postInstall =
+      (old.postInstall or "")
+      + ''
+        for tool in kicad pcbnew eeschema gerbview pcb_calculator pl_editor bitmap2component kicad-cli; do
+          wrapProgram $out/bin/$tool --set __GLX_VENDOR_LIBRARY_NAME mesa
+        done
+      '';
+  });
+
   # DIY Layout Creator — perfboard/stripboard/chassis layout tool
   # Java app from https://github.com/bancika/diy-layout-creator
   diylc-appimage = pkgs.stdenv.mkDerivation rec {
@@ -45,6 +59,8 @@ in
 {
   options.modules.editors.cad = {
     kicad.enable = mkEnableOption "KiCad EDA suite for schematic/PCB design";
+    openscad.enable = mkEnableOption "OpenSCAD for parametric 3D modeling (3D printing)";
+    freecad.enable = mkEnableOption "FreeCAD for interactive 3D CAD (enclosures, mechanical parts)";
     diylc.enable = mkEnableOption "DIY Layout Creator for perfboard/stripboard layouts";
     hardware.enable = mkEnableOption "Hardware DIY tools (serial consoles, flashing, embedded dev)";
   };
@@ -52,7 +68,19 @@ in
   config = mkMerge [
     (mkIf cfg.kicad.enable {
       environment.systemPackages = with pkgs; [
-        kicad         # Schematic + PCB editor (libraries bundled)
+        kicad         # Schematic + PCB editor (NVIDIA GL workaround applied)
+      ];
+    })
+
+    (mkIf cfg.openscad.enable {
+      environment.systemPackages = with pkgs; [
+        openscad
+      ];
+    })
+
+    (mkIf cfg.freecad.enable {
+      environment.systemPackages = with pkgs; [
+        freecad
       ];
     })
 
