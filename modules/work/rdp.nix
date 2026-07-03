@@ -9,7 +9,7 @@ with lib;
 
   config = mkIf config.modules.work.rdp.enable {
     users.users.nicho.packages = with pkgs; [
-      freerdp  # Provides sdl-freerdp (used by `werk` fish function for native Wayland RDP), plus xfreerdp/wlfreerdp
+      freerdp  # Provides xfreerdp (used by the `werk` fish function)
     ];
   };
 }

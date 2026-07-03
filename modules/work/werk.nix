@@ -16,7 +16,7 @@ with lib;
       zoom-us
       
       # Remote access
-      freerdp  # Provides sdl-freerdp (used by the `werk` fish function for native Wayland RDP), plus xfreerdp/wlfreerdp
+      freerdp  # Provides xfreerdp (used by the `werk` fish function)
       
       # Security
       yubikey-manager
