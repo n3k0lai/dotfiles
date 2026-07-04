@@ -241,6 +241,14 @@ in
       mode = "0400";
     };
 
+    age.secrets.hermes-ssh-config = {
+      file = ./secrets/hermes_ssh_config.age;
+      owner = cfg.user;
+      group = "users";
+      mode = "0600";
+      path = "${cfg.stateDir}/.ssh/config";
+    };
+
   environment.systemPackages = with pkgs; [
     nodePkg
     gh
@@ -248,9 +256,10 @@ in
 
   # kiss → ene file drops (rulebooks, cookies, etc.) via nicho@ene; hermes installs.
   system.activationScripts.hermes-inbox = lib.stringAfter [ "users" "groups" ] ''
-    mkdir -p ${cfg.stateDir}/inbox
-    chown ${cfg.user}:${cfg.user} ${cfg.stateDir}/inbox
+    mkdir -p ${cfg.stateDir}/inbox ${cfg.stateDir}/.ssh
+    chown ${cfg.user}:${cfg.user} ${cfg.stateDir}/inbox ${cfg.stateDir}/.ssh
     chmod 2775 ${cfg.stateDir}/inbox
+    chmod 700 ${cfg.stateDir}/.ssh
   '';
 
   # Run fix on every activation (nixos-rebuild switch)

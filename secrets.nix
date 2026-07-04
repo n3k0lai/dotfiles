@@ -5,6 +5,7 @@ let
   kiss = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ5xQ12AZjr/B7nwR4xQwtnh7g/4PlBMoiZ3MsTLoInK root@tr1ste";
   ene = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDJVEWuJ9zhai0WJm3j90jOps4KIOiG8JITvoOcJ4hrA root@test";
   rook = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKc43hg3+7eZ8JUTNNi+F0k2fjs8nVusG8wcLCj8Xc4A root@chateau";
+  artemis = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJJF+TeYqUsNhiVaAqX9maPim1XfUPgpCiToPSgW++5c";
 
   # ===========================================
   # USER KEY - for editing secrets from any machine
@@ -16,7 +17,7 @@ let
   # ===========================================
   allHosts = [ kiss ene rook ];
   desktops = [ kiss ];           # desktop machines only
-  servers = [ ene rook ];        # server machines only
+  servers = [ ene rook artemis ]; # server machines only
   streaming = [ rook ];          # stream bouncer
 
 in
@@ -43,6 +44,12 @@ in
   "modules/servers/secrets/xai_api_key.age".publicKeys = servers ++ [ nicho ];
   "modules/servers/secrets/openclaw_env.age".publicKeys = servers ++ [ nicho ];
   "modules/servers/secrets/hermes_env.age".publicKeys = [ ene nicho ];
+  "modules/servers/secrets/hermes_ssh_config.age".publicKeys = [ ene nicho ];
+
+  # ===========================================
+  # ARTEMIS SECRETS (artemis VPS)
+  # ===========================================
+  "modules/servers/secrets/artemis_authorized_keys.age".publicKeys = [ artemis nicho ];
   "modules/servers/secrets/gemini_api_key.age".publicKeys = servers ++ [ nicho ];
 
   # ===========================================
