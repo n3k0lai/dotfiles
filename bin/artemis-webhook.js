@@ -1,23 +1,19 @@
 #!/usr/bin/env node
 /**
  * Artemis Platform Deploy Webhook
- * 
- * Listens for GitHub push events and auto-deploys the Expo web build.
- * POST /webhook with X-Hub-Signature-256 header for verification.
+ * POST /webhook with X-Hub-Signature-256 — triggers artemis-deploy-platform
  */
 
 const http = require('http');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
-const path = require('path');
 
 const PORT = parseInt(process.env.WEBHOOK_PORT || '9000');
 const SECRET = process.env.WEBHOOK_SECRET || '';
-const PLATFORM_DIR = process.env.PLATFORM_DIR || '/opt/artemis/platform';
-const DEPLOY_DIR = process.env.DEPLOY_DIR || '/var/www/artemis';
+const DEPLOY_SCRIPT = process.env.DEPLOY_SCRIPT || '/opt/artemis/deploy-platform.sh';
 
 function verify(signature, body) {
-  if (!SECRET) return true; // no secret = no verification (dev mode)
+  if (!SECRET) return true;
   const expected = 'sha256=' + crypto.createHmac('sha256', SECRET).update(body).digest('hex');
   return crypto.timingSafeEqual(Buffer.from(signature || ''), Buffer.from(expected));
 }
@@ -25,10 +21,7 @@ function verify(signature, body) {
 function deploy() {
   console.log(`[${new Date().toISOString()}] Starting deploy...`);
   try {
-    execSync('git pull --ff-only', { cwd: PLATFORM_DIR, stdio: 'inherit' });
-    execSync('npm ci', { cwd: PLATFORM_DIR, stdio: 'inherit' });
-    execSync('npx expo export --platform web', { cwd: PLATFORM_DIR, stdio: 'inherit' });
-    execSync(`rm -rf ${DEPLOY_DIR}/dist && cp -r ${PLATFORM_DIR}/dist ${DEPLOY_DIR}/dist`, { stdio: 'inherit' });
+    execSync(DEPLOY_SCRIPT, { stdio: 'inherit' });
     console.log(`[${new Date().toISOString()}] Deploy complete!`);
   } catch (err) {
     console.error(`[${new Date().toISOString()}] Deploy failed:`, err.message);
@@ -56,7 +49,6 @@ const server = http.createServer((req, res) => {
           console.log(`[${new Date().toISOString()}] Push to platform/main detected`);
           res.writeHead(200);
           res.end('Deploying...');
-          // Deploy async so we don't block the webhook response
           setTimeout(deploy, 100);
         } else {
           res.writeHead(200);
