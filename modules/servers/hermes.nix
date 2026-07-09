@@ -624,6 +624,8 @@ in
       # Unify the parent gateway process cwd into .hermes/workspace as well
       # (delegation workdir controls the chdir for child grok processes).
       WorkingDirectory = lib.mkForce cfg.workingDirectory;
+      # config.yaml restart_drain_timeout=180 — unit must allow graceful drain + teardown.
+      TimeoutStopSec = lib.mkForce 240;
       # Browser provision/fix run via requiredBy oneshot units (before=hermes-agent).
       # Do not duplicate as ExecStartPre — systemd Pre hooks get no usable PATH on NixOS.
     };
