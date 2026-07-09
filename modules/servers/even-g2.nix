@@ -31,6 +31,18 @@ let
     "@evenrealities/evenhub-simulator@latest"
   ];
 
+  hermesHome = "/var/lib/hermes";
+  hermesSoul = "${hermesHome}/.hermes";
+  hermesWorkspace = "${hermesSoul}/workspace";
+  eneDir = "${cfg.workspace}/even-terminal-ene";
+
+  evenTerminalStart = pkgs.writeShellScriptBin "even-terminal-ene" ''
+    set -euo pipefail
+    export HOME="${hermesHome}"
+    export PATH="${hermesHome}/.grok/bin:''${HOME}/.npm-global/bin:''${PATH:-/bin}"
+    exec ${nodePkg}/bin/node "${eneDir}/src/cli.js" "$@"
+  '';
+
   provisionScript = pkgs.writeShellScriptBin "even-g2-update" ''
     set -euo pipefail
     export HOME="''${EVEN_G2_HOME:-/var/lib/hermes}"
@@ -60,6 +72,13 @@ let
     mkdir -p "$HOME"
     echo "${simLdPath}" > "$HOME/.even-sim-ldpath"
 
+    # even-terminal-ene: Grok (claude wire) + Hermes (codex wire) glasses bridge
+    ENE_DIR="${cfg.workspace}/even-terminal-ene"
+    if [ -f "$ENE_DIR/package.json" ]; then
+      echo "[even-g2] Installing even-terminal-ene deps …"
+      ${nodePkg}/bin/npm install --prefix "$ENE_DIR" 2>&1 | tail -3 || true
+    fi
+
     echo "[even-g2] Done."
     for bin in evenhub evenhub-simulator; do
       if command -v "$bin" >/dev/null 2>&1; then
@@ -83,15 +102,40 @@ in
 
     devServerPorts = lib.mkOption {
       type = lib.types.listOf lib.types.int;
-      default = [ 5173 5174 5175 3000 3001 9898 ];
-      description = "Dev + simulator automation ports allowed on tailscale0 only.";
+      default = [ 3456 5173 5174 5175 3000 3001 9898 ];
+      description = "Even Terminal bridge (3456) + dev + simulator automation ports on tailscale0 only.";
+    };
+
+    terminalService = {
+      enable = lib.mkEnableOption "even-terminal-ene systemd service (G2 Terminal Mode bridge)";
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 3456;
+        description = "HTTP port for the Even app (tailscale0 only via firewall).";
+      };
+
+      token = lib.mkOption {
+        type = lib.types.str;
+        default = "ene-g2-bridge";
+        description = "Auth token the Even app sends as ?token= or Bearer.";
+      };
+
+      cwd = lib.mkOption {
+        type = lib.types.str;
+        default = hermesSoul;
+        description = "Default cwd for Grok/Hermes sessions (soul repo — matches Cursor/Grok Build).";
+      };
     };
   };
 
   config = lib.mkIf cfg.enable {
+    modules.servers.even-g2.terminalService.enable = lib.mkDefault true;
+
     environment.systemPackages = with pkgs; [
       nodePkg
       provisionScript
+      evenTerminalStart
       xvfb-run
       tailscale
     ] ++ simRuntimeLibs;
@@ -99,6 +143,7 @@ in
     users.users.hermes.packages = with pkgs; [
       nodePkg
       provisionScript
+      evenTerminalStart
       xvfb-run
       tailscale
     ] ++ simRuntimeLibs;
@@ -116,5 +161,58 @@ in
     '';
 
     networking.firewall.interfaces."tailscale0".allowedTCPPorts = lib.mkAfter cfg.devServerPorts;
+
+    systemd.services.even-terminal-ene = lib.mkIf cfg.terminalService.enable {
+      description = "Even G2 Terminal bridge (Grok Build + Hermes Agent)";
+      documentation = [ "https://www.npmjs.com/package/@evenrealities/even-terminal" ];
+      wantedBy = [ "multi-user.target" ];
+      after = [
+        "network-online.target"
+        "hermes-agent-grok-provision.service"
+      ];
+      wants = [ "network-online.target" ];
+
+      environment = {
+        HOME = hermesHome;
+        HERMES_HOME = "${hermesHome}/.hermes";
+        EVEN_TERMINAL_CWD = cfg.terminalService.cwd;
+        BRIDGE_TOKEN = cfg.terminalService.token;
+        PORT = toString cfg.terminalService.port;
+        GROK_BIN = "${hermesHome}/.grok/bin/grok";
+      };
+
+      serviceConfig = {
+        User = "hermes";
+        Group = "users";
+        WorkingDirectory = cfg.terminalService.cwd;
+        ExecStart = "${evenTerminalStart}/bin/even-terminal-ene --port ${toString cfg.terminalService.port} --token ${cfg.terminalService.token} --cwd ${cfg.terminalService.cwd} --tailscale --no-qr";
+        # Ensure grok children die with the bridge (prevents orphan hung agents).
+        KillMode = "control-group";
+        KillSignal = "SIGTERM";
+        TimeoutStopSec = 30;
+        Restart = "always";
+        RestartSec = 5;
+        UMask = "0007";
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ProtectHome = false;
+        ReadWritePaths = [
+          hermesHome
+          cfg.terminalService.cwd
+          cfg.workspace
+        ];
+        PrivateTmp = true;
+      };
+
+      path = [
+        nodePkg
+        pkgs.bash
+        pkgs.coreutils
+        pkgs.tailscale
+        pkgs.sqlite
+      ] ++ lib.optionals (config.services.hermes-agent.enable or false) [
+        config.services.hermes-agent.package
+      ];
+    };
   };
 }
