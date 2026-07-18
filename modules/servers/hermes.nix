@@ -566,8 +566,20 @@ in
     fi
   '';
 
+  # Provision EVE Online MCP (workspace/mcp/eve): venv + goal/doc index on first boot.
+  system.activationScripts.hermes-eve-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-housing-mcp" ] ''
+    EVE_DIR="${cfg.delegationWorkdir}/mcp/eve"
+    if [ -f "$EVE_DIR/install.sh" ]; then
+      chmod +x "$EVE_DIR/install.sh" "$EVE_DIR/rebuild.sh" 2>/dev/null || true
+      if [ ! -d "$EVE_DIR/.venv" ] || [ ! -f "$EVE_DIR/data/eve.db" ]; then
+        su -s /bin/sh hermes -c "cd '$EVE_DIR' && ./install.sh" 2>&1 | tail -20 || \
+          echo "hermes-eve-mcp: install failed — run workspace/mcp/eve/install.sh as hermes" >&2
+      fi
+    fi
+  '';
+
   # Provision Even Hub MCP (workspace/mcp/even): venv + skill corpus index on first boot.
-  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-housing-mcp" ] ''
+  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-housing-mcp" "hermes-eve-mcp" ] ''
     EVEN_DIR="${cfg.delegationWorkdir}/mcp/even"
     if [ -f "$EVEN_DIR/install.sh" ]; then
       chmod +x "$EVEN_DIR/install.sh" "$EVEN_DIR/rebuild-index.sh" "$EVEN_DIR/sync-even-skills.sh" 2>/dev/null || true
@@ -584,7 +596,7 @@ in
   '';
 
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-housing-mcp" "hermes-even-mcp" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-housing-mcp" "hermes-eve-mcp" "hermes-even-mcp" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 

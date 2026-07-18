@@ -54,6 +54,7 @@ in
       ./modules/gaming/runescape.nix
       ./modules/gaming/battlenet.nix
       ./modules/gaming/riot.nix
+      ./modules/gaming/eve-online.nix
 
       # Music
       ./modules/music/nanoloop.nix
