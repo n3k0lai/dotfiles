@@ -103,6 +103,9 @@ in {
     # League of Legends — Moonlight client (Vanguard blocks native Linux; needs Windows Sunshine host)
     modules.gaming.riot.enable = true;
 
+    # EVE Online — first-class (dedicated launcher; Steam App 8500 backup)
+    modules.gaming.eve-online.enable = true;
+
     # Mullvad VPN (GUI) — resolved required for DNS resolution
     services.resolved.enable = true;
     services.mullvad-vpn.enable = true;
