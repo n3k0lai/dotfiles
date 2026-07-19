@@ -493,110 +493,12 @@ in
     fi
   '';
 
-  # Provision local Hermes Agent docs MCP (workspace/mcp/nous): venv + index on first boot.
-  system.activationScripts.hermes-nous-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" ] ''
-    NOUS_DIR="${cfg.delegationWorkdir}/mcp/nous"
-    if [ -f "$NOUS_DIR/install.sh" ]; then
-      chmod +x "$NOUS_DIR/install.sh" "$NOUS_DIR/update-docs.sh" 2>/dev/null || true
-      if [ ! -d "$NOUS_DIR/.venv" ] || [ ! -f "$NOUS_DIR/data/docs.db" ]; then
-        su -s /bin/sh hermes -c "cd '$NOUS_DIR' && ./install.sh" 2>&1 | tail -20 || \
-          echo "hermes-nous-mcp: install failed — run workspace/mcp/nous/update-docs.sh as hermes" >&2
-      fi
-    fi
-  '';
-
-  # Provision Artemis gun manuals MCP (workspace/mcp/guns): venv + PDF index on first boot.
-  system.activationScripts.hermes-guns-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" ] ''
-    GUNS_DIR="${cfg.delegationWorkdir}/mcp/guns"
-    if [ -f "$GUNS_DIR/install.sh" ]; then
-      chmod +x "$GUNS_DIR/install.sh" "$GUNS_DIR/rebuild-manuals.sh" 2>/dev/null || true
-      if [ ! -d "$GUNS_DIR/.venv" ] || [ ! -f "$GUNS_DIR/data/manuals.db" ]; then
-        su -s /bin/sh hermes -c "cd '$GUNS_DIR' && ./install.sh" 2>&1 | tail -30 || \
-          echo "hermes-guns-mcp: install failed — run workspace/mcp/guns/rebuild-manuals.sh as hermes" >&2
-      fi
-    fi
-  '';
-
-  # Provision competition MCP (workspace/mcp/guns/competition): venv + event/doc index on first boot.
-  system.activationScripts.hermes-competition-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" ] ''
-    COMP_DIR="${cfg.delegationWorkdir}/mcp/guns/competition"
-    if [ -f "$COMP_DIR/install.sh" ]; then
-      chmod +x "$COMP_DIR/install.sh" "$COMP_DIR/rebuild.sh" 2>/dev/null || true
-      if [ ! -d "$COMP_DIR/.venv" ] || [ ! -f "$COMP_DIR/data/competition.db" ]; then
-        su -s /bin/sh hermes -c "cd '$COMP_DIR' && ./install.sh" 2>&1 | tail -30 || \
-          echo "hermes-competition-mcp: install failed — run workspace/mcp/guns/competition/rebuild.sh as hermes" >&2
-      fi
-    fi
-  '';
-
-  # Provision firearms law MCP (workspace/mcp/guns/law): venv + law index on first boot.
-  system.activationScripts.hermes-law-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-competition-mcp" ] ''
-    LAW_DIR="${cfg.delegationWorkdir}/mcp/guns/law"
-    if [ -f "$LAW_DIR/install.sh" ]; then
-      chmod +x "$LAW_DIR/install.sh" "$LAW_DIR/rebuild.sh" "$LAW_DIR/receive_upload.sh" 2>/dev/null || true
-      chmod +x "$LAW_DIR/scripts/"*.py 2>/dev/null || true
-      if [ ! -d "$LAW_DIR/.venv" ] || [ ! -f "$LAW_DIR/data/law.db" ]; then
-        su -s /bin/sh hermes -c "cd '$LAW_DIR' && ./install.sh" 2>&1 | tail -30 || \
-          echo "hermes-law-mcp: install failed — run workspace/mcp/guns/law/rebuild.sh as hermes" >&2
-      fi
-    fi
-  '';
-
-  # Provision loadout MCP (workspace/mcp/guns/loadout): venv on first boot.
-  system.activationScripts.hermes-loadout-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-law-mcp" ] ''
-    LOADOUT_DIR="${cfg.delegationWorkdir}/mcp/guns/loadout"
-    if [ -f "$LOADOUT_DIR/install.sh" ]; then
-      chmod +x "$LOADOUT_DIR/install.sh" "$LOADOUT_DIR/rebuild.sh" 2>/dev/null || true
-      if [ ! -d "$LOADOUT_DIR/.venv" ]; then
-        su -s /bin/sh hermes -c "cd '$LOADOUT_DIR' && ./install.sh" 2>&1 | tail -15 || \
-          echo "hermes-loadout-mcp: install failed — run workspace/mcp/guns/loadout/install.sh as hermes" >&2
-      fi
-    fi
-  '';
-
-  # Provision housing MCP (workspace/mcp/housing): venv + listing/zoning index on first boot.
-  system.activationScripts.hermes-housing-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-loadout-mcp" ] ''
-    HOUSING_DIR="${cfg.delegationWorkdir}/mcp/housing"
-    if [ -f "$HOUSING_DIR/install.sh" ]; then
-      chmod +x "$HOUSING_DIR/install.sh" "$HOUSING_DIR/rebuild.sh" "$HOUSING_DIR/rebuild-docs.sh" "$HOUSING_DIR/refresh-listings.sh" 2>/dev/null || true
-      if [ ! -d "$HOUSING_DIR/.venv" ] || [ ! -f "$HOUSING_DIR/data/housing.db" ]; then
-        su -s /bin/sh hermes -c "cd '$HOUSING_DIR' && ./install.sh" 2>&1 | tail -20 || \
-          echo "hermes-housing-mcp: install failed — run workspace/mcp/housing/rebuild.sh as hermes" >&2
-      fi
-    fi
-  '';
-
-  # Provision EVE Online MCP (workspace/mcp/eve): venv + goal/doc index on first boot.
-  system.activationScripts.hermes-eve-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-housing-mcp" ] ''
-    EVE_DIR="${cfg.delegationWorkdir}/mcp/eve"
-    if [ -f "$EVE_DIR/install.sh" ]; then
-      chmod +x "$EVE_DIR/install.sh" "$EVE_DIR/rebuild.sh" 2>/dev/null || true
-      if [ ! -d "$EVE_DIR/.venv" ] || [ ! -f "$EVE_DIR/data/eve.db" ]; then
-        su -s /bin/sh hermes -c "cd '$EVE_DIR' && ./install.sh" 2>&1 | tail -20 || \
-          echo "hermes-eve-mcp: install failed — run workspace/mcp/eve/install.sh as hermes" >&2
-      fi
-    fi
-  '';
-
-  # Provision Even Hub MCP (workspace/mcp/even): venv + skill corpus index on first boot.
-  system.activationScripts.hermes-even-mcp = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-housing-mcp" "hermes-eve-mcp" ] ''
-    EVEN_DIR="${cfg.delegationWorkdir}/mcp/even"
-    if [ -f "$EVEN_DIR/install.sh" ]; then
-      chmod +x "$EVEN_DIR/install.sh" "$EVEN_DIR/rebuild-index.sh" "$EVEN_DIR/sync-even-skills.sh" 2>/dev/null || true
-      chmod +x "$EVEN_DIR/port_skills.py" "$EVEN_DIR/index_even.py" 2>/dev/null || true
-      if [ ! -d "$EVEN_DIR/.venv" ] || [ ! -f "$EVEN_DIR/data/even.db" ]; then
-        if [ -d "$EVEN_DIR/sources/everything-evenhub" ]; then
-          su -s /bin/sh hermes -c "cd '$EVEN_DIR' && ./install.sh" 2>&1 | tail -20 || \
-            echo "hermes-even-mcp: install failed — run workspace/mcp/even/sync-even-skills.sh as hermes" >&2
-        else
-          echo "hermes-even-mcp: run workspace/mcp/even/sync-even-skills.sh to fetch sources and build index" >&2
-        fi
-      fi
-    fi
-  '';
+  # MCP venv/index bootstrap is soul-owned (workspace/mcp/*/install.sh).
+  # Do not encode pack/db topography in Nix — see skills/nixos-hermes-operations
+  # and workspace/mcp/provision-all.sh (hermes user, on demand).
 
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-nous-mcp" "hermes-guns-mcp" "hermes-competition-mcp" "hermes-law-mcp" "hermes-loadout-mcp" "hermes-housing-mcp" "hermes-eve-mcp" "hermes-even-mcp" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 
