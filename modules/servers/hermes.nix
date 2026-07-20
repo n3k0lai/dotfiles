@@ -535,6 +535,8 @@ in
       CHROME_BIN = "${pkgs.chromium}/bin/chromium";
     };
     serviceConfig = {
+      # Secrets / tool keys (BROWSER_USE_API_KEY, FIRECRAWL_*, etc.) — optional file
+      EnvironmentFile = [ "-${cfg.stateDir}/.hermes/.env" ];
       # Unify the parent gateway process cwd into .hermes/workspace as well
       # (delegation workdir controls the chdir for child grok processes).
       WorkingDirectory = lib.mkForce cfg.workingDirectory;
@@ -546,6 +548,8 @@ in
     path = lib.mkAfter [
       grokWrapper
       agentBrowserWrapper
+      pkgs.coreutils
+      pkgs.bash
     ];
   };
 
