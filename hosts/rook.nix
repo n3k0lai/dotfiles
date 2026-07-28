@@ -27,8 +27,6 @@ in
     ../modules/servers/samba.nix
     # Calibre-Web ebook server
     ../modules/servers/lib.nix
-    # CouchDB (legacy LiveSync / wiki path — separate from paid Obsidian Sync)
-    ../modules/servers/wiki.nix
     # Stream bouncer — RTMP relay with fallback scene
     ../modules/servers/stream-bouncer.nix
     ../modules/servers/octoprint.nix
@@ -176,52 +174,7 @@ in
     enable = true;
   };
 
-  # === COUCHDB / OBSIDIAN LIVESYNC ===
-  # Wiki module handles CouchDB declaration.
-  # We override it here for Rook's specific needs:
-  # - Bind 0.0.0.0 so Tailscale interface can reach it (firewall blocks public)
-  # - Single node, CORS enabled for LiveSync, require auth
-  modules.servers.wiki = {
-    enable = true;
-    couchdbBindAddress = "0.0.0.0";
-  };
-
-  # Additional CouchDB config beyond what the wiki module sets
-  services.couchdb = {
-    package = pkgs.couchdb3;
-    extraConfig = {
-      couchdb = {
-        single_node = true;
-      };
-      chttpd = {
-        bind_address = "0.0.0.0";
-        port = 5984;
-        max_dbs_open = 100;
-      };
-      httpd = {
-        enable_cors = true;
-        bind_address = "0.0.0.0";
-        port = 5984;
-      };
-      cors = {
-        origins = "*";
-        credentials = true;
-        methods = "GET, PUT, POST, HEAD, DELETE";
-        headers = "accept, authorization, content-type, origin, referer, x-csrf-token";
-      };
-      cluster = {
-        n = 1;
-        q = 1;
-      };
-      chttpd_auth = {
-        timeout = 600;
-        require_valid_user = true;
-      };
-      couch_httpd_auth = {
-        require_valid_user = true;
-      };
-    };
-  };
+  # CouchDB / Obsidian LiveSync removed 2026-07-28 — vault uses paid Obsidian Sync (ob).
 
   # === HOME AUTOMATION ===
   modules.servers.homeAssistant = {
@@ -257,7 +210,7 @@ in
 
   # === CADDY (Tailscale-only reverse proxy) ===
   # Ene handles public-facing Caddy. This is for local Tailscale dashboards.
-  # The wiki and calibre modules add their own virtualHosts to Caddy.
+  # Calibre module may add its own virtualHosts.
   services.caddy = {
     enable = true;
     virtualHosts = {
