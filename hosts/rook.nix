@@ -15,6 +15,8 @@ in
     ../modules/servers/hermes.nix
     ../modules/editors/opencode.nix
     ../modules/editors/grokbuild.nix
+    # Obsidian Headless Sync (official Sync — not LiveSync/CouchDB)
+    ../modules/servers/obsidian-headless.nix
     # Svalbard RAID storage
     ../modules/hardware/svalbard.nix
     # Home automation (lights, IoT)
@@ -25,7 +27,7 @@ in
     ../modules/servers/samba.nix
     # Calibre-Web ebook server
     ../modules/servers/lib.nix
-    # CouchDB/Obsidian wiki sync
+    # CouchDB (legacy LiveSync / wiki path — separate from paid Obsidian Sync)
     ../modules/servers/wiki.nix
     # Stream bouncer — RTMP relay with fallback scene
     ../modules/servers/stream-bouncer.nix
@@ -38,6 +40,9 @@ in
     enable = true;
     envFile = ../modules/servers/secrets/rook_env.age;
   };
+
+  # Same module as ene: wraps `ob` → obsidian-headless for ~/.hermes/workspace/vault
+  modules.servers.obsidian-headless.enable = true;
 
   modules.editors.opencode.enable = true;
   modules.editors.grokbuild.enable = true;
