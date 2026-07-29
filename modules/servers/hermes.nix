@@ -5,12 +5,21 @@ let
   nodePkg = pkgs.nodejs_24;
   cfg = config.modules.servers.hermes;
 
+  # Store-pinned interpreter for generic Linux agent-browser ELFs on NixOS.
+  # Used by both bulk oneshot (hermes-browser-fix) and the always-on wrapper
+  # (patch-before-exec) so mid-session npx drops work without a rebuild.
+  agentBrowserInterpreter = "${pkgs.glibc}/lib/ld-linux-x86-64.so.2";
+  # Soft pin: provision installs this when the global native is missing.
+  # Bump when intentionally upgrading; wrapper still works with any drop.
+  agentBrowserVersion = "0.33.1";
+
   agentBrowserFix = pkgs.writeShellScriptBin "hermes-browser-fix" ''
     set -e
-    INTERPRETER="${pkgs.glibc}/lib/ld-linux-x86-64.so.2"
+    INTERPRETER="${agentBrowserInterpreter}"
     FIND="${pkgs.findutils}/bin/find"
     MKDIR="${pkgs.coreutils}/bin/mkdir"
     CHOWN="${pkgs.coreutils}/bin/chown"
+    PATCHELF="${pkgs.patchelf}/bin/patchelf"
 
     # Patch every agent-browser native binary under the hermes home tree.
     # npm/npx refreshes can drop a new dynamically-linked binary at any time.
@@ -18,9 +27,9 @@ let
     "$FIND" /var/lib/hermes \
       -path '/var/lib/hermes/.cache/*' -prune \
       -o -name "agent-browser-linux-x64" -type f -print 2>/dev/null | while read -r binary; do
-      current_interp=$(${pkgs.patchelf}/bin/patchelf --print-interpreter "$binary" 2>/dev/null || true)
+      current_interp=$("$PATCHELF" --print-interpreter "$binary" 2>/dev/null || true)
       if [ "$current_interp" != "$INTERPRETER" ]; then
-        ${pkgs.patchelf}/bin/patchelf --set-interpreter "$INTERPRETER" "$binary"
+        "$PATCHELF" --set-interpreter "$INTERPRETER" "$binary"
         echo "Patched: $binary"
       fi
     done
@@ -32,7 +41,7 @@ let
       '{executablePath: $chromium}' \
       > /var/lib/hermes/.agent-browser/config.json
 
-    # Fix ownership
+    # Fix ownership (config is written as root when run from systemd)
     "$CHOWN" -R hermes:users /var/lib/hermes/.agent-browser 2>/dev/null || true
   '';
 
@@ -77,42 +86,37 @@ let
     fi
   '';
 
-  # Ensure the agent-browser CLI is installed for the hermes user.
-  # This is required even for cloud browser providers (browser-use, etc.) because
-  # the browser tool surface and the Nous Tool Gateway status logic gate
-  # "browser automation" selection/availability on the presence of the agent-browser
-  # CLI (see _has_agent_browser and _resolve_browser_feature_state).
-  # The existing hermes-browser-fix activation will then patch the linux-x64 binary
-  # it finds (in .npm/_npx or global caches).
+  # Ensure a real npm-global agent-browser native exists for the hermes user.
+  # Required even for cloud browser providers (browser-use, etc.): Hermes gates
+  # "browser automation" on a runnable agent-browser CLI (_find_agent_browser).
+  # Do NOT use `command -v agent-browser` — the Nix profile wrapper is always
+  # present and would skip install even when the native ELF is missing.
   agentBrowserProvision = pkgs.writeShellScriptBin "hermes-agent-browser-provision" ''
     set -e
-    # Run the install as the hermes user so npm prefix and ownership are correct.
     ${pkgs.su}/bin/su -l hermes -c '
       export HOME=/var/lib/hermes
       export USER=hermes
-      if ! command -v agent-browser >/dev/null 2>&1; then
-        echo "[hermes-agent-browser-provision] agent-browser CLI not found for hermes user; installing via npm..."
-        export npm_config_prefix="$HOME/.npm-global"
-        mkdir -p "$npm_config_prefix"
-        npm install -g agent-browser 2>&1 | tail -5 || true
+      export npm_config_prefix="$HOME/.npm-global"
+      mkdir -p "$npm_config_prefix"
+      NATIVE="$HOME/.npm-global/lib/node_modules/agent-browser/bin/agent-browser-linux-x64"
+      if [ ! -x "$NATIVE" ]; then
+        echo "[hermes-agent-browser-provision] installing agent-browser@${agentBrowserVersion} into npm-global..."
+        npm install -g "agent-browser@${agentBrowserVersion}" 2>&1 | tail -8 || true
       fi
-      # Ensure bins owned.
       if [ -d "$HOME/.npm-global" ]; then
         chown -R hermes:hermes "$HOME/.npm-global" 2>/dev/null || true
       fi
       if [ -d "$HOME/.npm" ]; then
         chown -R hermes:hermes "$HOME/.npm" 2>/dev/null || true
       fi
-      # Add to PATH for the user (for interactive hermes status etc.)
+      # Prefer profile wrapper over raw npm-global ELF on interactive PATH.
+      # Put wrapper dir first if present; keep npm-global as fallback only.
       if ! grep -q ".npm-global/bin" "$HOME/.profile" 2>/dev/null; then
         echo "export PATH=\"\$HOME/.npm-global/bin:\$PATH\"" >> "$HOME/.profile"
       fi
     ' || true
   '';
 
-  # Static wrapper so which("agent-browser") succeeds for hermes user commands
-  # (interactive hermes status, doctor, etc.) and for the gateway process.
-  # It delegates to the user-installed location (populated by the provision).
   # Hermes dashboard validates Host (127.0.0.1 only). Tailscale Serve forwards the
   # MagicDNS hostname, so we rewrite Host on a localhost proxy before serve.
   serveProxyPort = 9120;
@@ -128,24 +132,60 @@ let
     }
   '';
 
+  # Durable agent-browser entrypoint for Hermes + interactive hermes shells.
+  # Critical: patch-before-exec so a fresh npx drop mid-session works without
+  # waiting for the oneshot/activation (see HERMES-BROWSER-FIX.md).
+  # Hermes resolves CLI via shutil.which("agent-browser") then agent_browser_runnable
+  # (--version). If the wrapper is first on PATH and returns a working --version,
+  # Hermes never falls through to bare `npx agent-browser` (which re-drops ELFs).
   agentBrowserWrapper = pkgs.writeShellScriptBin "agent-browser" ''
     set -euo pipefail
+    INTERPRETER="${agentBrowserInterpreter}"
+    PATCHELF="${pkgs.patchelf}/bin/patchelf"
+    FIND="${pkgs.findutils}/bin/find"
+    SORT="${pkgs.coreutils}/bin/sort"
+    CUT="${pkgs.coreutils}/bin/cut"
+    HEAD="${pkgs.coreutils}/bin/head"
     self=$(readlink -f "$0" 2>/dev/null || echo "$0")
-    # Prefer the patched native binary — avoids the Node shim and NixOS ld.so issues.
-    for base in /var/lib/hermes/.npm-global /var/lib/hermes/.npm/_npx /var/lib/hermes/.local; do
-      if [ -d "$base" ]; then
-        native=$(${pkgs.findutils}/bin/find "$base" -name 'agent-browser-linux-x64' -type f 2>/dev/null | ${pkgs.coreutils}/bin/head -1)
-        if [ -n "$native" ] && [ -x "$native" ]; then
-          exec "$native" "$@"
-        fi
+
+    patch_if_needed() {
+      local binary="$1"
+      local current
+      current=$("$PATCHELF" --print-interpreter "$binary" 2>/dev/null || true)
+      if [ -n "$current" ] && [ "$current" != "$INTERPRETER" ]; then
+        "$PATCHELF" --set-interpreter "$INTERPRETER" "$binary" 2>/dev/null || true
       fi
+    }
+
+    # Prefer newest mtime so a just-npx'd binary wins over a stale global.
+    # GNU find -printf is fine (Nix findutils). Only search dirs that exist.
+    search_dirs=()
+    for d in /var/lib/hermes/.npm-global /var/lib/hermes/.npm/_npx /var/lib/hermes/.local; do
+      [ -d "$d" ] && search_dirs+=("$d")
     done
-    # Fall back to the global npm JS shim (spawns native binary internally).
+    if [ "''${#search_dirs[@]}" -gt 0 ]; then
+      while IFS= read -r native; do
+        [ -n "$native" ] || continue
+        [ -x "$native" ] || continue
+        patch_if_needed "$native"
+        exec "$native" "$@"
+      done < <(
+        "$FIND" "''${search_dirs[@]}" \
+          \( -name 'agent-browser-linux-x64' -type f \) -printf '%T@\t%p\n' 2>/dev/null \
+          | "$SORT" -nr | "$CUT" -f2- | "$HEAD" -20 || true
+      )
+    fi
+
+    # Fall back to npm-global shim only if it is not this wrapper.
     for cand in \
       "/var/lib/hermes/.npm-global/bin/agent-browser" \
       "/var/lib/hermes/.local/bin/agent-browser"; do
       cand_resolved=$(readlink -f "$cand" 2>/dev/null || echo "$cand")
       if [ -x "$cand" ] && [ "$cand_resolved" != "$self" ]; then
+        # If the cand is itself the native ELF, patch first.
+        if "$PATCHELF" --print-interpreter "$cand_resolved" >/dev/null 2>&1; then
+          patch_if_needed "$cand_resolved"
+        fi
         exec "$cand" "$@"
       fi
     done
@@ -267,12 +307,17 @@ in
     ${agentBrowserFix}/bin/hermes-browser-fix
   '';
 
-  # Patch before the gateway starts (npm/npx can refresh the binary anytime).
+  # Bulk patch before gateway start. PartOf stops this unit when hermes-agent
+  # stops, so RemainAfterExit does not skip re-runs on agent restart (the old
+  # failure mode: active since 2026-07-07 while new npx drops went unpatched).
   systemd.services.hermes-agent-browser-fix = {
     description = "Patch Hermes agent-browser binary for NixOS";
     before = [ "hermes-agent.service" ];
     wantedBy = [ "hermes-agent.service" "multi-user.target" ];
     requiredBy = [ "hermes-agent.service" ];
+    unitConfig = {
+      PartOf = "hermes-agent.service";
+    };
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -522,17 +567,20 @@ in
     rm -f ${cfg.stateDir}/.hermes/.managed
   '';
 
-  # Make the external "grok" command (used by all the grok-build-* delegation agents)
-  # resolvable inside the hermes-agent gateway process. The real binary lives in the
-  # hermes user's home after grok-update / the provision script above.
-  # This wrapper gives a clear error + hint if it is still missing.
+  # Make the external "grok" / "agent-browser" commands resolvable inside the
+  # hermes-agent gateway process.
+  #
+  # PATH pitfall (fixed): `environment = lib.mkForce { ... }` wiped the PATH
+  # generated from `path =`, so shutil.which("agent-browser") missed the Nix
+  # wrapper and Hermes fell through to `npx agent-browser` (fresh unpatched ELF).
+  # Use per-key mkForce and mkBefore so the wrapper is first on PATH.
   systemd.services.hermes-agent = {
-    environment = lib.mkForce {
-      HOME = cfg.stateDir;
-      HERMES_HOME = "${cfg.stateDir}/.hermes";
-      MESSAGING_CWD = cfg.workingDirectory;
-      PUPPETEER_EXECUTABLE_PATH = "${pkgs.chromium}/bin/chromium";
-      CHROME_BIN = "${pkgs.chromium}/bin/chromium";
+    environment = {
+      HOME = lib.mkForce cfg.stateDir;
+      HERMES_HOME = lib.mkForce "${cfg.stateDir}/.hermes";
+      MESSAGING_CWD = lib.mkForce cfg.workingDirectory;
+      PUPPETEER_EXECUTABLE_PATH = lib.mkForce "${pkgs.chromium}/bin/chromium";
+      CHROME_BIN = lib.mkForce "${pkgs.chromium}/bin/chromium";
     };
     serviceConfig = {
       # Secrets / tool keys (BROWSER_USE_API_KEY, FIRECRAWL_*, etc.) — optional file
@@ -542,12 +590,15 @@ in
       WorkingDirectory = lib.mkForce cfg.workingDirectory;
       # config.yaml restart_drain_timeout=180 — unit must allow graceful drain + teardown.
       TimeoutStopSec = lib.mkForce 240;
-      # Browser provision/fix run via requiredBy oneshot units (before=hermes-agent).
-      # Do not duplicate as ExecStartPre — systemd Pre hooks get no usable PATH on NixOS.
+      # Belt-and-suspenders: re-patch on every start (script uses store-pinned paths,
+      # so missing PATH in ExecStartPre is fine). Mid-session drops are handled by
+      # the wrapper's patch-before-exec.
+      ExecStartPre = [ "${agentBrowserFix}/bin/hermes-browser-fix" ];
     };
-    path = lib.mkAfter [
-      grokWrapper
+    # Wrapper MUST be first so Hermes never prefers raw npm-global ELF or npx.
+    path = lib.mkBefore [
       agentBrowserWrapper
+      grokWrapper
       pkgs.coreutils
       pkgs.bash
     ];
