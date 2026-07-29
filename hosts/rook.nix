@@ -41,7 +41,7 @@ in
     envFile = ../modules/servers/secrets/rook_env.age;
   };
 
-  # Ene fetches GET /v1/usage/weekly over tailnet (host chat / 203.0.113.11:9855)
+  # Ene fetches GET /v1/usage/weekly over tailnet (MagicDNS chat.example.ts.net:9855)
   modules.servers.supergrokUsageApi = {
     enable = true;
     hostName = "rook";
