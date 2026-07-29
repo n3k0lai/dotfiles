@@ -134,7 +134,7 @@ let
 
   # Durable agent-browser entrypoint for Hermes + interactive hermes shells.
   # Critical: patch-before-exec so a fresh npx drop mid-session works without
-  # waiting for the oneshot/activation (see HERMES-BROWSER-FIX.md).
+  # waiting for the oneshot/activation.
   # Hermes resolves CLI via shutil.which("agent-browser") then agent_browser_runnable
   # (--version). If the wrapper is first on PATH and returns a working --version,
   # Hermes never falls through to bare `npx agent-browser` (which re-drops ELFs).
