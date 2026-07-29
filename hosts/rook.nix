@@ -30,6 +30,8 @@ in
     # Stream bouncer — RTMP relay with fallback scene
     ../modules/servers/stream-bouncer.nix
     ../modules/servers/octoprint.nix
+    # SuperGrok weekly buckets API for Ene (Tailscale-only)
+    ../modules/servers/supergrok-usage-api.nix
   ] ++ lib.optional (builtins.pathExists ./rook-local.nix) ./rook-local.nix;
 
   networking.hostName = "rook";
@@ -37,6 +39,13 @@ in
   modules.servers.hermes = {
     enable = true;
     envFile = ../modules/servers/secrets/rook_env.age;
+  };
+
+  # Ene fetches GET /v1/usage/weekly over tailnet (host chat / 100.114.138.5:9855)
+  modules.servers.supergrokUsageApi = {
+    enable = true;
+    hostName = "rook";
+    port = 9855;
   };
 
   # Same module as ene: wraps `ob` → obsidian-headless for ~/.hermes/workspace/vault
