@@ -50,3 +50,4 @@ assets/scrots/
 CLAUDE.md
 .github/copilot-instructions.md
 .github/*.code-workspace
+__pycache__/
