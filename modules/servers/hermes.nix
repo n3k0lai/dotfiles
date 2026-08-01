@@ -448,12 +448,17 @@ in
       ];
     };
 
-    # Secrets (decrypted at activation by agenix)
+    # Secrets (decrypted at activation by agenix).
+    # SoT is modules/servers/secrets/hermes_env.age (secrets.nix → ene + nicho).
+    # Owner MUST be hermes so hermes-agent EnvironmentFile can read it.
+    # Do NOT tell operators to echo keys into ~/.hermes/.env — edit the age blob.
     age.secrets.hermes-env = {
       file = cfg.envFile;
-      owner = "nicho";
-      group = "users";
+      owner = cfg.user;
+      group = cfg.user;
       mode = "0400";
+      # Stable path for service EnvironmentFile + optional human inspect as hermes
+      path = "${cfg.stateDir}/.hermes/.env";
     };
 
     age.secrets.hermes-ssh-config = {
@@ -886,8 +891,12 @@ in
       CHROME_BIN = lib.mkForce "${pkgs.chromium}/bin/chromium";
     };
     serviceConfig = {
-      # Secrets / tool keys (BROWSER_USE_API_KEY, FIRECRAWL_*, etc.) — optional file
-      EnvironmentFile = [ "-${cfg.stateDir}/.hermes/.env" ];
+      # Secrets SoT: agenix hermes_env.age → ${stateDir}/.hermes/.env (see age.secrets.hermes-env).
+      # Optional second file for local non-secret overrides only (ignored if missing).
+      EnvironmentFile = [
+        "-${cfg.stateDir}/.hermes/.env"
+        "-${cfg.stateDir}/.hermes/.env.local"
+      ];
       # Unify the parent gateway process cwd into .hermes/workspace as well
       # (delegation workdir controls the chdir for child grok processes).
       WorkingDirectory = lib.mkForce cfg.workingDirectory;
