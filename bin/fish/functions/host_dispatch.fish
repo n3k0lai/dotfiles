@@ -3,6 +3,10 @@
 #
 #   host_dispatch --target ene --ssh nicho@ene --flake-env ENE_FLAKE_DIR $argv
 #   host_dispatch --target rook --ssh nicho@rook --flake-env ROOK_FLAKE_DIR $argv
+#
+# Remote note: nicho's login shell is fish. `ssh host 'cmd'` becomes `fish -c cmd`,
+# so bash scripts cannot be passed as the ssh command string. Non-interactive
+# remote work is always:  printf script | ssh host bash --noprofile --norc -s
 
 function host_dispatch
     argparse 'target=' 'ssh=' 'flake-env=' -- $argv
@@ -68,7 +72,7 @@ function host_dispatch
         set rebuild_base "sudo nixos-rebuild --flake $active_flake#$target"
     end
 
-    # Escape argv for embedding in a remote bash -lc string
+    # Escape argv for embedding in a remote bash script body
     set -l escaped_args
     for a in $argv
         set -a escaped_args (string escape -- $a)
@@ -123,7 +127,13 @@ function host_dispatch
                 git -C $on_host_flake pull --ff-only
             else if test "$on_kiss" = true
                 echo "📥 git pull --ff-only on $ssh_dest (nicho dotfiles) ..."
-                ssh $ssh_dest "if test -e $hermes_flake; then git -C $hermes_flake pull --ff-only; else git -C \$HOME/dotfiles pull --ff-only; fi"
+                set -l pull_script "set -e
+if test -e $hermes_flake; then
+  git -C $hermes_flake pull --ff-only
+else
+  git -C \"\$HOME/dotfiles\" pull --ff-only
+fi"
+                printf '%s\n' "$pull_script" | ssh $ssh_dest bash --noprofile --norc -s
             else
                 echo "$target: pull needs to run on $target or from kiss" >&2
                 return 1
@@ -133,33 +143,32 @@ function host_dispatch
             if test "$on_target" = true
                 exec sudo -u hermes -i
             else if test "$on_kiss" = true
-                ssh -t $ssh_dest "sudo -u hermes -i"
+                # Interactive hermes login (hermes shell is bash; sudo -i is fine)
+                ssh -t $ssh_dest -- sudo -u hermes -i
             else
                 echo "$target: shell needs to run on $target or from kiss" >&2
                 return 1
             end
 
         case grok g
-            set -l grok_script '
-                set -e
-                export HOME='"$hermes_home"' USER=hermes HERMES_HOME='"$hermes_soul"'
-                cd "$HERMES_HOME"
-                if command -v grok-update >/dev/null 2>&1; then
-                    echo "Updating Grok CLI (hermes)..."
-                    grok-update || true
-                fi
-                BIN="$HOME/.grok/bin/grok"
-                if [ ! -x "$BIN" ]; then
-                    echo "grok: not found at $BIN" >&2
-                    exit 127
-                fi
-                exec "$BIN" '"$joined_args"'
-            '
+            set -l grok_script "set -e
+cd \"$hermes_soul\"
+if command -v grok-update >/dev/null 2>&1; then
+  echo 'Updating Grok CLI (hermes)...'
+  grok-update || true
+fi
+BIN=\"\$HOME/.grok/bin/grok\"
+if [ ! -x \"\$BIN\" ]; then
+  echo \"grok: not found at \$BIN\" >&2
+  exit 127
+fi
+exec \"\$BIN\" $joined_args"
+            set -l hermes_bash sudo -u hermes env HOME=$hermes_home USER=hermes HERMES_HOME=$hermes_soul bash --noprofile --norc -s
             if test "$on_target" = true
-                sudo -u hermes env HOME=$hermes_home USER=hermes HERMES_HOME=$hermes_soul \
-                    bash -lc "$grok_script"
+                printf '%s\n' "$grok_script" | $hermes_bash
             else if test "$on_kiss" = true
-                ssh -t $ssh_dest "sudo -u hermes env HOME=$hermes_home USER=hermes HERMES_HOME=$hermes_soul bash -lc "(string escape -- $grok_script)
+                # stdin → remote bash -s as hermes (avoid fish parsing bash scripts)
+                printf '%s\n' "$grok_script" | ssh -t $ssh_dest $hermes_bash
             else
                 echo "$target: grok needs to run on $target or from kiss" >&2
                 return 1
@@ -171,39 +180,32 @@ function host_dispatch
                 echo "  e.g. $target do hermes doctor" >&2
                 return 2
             end
-            set -l do_script '
-                set -e
-                export HOME='"$hermes_home"' USER=hermes HERMES_HOME='"$hermes_soul"'
-                cd "$HERMES_HOME"
-                exec '"$joined_args"'
-            '
+            set -l do_script "set -e
+cd \"$hermes_soul\"
+exec $joined_args"
+            set -l hermes_bash sudo -u hermes env HOME=$hermes_home USER=hermes HERMES_HOME=$hermes_soul bash --noprofile --norc -s
             if test "$on_target" = true
-                sudo -u hermes env HOME=$hermes_home USER=hermes HERMES_HOME=$hermes_soul \
-                    bash -lc "$do_script"
+                printf '%s\n' "$do_script" | $hermes_bash
             else if test "$on_kiss" = true
-                ssh -t $ssh_dest "sudo -u hermes env HOME=$hermes_home USER=hermes HERMES_HOME=$hermes_soul bash -lc "(string escape -- $do_script)
+                printf '%s\n' "$do_script" | ssh -t $ssh_dest $hermes_bash
             else
                 echo "$target: do needs to run on $target or from kiss" >&2
                 return 1
             end
 
         case status st
-            # systemd unit health + hermes CLI status (as hermes user)
-            set -l status_script '
-                echo "=== hermes-agent ==="
-                systemctl status hermes-agent --no-pager -l || true
-                echo ""
-                echo "=== hermes-dashboard ==="
-                systemctl status hermes-dashboard --no-pager -l 2>/dev/null || true
-                echo ""
-                echo "=== hermes status (CLI, as hermes) ==="
-                sudo -u hermes env HOME=/var/lib/hermes HERMES_HOME=/var/lib/hermes/.hermes \
-                    hermes status 2>/dev/null || echo "(hermes CLI status unavailable)"
-            '
+            set -l status_script "echo '=== hermes-agent ==='
+systemctl status hermes-agent --no-pager -l || true
+echo ''
+echo '=== hermes-dashboard ==='
+systemctl status hermes-dashboard --no-pager -l 2>/dev/null || true
+echo ''
+echo '=== hermes status (CLI, as hermes) ==='
+sudo -u hermes env HOME=$hermes_home HERMES_HOME=$hermes_soul hermes status 2>/dev/null || echo '(hermes CLI status unavailable)'"
             if test "$on_target" = true
-                bash -c "$status_script"
+                printf '%s\n' "$status_script" | bash --noprofile --norc -s
             else if test "$on_kiss" = true
-                ssh $ssh_dest "$status_script"
+                printf '%s\n' "$status_script" | ssh $ssh_dest bash --noprofile --norc -s
             else
                 echo "$target: status needs to run on $target or from kiss" >&2
                 return 1
@@ -213,7 +215,7 @@ function host_dispatch
             if test "$on_target" = true
                 journalctl -u hermes-agent -f --no-pager
             else if test "$on_kiss" = true
-                ssh -t $ssh_dest "journalctl -u hermes-agent -f --no-pager"
+                ssh -t $ssh_dest -- journalctl -u hermes-agent -f --no-pager
             else
                 echo "$target: logs need to run on $target or from kiss" >&2
                 return 1
