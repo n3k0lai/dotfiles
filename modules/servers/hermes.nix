@@ -80,10 +80,8 @@ let
       echo "[hermes-grok-provision] Warning: grok still not present after attempt. The grok-build delegation agents will fail until it is installed and logged in."
     fi
 
-    # Hermes uses bash (no fish dotfiles). Login shells read .profile only — mirror npm-global.
-    if ! grep -q ".grok/bin" "$HOME/.profile" 2>/dev/null; then
-      echo 'export PATH="$HOME/.grok/bin:$PATH"' >> "$HOME/.profile"
-    fi
+    # PATH for interactive login is owned by hermes-shell-profile activation
+    # (managed .profile / .bash_profile). No append-only mutation here.
   '';
 
   # Ensure a real npm-global agent-browser native exists for the hermes user.
@@ -109,11 +107,7 @@ let
       if [ -d "$HOME/.npm" ]; then
         chown -R hermes:hermes "$HOME/.npm" 2>/dev/null || true
       fi
-      # Prefer profile wrapper over raw npm-global ELF on interactive PATH.
-      # Put wrapper dir first if present; keep npm-global as fallback only.
-      if ! grep -q ".npm-global/bin" "$HOME/.profile" 2>/dev/null; then
-        echo "export PATH=\"\$HOME/.npm-global/bin:\$PATH\"" >> "$HOME/.profile"
-      fi
+      # Interactive PATH (npm-global) is owned by hermes-shell-profile activation.
     ' || true
   '';
 
@@ -203,6 +197,29 @@ let
     echo "It is normally installed by the hermes-grok-provision activation / service." >&2
     echo "Try: sudo -u hermes HOME=/var/lib/hermes grok-update && sudo -u hermes HOME=/var/lib/hermes grok login" >&2
     exit 127
+  '';
+
+  # Interactive login profile for `sudo -i -u hermes` / ene|rook shell.
+  # Login shell stays bash (services use explicit ExecStart; no fish).
+  hermesBashProfile = pkgs.writeText "hermes-bash-profile" ''
+    # Managed by modules/servers/hermes.nix — regenerated on nixos-rebuild.
+    # Marker: HERMES_NIX_PROFILE=1
+    export HERMES_NIX_PROFILE=1
+    export HOME="${cfg.stateDir}"
+    export USER="''${USER:-hermes}"
+    export HERMES_HOME="${cfg.stateDir}/.hermes"
+    # Grok CLI + npm-global agent-browser ahead of system PATH
+    export PATH="$HOME/.grok/bin:$HOME/.npm-global/bin:$PATH"
+
+    # Interactive login only (sudo -i, ene shell, rook shell)
+    case $- in
+      *i*)
+        if [ -d "$HERMES_HOME" ]; then
+          cd "$HERMES_HOME" || true
+        fi
+        PS1='[hermes \w]\$ '
+        ;;
+    esac
   '';
 in
 {
@@ -533,8 +550,18 @@ in
   # Do not encode pack/db topography in Nix — see skills/nixos-hermes-operations
   # and workspace/mcp/provision-all.sh (hermes user, on demand).
 
+  # Managed interactive bash profile for the hermes service user.
+  system.activationScripts.hermes-shell-profile = lib.stringAfter [ "users" "groups" ] ''
+    PROF="${cfg.stateDir}/.profile"
+    BPROF="${cfg.stateDir}/.bash_profile"
+    install -d -m 0755 -o ${cfg.user} -g ${cfg.user} "${cfg.stateDir}"
+    install -m 0644 ${hermesBashProfile} "$PROF"
+    install -m 0644 ${hermesBashProfile} "$BPROF"
+    chown ${cfg.user}:${cfg.user} "$PROF" "$BPROF"
+  '';
+
   # Run grok CLI provisioning on every activation (so delegated grok-build* agents work).
-  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" ] ''
+  system.activationScripts.hermes-grok-provision = lib.stringAfter [ "users" "groups" "hermes-workspace" "hermes-shell-profile" ] ''
     ${grokProvision}/bin/hermes-grok-provision
   '';
 

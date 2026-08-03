@@ -1,5 +1,7 @@
 # users/nicho.nix
-# User-specific configuration for nicho
+# Account config for user `nicho` on every host that has this account.
+# Imported by configuration.nix (kiss) and configuration-server.nix (ene, rook, …).
+# CLI tools (grok, nvim, session PATH) live here so they are never host-specific.
 { config, lib, pkgs, ... }: {
   imports = [
     ../modules/editors/grokbuild.nix
@@ -38,8 +40,11 @@
       DISPLAY = ":0";
     };
 
-    # Additional PATH entries
+    # Additional PATH entries.
+    # grok itself is bin/fish/functions/grok.fish (update-then-run); ~/.grok/bin
+    # stays on PATH for the real binary, agent, and non-fish callers.
     home.sessionPath = [
+      "$HOME/.grok/bin"
       "$HOME/.local/bin"
       "$HOME/.local/share/go/bin"
       "$HOME/.config/emacs/bin"
@@ -66,6 +71,7 @@
       xz
     ];
 
-    home.stateVersion = "25.05";
+    # Hosts may pin an older value (e.g. rook 24.11) — do not force overwrite.
+    home.stateVersion = lib.mkDefault "25.05";
   };
 }

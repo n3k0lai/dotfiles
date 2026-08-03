@@ -14,7 +14,6 @@ in
     # Hermes Agent
     ../modules/servers/hermes.nix
     ../modules/editors/opencode.nix
-    ../modules/editors/grokbuild.nix
     # Obsidian Headless Sync (official Sync — not LiveSync/CouchDB)
     ../modules/servers/obsidian-headless.nix
     # Svalbard RAID storage
@@ -52,9 +51,9 @@ in
   modules.servers.obsidian-headless.enable = true;
 
   modules.editors.opencode.enable = true;
-  modules.editors.grokbuild.enable = true;
+  # grok + nvim + user PATH: users/nicho.nix via configuration-server.nix
 
-  # Home-manager state version
+  # Home-manager state version (pinned from first HM on this host)
   home-manager.users.nicho.home.stateVersion = "24.11";
 
   # Boot

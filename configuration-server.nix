@@ -31,6 +31,10 @@
 
   imports = [
     ./modules/core/security.nix
+    # nicho's account: CLI tools (grok, nvim, PATH, fish init) — same as kiss
+    ./users/nicho.nix
+    # fish functions (incl. grok.fish) + conf.d for nicho
+    ./bin/default.nix
   ];
 
   # Agenix secrets configuration
@@ -42,8 +46,9 @@
   time.timeZone = "America/New_York";
   i18n.defaultLocale = "en_US.UTF-8";
 
-  # User configuration
+  # User configuration (packages / shell env live in users/nicho.nix)
   programs.fish.enable = true;
+  home-manager.backupFileExtension = "hm-bak";
 
   users.users.nicho = {
     isNormalUser = true;

@@ -71,6 +71,7 @@
           ./hosts/ene-hardware.nix
           ./configuration-server.nix
           ./hosts/ene.nix
+          home-manager.nixosModules.home-manager
           agenix.nixosModules.default
           hermes-agent.nixosModules.default
           {
@@ -86,6 +87,7 @@
           ./hosts/artemis-hardware.nix
           ./configuration-server.nix
           ./hosts/artemis.nix
+          home-manager.nixosModules.home-manager
           agenix.nixosModules.default
           {
             nixpkgs.overlays = [ agenix.overlays.default ];
@@ -101,7 +103,7 @@
           ./hosts/rook-hardware.nix
           ./configuration-server.nix
           ./hosts/rook.nix
-          ./bin/default.nix
+          # bin/default.nix (fish functions) comes via configuration-server.nix
           home-manager.nixosModules.home-manager
           agenix.nixosModules.default
           hermes-agent.nixosModules.default
