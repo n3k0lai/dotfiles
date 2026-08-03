@@ -1,4 +1,4 @@
-# Shared server configuration for ene (DigitalOcean droplet)
+# Shared server configuration for ene + rook (+ artemis).
 # This is the server equivalent of configuration.nix for the desktop.
 { config, lib, pkgs, ... }:
 
@@ -6,8 +6,21 @@
   # Allow unfree packages (for some monitoring tools if needed)
   nixpkgs.config.allowUnfree = true;
 
-  # Enable flakes
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # Enable flakes + keep rebuilds from dying on EMFILE / full download buffers.
+  # Default download-buffer-size is 64MiB; when it fills, nix opens more concurrent
+  # fetches until "creating pipe: Too many open files". Applies to ene + rook.
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+    download-buffer-size = 268435456; # 256 MiB
+    max-substitution-jobs = 8;       # default 16 is FD-heavy during big switches
+  };
+
+  # Raise FD ceiling for the daemon (client soft limit via PAM below).
+  systemd.services.nix-daemon.serviceConfig.LimitNOFILE = lib.mkForce 1048576;
+  security.pam.loginLimits = [
+    { domain = "*"; type = "soft"; item = "nofile"; value = "65536"; }
+    { domain = "*"; type = "hard"; item = "nofile"; value = "1048576"; }
+  ];
 
   # Garbage collection to keep disk usage low
   nix.gc = {
