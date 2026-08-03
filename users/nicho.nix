@@ -1,15 +1,20 @@
 # users/nicho.nix
 # User-specific configuration for nicho
 { config, lib, pkgs, ... }: {
-  imports = [ ../modules/editors/grokbuild.nix ];
+  imports = [
+    ../modules/editors/grokbuild.nix
+    ../modules/editors/vim.nix
+  ];
 
   modules.editors.grokbuild.enable = true;
+  modules.editors.vim.enable = true;
 
   home-manager.users.nicho = { pkgs, ... }: {
     # User environment variables
     home.sessionVariables = {
-      # Default programs
-      EDITOR = "emacs";
+      # Default programs — nvim for TUI chores; GUI Emacs via `e`
+      EDITOR = "nvim";
+      VISUAL = "nvim";
       TERMINAL = "kitty";
       BROWSER = "firefox";
       BROWSER_MIN = "luakit";
