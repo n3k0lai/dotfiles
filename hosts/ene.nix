@@ -28,8 +28,8 @@
   # ene-only: tiny /tmp tmpfs (~2G on 4G RAM). Shared FD/download-buffer knobs live
   # in configuration-server.nix (ene + rook).
   #
-  # - build-dir: large hermes npm builds (ui-tui + web ~900MB npmDeps + node_modules +
-  #   vite/esbuild) exceed /tmp. Path must not be under a world-writable parent
+  # - build-dir: hermes npm still builds ui-tui (esbuild); withWeb=false drops the
+  #   Vite hermes-web graph. Path must not be under a world-writable parent
   #   (e.g. /var/tmp is 1777) or nix rejects it for security.
   # - max-jobs 1: avoid parallel multi-GB hermes cache copies on this box.
   nix.settings = {
@@ -68,9 +68,12 @@
   #
   # After activation, `nix-daemon.service` restarts with the new nix.conf.
 
+  # Discord + SSH CLI only — no web UI / Tailscale Serve / hermes-web build.
   modules.servers.hermes = {
     enable = true;
-    tailscaleServe.enable = true;
+    dashboard.enable = false;
+    tailscaleServe.enable = false;
+    withWeb = false;
   };
   modules.servers.obsidian-headless.enable = true;
   modules.servers.even-g2.enable = true;
