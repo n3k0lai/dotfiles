@@ -127,6 +127,9 @@ in {
     };
 
     # Fonts
+    # Martian Mono covers Latin only — CJK (fortune-zh, fcitx5, host icon 吻吻)
+    # and Nerd symbols need explicit packages + fontconfig fallbacks, otherwise
+    # terminals/UI show tofu boxes for missing glyphs.
     fonts = {
       enableDefaultPackages = true;
       packages = with pkgs; [
@@ -134,7 +137,22 @@ in {
         nerd-fonts.hurmit
         nerd-fonts.symbols-only
         font-awesome
+        noto-fonts
+        noto-fonts-cjk-sans
+        noto-fonts-emoji
       ];
+      fontconfig = {
+        defaultFonts = {
+          serif = [ "Noto Serif" "Noto Sans CJK SC" ];
+          sansSerif = [ "Noto Sans" "Noto Sans CJK SC" ];
+          monospace = [
+            "Martian Mono"
+            "Symbols Nerd Font Mono"
+            "Noto Sans Mono CJK SC"
+          ];
+          emoji = [ "Noto Color Emoji" ];
+        };
+      };
     };
 
     # XDG MIME configuration
