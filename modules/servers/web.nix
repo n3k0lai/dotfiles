@@ -67,21 +67,6 @@ in
         '';
       };
 
-      # Obsidian LiveSync (wiki) — CouchDB on Rook via Tailscale
-      "wiki.comfy.sh" = {
-        extraConfig = ''
-          import /etc/caddy/auth.conf
-          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:5984 {
-            header_up Host {host}
-            header_up X-Forwarded-Proto {scheme}
-          }
-          header Access-Control-Allow-Origin "*"
-          header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, HEAD, OPTIONS"
-          header Access-Control-Allow-Headers "accept, authorization, content-type, origin, referer, if-match, if-none-match, etag"
-          header Access-Control-Allow-Credentials "true"
-        '';
-      };
-
       # OctoPrint — proxied to Rook via Tailscale
       "factory.comfy.sh" = {
         extraConfig = ''
@@ -125,12 +110,6 @@ in
       # "api.itsnicholai.fyi" = {
       #   extraConfig = ''
       #     reverse_proxy localhost:3000
-      #   '';
-      # };
-
-      # "wiki.itsnicholai.fyi" = {
-      #   extraConfig = ''
-      #     reverse_proxy localhost:5984
       #   '';
       # };
     };
