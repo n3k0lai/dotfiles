@@ -10,7 +10,7 @@
     # ../modules/editors/opencode.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
-    # IRC server (Ergo) — Chatterino + OpenClaw agent mesh
+    # IRC server (Ergo) — Chatterino + Hermes agent mesh
     ../modules/servers/irc.nix
     # Obsidian Headless Sync (for vault access + future MCP)
     ../modules/servers/obsidian-headless.nix

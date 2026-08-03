@@ -42,7 +42,6 @@ in
   # SERVER SECRETS (ene)
   # ===========================================
   "modules/servers/secrets/xai_api_key.age".publicKeys = servers ++ [ nicho ];
-  "modules/servers/secrets/openclaw_env.age".publicKeys = servers ++ [ nicho ];
   "modules/servers/secrets/hermes_env.age".publicKeys = [ ene nicho ];
   "modules/servers/secrets/hermes_ssh_config.age".publicKeys = [ ene nicho ];
 
@@ -59,7 +58,7 @@ in
   "modules/servers/secrets/x_stream_key.age".publicKeys = streaming ++ [ nicho ];
 
   # ===========================================
-  # ROOK AGENT SECRETS (migrated from Windows OpenClaw)
+  # ROOK HERMES SECRETS
   # ===========================================
   "modules/servers/secrets/rook_env.age".publicKeys = [ rook nicho ];
 

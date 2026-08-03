@@ -5,8 +5,7 @@
 #   1. Register accounts via CLI:
 #      sudo -u ergochat ergo useradd nicholai -password <pass>
 #      (or connect and use /NS REGISTER <password>)
-#   2. Configure OpenClaw IRC channel: openclaw configure --section channels
-#   3. Connect Chatterino to ene-1.bushbaby-mercat.ts.net:6667 (SASL PLAIN)
+#   2. Connect Chatterino / Hermes to ene-1.bushbaby-mercat.ts.net:6667
 #
 # Channels:
 #   #main    — primary chat (Nicholai + Ene)
