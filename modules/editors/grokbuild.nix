@@ -1,11 +1,12 @@
 # -*- mode: nix -*-
 # modules/editors/grokbuild.nix
-# Grok CLI (grok + agent) from x.ai — simple update wrapper.
+# Grok CLI from x.ai — system `grok-update` helper.
 #
 # Usage:
 #   modules.editors.grokbuild.enable = true;
 #
-# After enabling, run `grok-update` to install or upgrade the Grok CLI.
+# Interactive use goes through bin/fish/functions/grok.fish (update-then-run).
+# Hermes and non-fish contexts can still call grok-update + ~/.grok/bin/grok.
 
 { config, pkgs, lib, ... }:
 
@@ -32,7 +33,7 @@ let
 
     echo ""
     echo "Grok CLI updated. Binaries are in ~/.grok/bin/"
-    echo "Run 'grok' or 'agent' to start."
+    echo "Run 'grok' (fish) or ~/.grok/bin/grok to start."
   '';
 
 in
@@ -42,6 +43,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # `grok` itself is bin/fish/functions/grok.fish (update-then-run), deployed
+    # via bin/default.nix → ~/.config/fish/functions/.
     environment.systemPackages = [ updateScript ];
   };
 }

@@ -7,7 +7,6 @@
     ../modules/servers/web.nix
     # Hermes Agent (Ene)
     ../modules/servers/hermes.nix
-    ../modules/editors/grokbuild.nix
     # ../modules/editors/opencode.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
@@ -20,6 +19,7 @@
     # ../modules/servers/git.nix
     # ../modules/servers/api.nix
     # wiki.nix / CouchDB LiveSync retired — vault uses official Obsidian Sync (ob)
+    # grok + nvim + user PATH: users/nicho.nix via configuration-server.nix
   ] ++ lib.optional (builtins.pathExists ./ene-local.nix) ./ene-local.nix;
 
   # Machine hostname
@@ -72,7 +72,6 @@
     enable = true;
     tailscaleServe.enable = true;
   };
-  modules.editors.grokbuild.enable = true;
   modules.servers.obsidian-headless.enable = true;
   modules.servers.even-g2.enable = true;
   # modules.editors.opencode.enable = true;
