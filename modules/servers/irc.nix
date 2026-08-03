@@ -5,7 +5,7 @@
 #   1. Register accounts via CLI:
 #      sudo -u ergochat ergo useradd nicholai -password <pass>
 #      (or connect and use /NS REGISTER <password>)
-#   2. Connect Chatterino / Hermes to ene-1.example.ts.net:6667
+#   2. Connect Chatterino / Hermes to ene.example.ts.net:6667
 #
 # Channels:
 #   #main    — primary chat (Nicholai + Ene)

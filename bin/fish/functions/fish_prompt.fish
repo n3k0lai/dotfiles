@@ -12,12 +12,10 @@ function fish_prompt --description 'Write out the prompt'
   set -l hn (hostname 2>/dev/null || cat /etc/hostname 2>/dev/null || echo 'unknown')
   set hn (string trim -- $hn)
   switch $hn
-      case 'ene' 'ene-1'
+      case 'ene'
           set host_icon '🩵'
       case 'rook'
           set host_icon '♜'
-      case 'chateau' 'chat'
-          set host_icon '🍹'
       case 'kiss'
           set host_icon '吻吻'
       case 'artemis'
