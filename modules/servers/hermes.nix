@@ -1,9 +1,72 @@
 # Hermes Agent — Nous Research autonomous agent
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, hermes-agent ? null, ... }:
 
 let
   nodePkg = pkgs.nodejs_24;
   cfg = config.modules.servers.hermes;
+
+  # Optional backends baked into the sealed venv (lazy_deps can't pip-install on Nix).
+  # Keep in sync with services.hermes-agent.extraDependencyGroups below (or the
+  # withWeb=false package override, which applies the same list).
+  hermesDepGroups = [
+    "mcp"
+    "messaging"
+    "edge-tts"
+    "firecrawl" # web_search + web_extract via Tool Gateway (or direct)
+    # Add "fal" for image/video generation gateway, "exa"/"parallel-web" for other search
+    # backends, "modal"/"daytona" for sandboxed code execution delegation, etc. as needed.
+  ];
+
+  # Stub web_dist so hermes-agent does not pull the Vite/React hermes-web derivation.
+  # Upstream always `ln -s ${hermesWeb}` in installPhase. We rewrite that path after
+  # discarding the original string context so Nix never builds hermes-web.
+  # (pkgs.replaceDependency still builds the old dep first — useless for memory.)
+  hermesWebStub = pkgs.runCommand "hermes-web-disabled" {
+    meta.description = "Empty web_dist stub (modules.servers.hermes.withWeb = false)";
+  } ''
+    mkdir -p "$out"
+    cat > "$out/index.html" <<'EOF'
+    <!doctype html>
+    <meta charset="utf-8">
+    <title>Hermes dashboard disabled</title>
+    <p>This hermes-agent package was built with <code>withWeb=false</code>.</p>
+    EOF
+  '';
+
+  # Slim package: same dep groups as the full service, but hermesWeb → stub.
+  # Requires hermes-agent flake input (specialArgs on ene/rook).
+  #
+  # Critical: only drop hermesWeb's string context. Discarding the whole
+  # installPhase would also drop hermesTui / venv / skills and break the build
+  # (or race on already-realized store paths). getContext keys are .drv paths.
+  hermesPackageSlim =
+    assert hermes-agent != null
+      || throw "modules.servers.hermes.withWeb=false needs hermes-agent in specialArgs";
+    let
+      system = pkgs.stdenv.hostPlatform.system;
+      base = hermes-agent.packages.${system}.default;
+      withDeps = base.override { extraDependencyGroups = hermesDepGroups; };
+      oldWeb = withDeps.passthru.hermesWeb;
+      oldWebOut = builtins.unsafeDiscardStringContext oldWeb.outPath;
+      oldWebDrv = builtins.unsafeDiscardStringContext oldWeb.drvPath;
+    in
+    withDeps.overrideAttrs (old: {
+      installPhase =
+        let
+          phase = old.installPhase;
+          # Rewrite the symlink target in the script text.
+          rewritten =
+            builtins.replaceStrings [ oldWebOut ] [ (builtins.unsafeDiscardStringContext hermesWebStub.outPath) ]
+              (builtins.unsafeDiscardStringContext phase);
+          # Keep every original input except hermesWeb; add the stub.
+          ctx = builtins.removeAttrs (builtins.getContext phase) [ oldWebDrv ];
+          stubCtx = builtins.getContext "${hermesWebStub}";
+        in
+        builtins.appendContext rewritten (ctx // stubCtx);
+      passthru = old.passthru // {
+        hermesWeb = hermesWebStub;
+      };
+    });
 
   # Store-pinned interpreter for generic Linux agent-browser ELFs on NixOS.
   # Used by both bulk oneshot (hermes-browser-fix) and the always-on wrapper
@@ -228,12 +291,12 @@ in
     user = lib.mkOption {
       type = lib.types.str;
       default = "hermes";
-      description = "User to run the Hermes dashboard under";
+      description = "System user for Hermes services (gateway, optional dashboard)";
     };
     group = lib.mkOption {
       type = lib.types.str;
       default = "users";
-      description = "Group to run the Hermes dashboard under";
+      description = "Primary group for Hermes service processes";
     };
     envFile = lib.mkOption {
       type = lib.types.path;
@@ -248,7 +311,7 @@ in
     workingDirectory = lib.mkOption {
       type = lib.types.path;
       default = "/var/lib/hermes/.hermes/workspace";
-      description = "Working directory for the Hermes gateway/dashboard itself";
+      description = "Working directory for the Hermes gateway (and dashboard, if enabled)";
     };
     delegationWorkdir = lib.mkOption {
       type = lib.types.path;
@@ -260,10 +323,32 @@ in
       default = [];
       description = "Extra packages available to the Hermes service";
     };
+    # Runtime: systemd units. Default on for hosts that still use the web UI (rook).
+    dashboard.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Run `hermes dashboard` on 127.0.0.1:9119 (plus optional Tailscale Serve).
+        Disable on gateway/CLI-only hosts (e.g. ene: Discord + SSH). This only
+        stops the units — set withWeb = false to also skip building hermes-web.
+      '';
+    };
+    # Build graph: hermes-web Vite assets. Independent of dashboard.enable.
+    withWeb = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Include hermes-web (Vite dashboard) in the hermes-agent package.
+        false rewrites installPhase to an empty stub (string-context discarded) so
+        Nix never builds the multi-GB npm web derivation. Use on 4 GiB hosts that
+        only need gateway + CLI. Requires hermes-agent flake specialArgs.
+      '';
+    };
     tailscaleServe = {
       enable = lib.mkEnableOption ''
         Expose the Hermes dashboard on the tailnet via Tailscale Serve (MagicDNS).
         Access at https://<hostname>.<tailnet>.ts.net — not on the public internet.
+        Requires dashboard.enable = true.
       '';
       target = lib.mkOption {
         type = lib.types.str;
@@ -421,9 +506,10 @@ in
   # Hermes Agent — Nous Research autonomous agent
   services.hermes-agent = {
     enable = true;
-    # Package comes from hermes-agent.nixosModules.default (flake input).
-    # Do not override nodejs_*: as of v0.20+ the package builds against
-    # nodejs_26 + npm 12 internally and no longer accepts a nodejs_22 arg.
+    # Package comes from hermes-agent.nixosModules.default (flake input), unless
+    # withWeb=false — then we substitute a slim package (hermesWeb → stub) so the
+    # Vite web UI is not built. Do not override nodejs_*: as of v0.20+ the package
+    # builds against nodejs_26 + npm 12 internally and no longer accepts nodejs_22.
     # Agent config (model, discord, delegation, MCP, profiles) lives in the soul
     # repo at ~/.hermes/config.yaml — not here. Empty settings = activation merge
     # is a no-op and soul config survives rebuilds.
@@ -439,19 +525,11 @@ in
       tesseract5
     ];
 
-    # Dependency groups for optional backends that are lazily imported at runtime.
-    # The hermes-agent package uses a sealed venv; missing groups cause lazy_deps.py
-    # "search.firecrawl" (and similar) to attempt `pip install` which fails on Nix,
-    # surfacing as "web tools are not configured" + unhelpful update advice even when
-    # the managed Tool Gateway (Nous) auth + use_gateway are ready.
-    extraDependencyGroups = [
-      "mcp"
-      "messaging"
-      "edge-tts"
-      "firecrawl" # web_search + web_extract via Tool Gateway (or direct)
-      # Add "fal" for image/video generation gateway, "exa"/"parallel-web" for other search
-      # backends, "modal"/"daytona" for sandboxed code execution delegation, etc. as needed.
-    ];
+    # When withWeb=false the slim package already bakes in hermesDepGroups; leave
+    # extraDependencyGroups empty so the upstream module does not call .override
+    # again (groups already applied; a second override would rebuild with web).
+    package = lib.mkIf (!cfg.withWeb) hermesPackageSlim;
+    extraDependencyGroups = lib.mkIf cfg.withWeb hermesDepGroups;
   };
 
   # Ensure the (unified) workspace exists and is owned by the hermes user.
@@ -623,8 +701,9 @@ in
   };
 
 
-  # Hermes dashboard — web UI for managing agent config, sessions, logs
-  systemd.services.hermes-dashboard = {
+  # Hermes dashboard — web UI for managing agent config, sessions, logs.
+  # ene: dashboard.enable=false (Discord + SSH CLI only). rook: still on by default.
+  systemd.services.hermes-dashboard = lib.mkIf cfg.dashboard.enable {
     description = "Hermes Agent Dashboard";
     wantedBy = [ "multi-user.target" ];
     after = [ "network-online.target" "hermes-agent.service" ];
@@ -664,7 +743,7 @@ in
   };
 
   # Rewrites Host to 127.0.0.1 so the dashboard accepts Tailscale Serve traffic.
-  systemd.services.hermes-dashboard-serve-proxy = lib.mkIf cfg.tailscaleServe.enable {
+  systemd.services.hermes-dashboard-serve-proxy = lib.mkIf (cfg.dashboard.enable && cfg.tailscaleServe.enable) {
     description = "Host rewrite proxy for Tailscale Serve → Hermes dashboard";
     after = [ "network-online.target" "hermes-dashboard.service" ];
     wants = [ "network-online.target" "hermes-dashboard.service" ];
@@ -678,7 +757,7 @@ in
   };
 
   # Tailnet-only HTTPS for the dashboard (MagicDNS). Replaces public Caddy + basic auth.
-  systemd.services.hermes-dashboard-tailscale-serve = lib.mkIf cfg.tailscaleServe.enable {
+  systemd.services.hermes-dashboard-tailscale-serve = lib.mkIf (cfg.dashboard.enable && cfg.tailscaleServe.enable) {
     description = "Tailscale Serve: Hermes dashboard (tailnet only)";
     after = [
       "network-online.target"
