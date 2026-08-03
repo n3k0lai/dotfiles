@@ -52,15 +52,22 @@ let
       echo "No AppImage found inside $DEB" >&2
       exit 1
     fi
-    install -d -m 0755 "$DEST"
-    install -m 0755 "$APPIMAGE" "$DEST/NimbusOS.AppImage"
+    install -d -m 0755 -o nimbus -g nimbus "$DEST"
+    install -m 0755 -o nimbus -g nimbus "$APPIMAGE" "$DEST/NimbusOS.AppImage"
     echo "Installed $DEST/NimbusOS.AppImage"
-    echo "Start with: systemctl start nimbusos"
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl reset-failed nimbusos.service 2>/dev/null || true
+      systemctl start nimbusos.service
+      echo "Started nimbusos.service"
+    else
+      echo "Start with: systemctl start nimbusos"
+    fi
   '';
 
   nimbusRunner = pkgs.writeShellScript "nimbusos-runner" ''
     set -euo pipefail
     APPIMAGE="${cfg.stateDir}/NimbusOS.AppImage"
+    # systemd ConditionPathExists should skip us when missing; belt-and-suspenders.
     if [ ! -x "$APPIMAGE" ]; then
       echo "NimbusOS not installed. Run: hangar-install-nimbus /path/to/NimbusOS.deb" >&2
       exit 1
@@ -139,15 +146,23 @@ in {
       "d ${cfg.stateDir}/.local/share 0755 nimbus nimbus -"
     ];
 
+    # AppImage is installed out-of-band (hangar-install-nimbus). Until then the
+    # unit must not crash-loop and must not fail nixos-rebuild switch.
     systemd.services.nimbusos = {
       description = "Droneforge NimbusOS (DF1 + ZeroMQ bridge)";
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
+      unitConfig = {
+        ConditionPathExists = "${cfg.stateDir}/NimbusOS.AppImage";
+        # If the AppImage exists but keeps dying, don't thrash forever.
+        StartLimitIntervalSec = 300;
+        StartLimitBurst = 5;
+      };
       serviceConfig = {
         Type = "simple";
         ExecStart = nimbusRunner;
         Restart = "on-failure";
-        RestartSec = 10;
+        RestartSec = 30;
         User = "nimbus";
         Group = "nimbus";
         WorkingDirectory = cfg.stateDir;

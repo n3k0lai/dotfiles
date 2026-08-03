@@ -25,12 +25,17 @@
   # Machine hostname
   networking.hostName = "ene";
 
-  # Use on-disk build dir (not /tmp tmpfs ~2G) for large hermes npm builds
-  # (ui-tui + web share ~900MB npmDeps cache; "make cache writable" + node_modules
-  # + vite/esbuild artifacts easily exceed tmpfs during hermes-tui/web derivations).
-  # Must be under non-world-writable path (e.g. not directly under /var/tmp which is 1777)
-  # or nix complains "Path ... is world-writable ... not allowed for security".
-  nix.settings.build-dir = "/var/nix/builds";
+  # ene-only: tiny /tmp tmpfs (~2G on 4G RAM). Shared FD/download-buffer knobs live
+  # in configuration-server.nix (ene + rook).
+  #
+  # - build-dir: large hermes npm builds (ui-tui + web ~900MB npmDeps + node_modules +
+  #   vite/esbuild) exceed /tmp. Path must not be under a world-writable parent
+  #   (e.g. /var/tmp is 1777) or nix rejects it for security.
+  # - max-jobs 1: avoid parallel multi-GB hermes cache copies on this box.
+  nix.settings = {
+    build-dir = "/var/nix/builds";
+    max-jobs = 1;
+  };
 
   # Pre-create (and on activation) so first builds after setting have the dir.
   systemd.tmpfiles.rules = [
@@ -48,23 +53,20 @@
     deps = [ "users" "groups" ];
   };
 
-  # Bootstrap note: nix.settings.build-dir updates /etc/nix/nix.conf (used by
-  # nix-daemon at startup). The *first* nixos-rebuild after adding/changing this
-  # (or similar restricted settings) will still use the *old* running daemon config,
-  # so large hermes npm builds (web + tui monorepo cache copies + node_modules + vite)
-  # will hit ENOSPC on the tiny /tmp tmpfs (~2G on this 4G RAM box).
+  # Bootstrap note: nix.settings.* updates /etc/nix/nix.conf (used by nix-daemon
+  # at startup). The *first* nixos-rebuild after adding/changing these will still
+  # use the *old* running daemon config, so large hermes npm builds can hit ENOSPC
+  # on /tmp tmpfs and EMFILE ("creating pipe: Too many open files") under old defaults.
   #
   # Full bootstrap sequence (run these, then plain `nixos-rebuild` works forever after):
-  #   sudo mkdir -p /var/nix/builds
-  #   sudo chmod 755 /var/nix/builds
-  #   sudo nixos-rebuild switch --flake .#ene --option build-dir /var/nix/builds --option max-jobs 1
+  #   sudo mkdir -p /var/nix/builds && sudo chmod 755 /var/nix/builds
+  #   sudo nixos-rebuild switch --flake .#ene \
+  #     --option build-dir /var/nix/builds \
+  #     --option max-jobs 1 \
+  #     --option max-substitution-jobs 8 \
+  #     --option download-buffer-size 268435456
   #
-  # (max-jobs 1 prevents tui + web from consuming separate multi-GB cache copies in parallel.)
-  # After activation, `nix-daemon.service` is restarted with the new nix.conf containing
-  # the build-dir, and systemd-tmpfiles keeps /var/nix/builds around.
-  #
-  # The /var/nix/builds location is deliberately *not* under /var/tmp (which is 1777
-  # world-writable); Nix rejects build-dir under world-writable parents for security.
+  # After activation, `nix-daemon.service` restarts with the new nix.conf.
 
   modules.servers.hermes = {
     enable = true;
