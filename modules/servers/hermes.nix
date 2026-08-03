@@ -356,6 +356,79 @@ in
         description = "Local port passed to tailscale serve (via Host-rewrite proxy, not dashboard directly).";
       };
     };
+
+    # A2A (Agent-to-Agent) — inbound HTTP + outbound peer tools.
+    # Secrets (A2A_PEER_TOKENS, A2A_OUTBOUND_TOKEN_*) live in envFile (agenix).
+    # Non-secret bind/name/url + peer URLs are declarative here.
+    # Docs: https://hermes-agent.nousresearch.com/docs/user-guide/messaging/a2a
+    a2a = {
+      enable = lib.mkEnableOption "Hermes A2A inbound server + outbound peer tools";
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 9900;
+        description = "A2A HTTP listen port";
+      };
+      host = lib.mkOption {
+        type = lib.types.str;
+        default = "0.0.0.0";
+        description = ''
+          Bind address. Non-localhost requires A2A_PEER_TOKENS (or A2A_BEARER_TOKEN)
+          in the hermes env secret — Hermes refuses to widen without a token.
+        '';
+      };
+      agentName = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Name on the Agent Card (A2A_AGENT_NAME). Default: hostname-derived.";
+      };
+      publicUrl = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Routable URL advertised on the Agent Card (MagicDNS, e.g. http://ene.tailnet:9900).";
+      };
+      trustedPeers = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Allow-list of authenticated peer identities (A2A_TRUSTED_PEERS).";
+      };
+      openFirewall = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Open TCP a2a.port on tailscale0 (tailnet-only; not the public internet).";
+      };
+      peers = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.submodule ({ name, ... }: {
+          options = {
+            url = lib.mkOption {
+              type = lib.types.str;
+              description = "Peer A2A base URL (e.g. http://chat.tailnet:9900).";
+            };
+            capabilities = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [ ];
+              description = "Capability tags advertised for a2a_orchestrate.";
+            };
+            timeout = lib.mkOption {
+              type = lib.types.int;
+              default = 120;
+              description = "Outbound call timeout (seconds).";
+            };
+            outboundTokenEnv = lib.mkOption {
+              type = lib.types.str;
+              default = "A2A_OUTBOUND_TOKEN_${lib.toUpper name}";
+              defaultText = lib.literalExpression ''"A2A_OUTBOUND_TOKEN_<PEER>"'';
+              description = ''
+                Env var (in hermes envFile) holding the bearer token this host
+                presents when calling the peer. Must match the peer's
+                A2A_PEER_TOKENS entry for this agent name.
+              '';
+            };
+          };
+        }));
+        default = { };
+        description = "Outbound peers (a2a_agents). Tokens come from env, not Nix.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -510,10 +583,32 @@ in
     # withWeb=false — then we substitute a slim package (hermesWeb → stub) so the
     # Vite web UI is not built. Do not override nodejs_*: as of v0.20+ the package
     # builds against nodejs_26 + npm 12 internally and no longer accepts nodejs_22.
-    # Agent config (model, discord, delegation, MCP, profiles) lives in the soul
-    # repo at ~/.hermes/config.yaml — not here. Empty settings = activation merge
-    # is a no-op and soul config survives rebuilds.
-    settings = { };
+    #
+    # Soul owns most agent config (model, discord, MCP, …). Upstream deep-merges
+    # `settings` into config.yaml on activation (Nix keys win; soul keys preserved).
+    # We only declare A2A platform enable here; peers/tokens land via hermes-a2a-config.
+    settings = lib.mkIf cfg.a2a.enable {
+      gateway.platforms.a2a = {
+        enabled = true;
+        extra.port = cfg.a2a.port;
+      };
+    };
+    # Non-secret A2A bind/name/url → $HERMES_HOME/.env (merged with age secrets).
+    environment = lib.mkIf cfg.a2a.enable (
+      {
+        A2A_HOST = cfg.a2a.host;
+        A2A_PORT = toString cfg.a2a.port;
+      }
+      // lib.optionalAttrs (cfg.a2a.agentName != null) {
+        A2A_AGENT_NAME = cfg.a2a.agentName;
+      }
+      // lib.optionalAttrs (cfg.a2a.publicUrl != null) {
+        A2A_PUBLIC_URL = cfg.a2a.publicUrl;
+      }
+      // lib.optionalAttrs (cfg.a2a.trustedPeers != [ ]) {
+        A2A_TRUSTED_PEERS = lib.concatStringsSep "," cfg.a2a.trustedPeers;
+      }
+    );
     environmentFiles = [ config.age.secrets.hermes-env.path ];
     addToSystemPackages = true;
     # Browser automation support
@@ -662,6 +757,118 @@ in
   system.activationScripts.hermes-dynamic-config = lib.stringAfter [ "hermes-agent-setup" ] ''
     rm -f ${cfg.stateDir}/.hermes/.managed
   '';
+
+  # A2A: merge outbound peers + enable a2a toolset in soul config.yaml.
+  # Tokens read from $HERMES_HOME/.env (A2A_OUTBOUND_TOKEN_* from age secret).
+  # Runs after hermes-agent-setup (which writes .env) and dynamic-config.
+  system.activationScripts.hermes-a2a-config = lib.mkIf cfg.a2a.enable (
+    let
+      peersJson = pkgs.writeText "hermes-a2a-peers.json" (builtins.toJSON (
+        lib.mapAttrs (_name: p: {
+          inherit (p) url capabilities timeout outboundTokenEnv;
+        }) cfg.a2a.peers
+      ));
+      a2aMerge = pkgs.writeScript "hermes-a2a-merge" ''
+        #!${pkgs.python3.withPackages (ps: [ ps.pyyaml ])}/bin/python3
+        import os, sys, json, yaml
+        from pathlib import Path
+
+        config_path = Path(sys.argv[1])
+        peers_path = Path(sys.argv[2])
+        env_path = Path(sys.argv[3])
+        port = int(sys.argv[4])
+
+        def load_env(path: Path) -> dict:
+            out = {}
+            if not path.exists():
+                return out
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                out[k.strip()] = v.strip().strip("'").strip('"')
+            return out
+
+        peers_spec = json.loads(peers_path.read_text())
+        env = load_env(env_path)
+
+        cfg = {}
+        if config_path.exists():
+            with open(config_path) as f:
+                cfg = yaml.safe_load(f) or {}
+
+        # Inbound platform (also set via services.hermes-agent.settings; re-assert)
+        gw = cfg.setdefault("gateway", {})
+        plats = gw.setdefault("platforms", {})
+        a2a = plats.setdefault("a2a", {})
+        a2a["enabled"] = True
+        extra = a2a.setdefault("extra", {})
+        extra["port"] = port
+
+        # Outbound peers
+        agents = cfg.setdefault("a2a_agents", {})
+        missing = []
+        for name, spec in peers_spec.items():
+            token_env = spec.get("outboundTokenEnv") or f"A2A_OUTBOUND_TOKEN_{name.upper()}"
+            token = env.get(token_env, "")
+            if not token:
+                missing.append(token_env)
+            entry = agents.get(name) if isinstance(agents.get(name), dict) else {}
+            entry["url"] = spec["url"]
+            entry["timeout"] = spec.get("timeout", 120)
+            if spec.get("capabilities"):
+                entry["capabilities"] = list(spec["capabilities"])
+            if token:
+                entry["auth"] = {"type": "bearer", "token": token}
+            agents[name] = entry
+
+        # Enable a2a toolset on known platform profiles (append, never wipe)
+        pts = cfg.setdefault("platform_toolsets", {})
+        if isinstance(pts, dict):
+            for _plat, tools in pts.items():
+                if isinstance(tools, list) and "a2a" not in tools:
+                    tools.append("a2a")
+
+        # If top-level toolsets is a list without a2a and without "all", append
+        ts = cfg.get("toolsets")
+        if isinstance(ts, list) and "all" not in ts and "a2a" not in ts:
+            ts.append("a2a")
+
+        # Drop a2a from disabled_toolsets if present
+        agent = cfg.get("agent")
+        if isinstance(agent, dict):
+            disabled = agent.get("disabled_toolsets")
+            if isinstance(disabled, list) and "a2a" in disabled:
+                agent["disabled_toolsets"] = [x for x in disabled if x != "a2a"]
+
+        with open(config_path, "w") as f:
+            yaml.dump(cfg, f, default_flow_style=False, sort_keys=False)
+
+        if missing:
+            print(
+                "hermes-a2a-config: missing outbound token env vars (add to hermes env age secret): "
+                + ", ".join(missing),
+                file=sys.stderr,
+            )
+        else:
+            print(f"hermes-a2a-config: merged {len(peers_spec)} peer(s) into {config_path}")
+      '';
+    in
+    lib.stringAfter [ "hermes-agent-setup" "hermes-dynamic-config" ] ''
+      ${a2aMerge} \
+        ${cfg.stateDir}/.hermes/config.yaml \
+        ${peersJson} \
+        ${cfg.stateDir}/.hermes/.env \
+        ${toString cfg.a2a.port}
+      chown ${cfg.user}:${cfg.group} ${cfg.stateDir}/.hermes/config.yaml 2>/dev/null || true
+      chmod 0660 ${cfg.stateDir}/.hermes/config.yaml 2>/dev/null || true
+    ''
+  );
+
+  # Tailnet-only A2A port (ene has a strict public allow-list; rook trusts tailscale0)
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts =
+    lib.mkIf (cfg.a2a.enable && cfg.a2a.openFirewall) [ cfg.a2a.port ];
 
   # Make the external "grok" / "agent-browser" commands resolvable inside the
   # hermes-agent gateway process.

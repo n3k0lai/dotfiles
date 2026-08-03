@@ -221,6 +221,156 @@ sudo -u hermes env HOME=$hermes_home HERMES_HOME=$hermes_soul hermes status 2>/d
                 return 1
             end
 
+        case restart rs
+            # Restart hermes gateway (picks up env/config without full nixos switch)
+            set -l restart_script "set -e
+echo '🔄 sudo systemctl restart hermes-agent on $target...'
+sudo systemctl restart hermes-agent
+sleep 2
+systemctl is-active hermes-agent
+systemctl status hermes-agent --no-pager -l | head -20
+"
+            if test "$on_target" = true
+                printf '%s\n' "$restart_script" | bash --noprofile --norc -s
+            else if test "$on_kiss" = true
+                printf '%s\n' "$restart_script" | ssh $ssh_dest bash --noprofile --norc -s
+            else
+                echo "$target: restart needs to run on $target or from kiss" >&2
+                return 1
+            end
+
+        case a2a
+            # A2A ops: status | smoke | card | restart | tools
+            set -l a2a_sub status
+            if test (count $argv) -gt 0
+                set a2a_sub $argv[1]
+                set -e argv[1]
+            end
+
+            # MagicDNS: ene / rook (match NixOS hostnames; no ene-1 / chat legacy)
+            set -l a2a_self_url
+            set -l a2a_peer_url
+            set -l a2a_peer_name
+            if test "$target" = ene
+                set a2a_self_url "http://ene.bushbaby-mercat.ts.net:9900"
+                set a2a_peer_url "http://rook.bushbaby-mercat.ts.net:9900"
+                set a2a_peer_name rook
+            else if test "$target" = rook
+                set a2a_self_url "http://rook.bushbaby-mercat.ts.net:9900"
+                set a2a_peer_url "http://ene.bushbaby-mercat.ts.net:9900"
+                set a2a_peer_name ene
+            else
+                set a2a_self_url "http://127.0.0.1:9900"
+                set a2a_peer_url ""
+                set a2a_peer_name ""
+            end
+
+            set -l a2a_script
+            switch "$a2a_sub"
+                case status st s ''
+                    set a2a_script "set +e
+echo '=== A2A status ($target) ==='
+echo \"self card: $a2a_self_url/.well-known/agent-card.json\"
+curl -sS -m 8 \"$a2a_self_url/.well-known/agent-card.json\" 2>&1 | head -c 1200
+echo ''
+echo ''
+echo '--- env keys (names only) ---'
+sudo -u hermes bash -c 'grep -E \"^A2A_\" $hermes_soul/.env 2>/dev/null | sed \"s/=.*/=***/\"' || true
+echo ''
+echo '--- config.yaml a2a ---'
+sudo -u hermes bash -c 'grep -n -E \"a2a|A2A\" $hermes_soul/config.yaml 2>/dev/null | head -40' || true
+echo ''
+echo '--- listen ---'
+ss -tlnp 2>/dev/null | grep -E ':9900\\b' || echo '(nothing on :9900)'
+echo ''
+echo '--- recent journal ---'
+journalctl -u hermes-agent -n 30 --no-pager 2>/dev/null | grep -i a2a | tail -15 || true
+"
+                case smoke sm
+                    set a2a_script "set +e
+echo '=== A2A smoke ($target) ==='
+ok=0
+echo -n \"self  $a2a_self_url ... \"
+if curl -sS -m 8 -o /tmp/a2a-self.json -w '%{http_code}' \"$a2a_self_url/.well-known/agent-card.json\" | tee /tmp/a2a-self.code | grep -q 200; then
+  echo OK
+  head -c 400 /tmp/a2a-self.json; echo
+  ok=\$((ok+1))
+else
+  echo FAIL code=\$(cat /tmp/a2a-self.code 2>/dev/null)
+fi
+if [ -n \"$a2a_peer_url\" ]; then
+  echo -n \"peer  $a2a_peer_url ($a2a_peer_name) ... \"
+  if curl -sS -m 8 -o /tmp/a2a-peer.json -w '%{http_code}' \"$a2a_peer_url/.well-known/agent-card.json\" | tee /tmp/a2a-peer.code | grep -q 200; then
+    echo OK
+    head -c 400 /tmp/a2a-peer.json; echo
+    ok=\$((ok+1))
+  else
+    echo FAIL code=\$(cat /tmp/a2a-peer.code 2>/dev/null)
+  fi
+fi
+echo ''
+echo \"smoke: \$ok endpoint(s) OK\"
+[ \"\$ok\" -ge 1 ]
+"
+                case card c
+                    set a2a_script "set -e
+curl -sS -m 8 \"$a2a_self_url/.well-known/agent-card.json\"
+echo
+"
+                case restart r
+                    set a2a_script "set -e
+echo '🔄 restarting hermes-agent (picks up A2A env + config)...'
+sudo systemctl restart hermes-agent
+sleep 2
+systemctl is-active hermes-agent
+ss -tlnp 2>/dev/null | grep -E ':9900\\b' || echo '(not listening on :9900 yet — check journal)'
+"
+                case tools t
+                    # Non-interactive: activation already enables a2a toolset on switch.
+                    # Interactive picker still available via: $target do hermes tools
+                    set a2a_script "set -e
+echo 'A2A toolset is enabled on activate (platform_toolsets += a2a).'
+echo 'Checking soul config...'
+if sudo -u hermes grep -n \"a2a\" $hermes_soul/config.yaml 2>/dev/null | head -20; then
+  :
+else
+  echo '(no a2a lines yet — run $target switch first)'
+fi
+echo ''
+echo \"Restart gateway:  $target restart\"
+echo \"Interactive tools: $target do hermes tools\"
+"
+                case help h
+                    echo "$target a2a — Agent-to-Agent ops"
+                    echo ""
+                    echo "  $target a2a status|st   agent card + env keys + listen + journal"
+                    echo "  $target a2a smoke|sm    curl self (+ peer) agent-card.json"
+                    echo "  $target a2a card|c      print self agent card"
+                    echo "  $target a2a tools|t     ensure a2a toolset in soul config"
+                    echo "  $target a2a restart|r   systemctl restart hermes-agent"
+                    echo ""
+                    echo "  self: $a2a_self_url"
+                    if test -n "$a2a_peer_url"
+                        echo "  peer: $a2a_peer_url ($a2a_peer_name)"
+                    end
+                    echo ""
+                    echo "  Deploy path: edit secrets + module → $target switch → $target a2a smoke"
+                    echo "  As hermes:   $target do hermes tools   (interactive tool picker)"
+                    return 0
+                case '*'
+                    echo "unknown a2a subcommand: $a2a_sub (try: $target a2a help)" >&2
+                    return 1
+            end
+
+            if test "$on_target" = true
+                printf '%s\n' "$a2a_script" | bash --noprofile --norc -s
+            else if test "$on_kiss" = true
+                printf '%s\n' "$a2a_script" | ssh $ssh_dest bash --noprofile --norc -s
+            else
+                echo "$target: a2a needs to run on $target or from kiss" >&2
+                return 1
+            end
+
         case '' help h
             echo "$target — host ops (rebuild + hermes hop)"
             echo ""
@@ -235,9 +385,11 @@ sudo -u hermes env HOME=$hermes_home HERMES_HOME=$hermes_soul hermes status 2>/d
             echo "  Hermes"
             echo "    $target shell|sh     interactive login as hermes"
             echo "    $target grok|g …     update + run hermes Grok in .hermes"
-            echo "    $target do <cmd…>    run command as hermes (e.g. hermes doctor)"
+            echo "    $target do <cmd…>    run command as hermes (e.g. hermes doctor / hermes tools)"
             echo "    $target status|st    systemd units + hermes status"
             echo "    $target logs|l       follow hermes-agent journal"
+            echo "    $target restart|rs   sudo systemctl restart hermes-agent"
+            echo "    $target a2a …        A2A status/smoke/card/tools/restart (see $target a2a help)"
             echo ""
             echo "  host:   $this_host"
             echo "  user:   $current_user"

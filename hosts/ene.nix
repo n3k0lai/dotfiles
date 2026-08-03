@@ -25,6 +25,9 @@
   # Machine hostname
   networking.hostName = "ene";
 
+  # MagicDNS used to be ene-1; pin Tailscale machine name to match NixOS (drop -1).
+  services.tailscale.extraSetFlags = [ "--hostname=ene" ];
+
   # ene-only: tiny /tmp tmpfs (~2G on 4G RAM). Shared FD/download-buffer knobs live
   # in configuration-server.nix (ene + rook).
   #
@@ -69,11 +72,23 @@
   # After activation, `nix-daemon.service` restarts with the new nix.conf.
 
   # Discord + SSH CLI only — no web UI / Tailscale Serve / hermes-web build.
+  # A2A: tailnet peer with rook. Tokens in hermes_env.age.
   modules.servers.hermes = {
     enable = true;
     dashboard.enable = false;
     tailscaleServe.enable = false;
     withWeb = false;
+    a2a = {
+      enable = true;
+      agentName = "ene";
+      publicUrl = "http://ene.bushbaby-mercat.ts.net:9900";
+      trustedPeers = [ "rook" ];
+      peers.rook = {
+        url = "http://rook.bushbaby-mercat.ts.net:9900";
+        capabilities = [ "work" "tickets" ];
+        outboundTokenEnv = "A2A_OUTBOUND_TOKEN_ROOK";
+      };
+    };
   };
   modules.servers.obsidian-headless.enable = true;
   modules.servers.even-g2.enable = true;

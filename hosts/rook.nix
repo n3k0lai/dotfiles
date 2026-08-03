@@ -35,12 +35,28 @@ in
 
   networking.hostName = "rook";
 
+  # MagicDNS used to advertise as "chat"; pin Tailscale machine name to match NixOS.
+  # (extraSetFlags → systemd tailscaled-set on every boot/switch)
+  services.tailscale.extraSetFlags = [ "--hostname=rook" ];
+
+  # A2A: tailnet peer with ene. Tokens in rook_env.age.
   modules.servers.hermes = {
     enable = true;
     envFile = ../modules/servers/secrets/rook_env.age;
+    a2a = {
+      enable = true;
+      agentName = "rook";
+      publicUrl = "http://rook.bushbaby-mercat.ts.net:9900";
+      trustedPeers = [ "ene" ];
+      peers.ene = {
+        url = "http://ene.bushbaby-mercat.ts.net:9900";
+        capabilities = [ "life" "research" ];
+        outboundTokenEnv = "A2A_OUTBOUND_TOKEN_ENE";
+      };
+    };
   };
 
-  # Ene fetches GET /v1/usage/weekly over tailnet (MagicDNS chat.bushbaby-mercat.ts.net:9855)
+  # Ene fetches GET /v1/usage/weekly over tailnet (MagicDNS rook.bushbaby-mercat.ts.net:9855)
   modules.servers.supergrokUsageApi = {
     enable = true;
     hostName = "rook";
