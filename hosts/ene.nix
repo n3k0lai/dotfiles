@@ -19,7 +19,7 @@
     # TODO: enable when ready
     # ../modules/servers/git.nix
     # ../modules/servers/api.nix
-    # ../modules/servers/wiki.nix
+    # wiki.nix / CouchDB LiveSync retired — vault uses official Obsidian Sync (ob)
   ] ++ lib.optional (builtins.pathExists ./ene-local.nix) ./ene-local.nix;
 
   # Machine hostname
