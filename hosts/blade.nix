@@ -1,4 +1,8 @@
-# Razer Blade 13" Stealth (RZ09-0281)
+# Razer Blade Stealth 13" (2019) — model RZ09-0281x
+# Make/model (from vault hardware/laptop, 2026-08-03):
+#   Razer Blade Stealth 13" 2019
+# Support / FAQs:
+#   https://mysupport.razer.com/app/answers/detail/a_id/3701/~/razer-blade-stealth-13”-%282019%29-%7C-rz09-0281x-support-%26-faqs
 # NVIDIA MX150 mobile + Intel UHD 620 (Optimus)
 # eGPU capable (Thunderbolt 3)
 # Primary portable workstation + car diagnostic VM host
