@@ -5,8 +5,9 @@
 fish_add_path /bin /usr/bin /usr/local/bin
 fish_add_path /sbin /usr/sbin /user/local/sbin
 
-# default programs
-set -gx EDITOR emacs
+# default programs — nvim for TUI chores; GUI Emacs via `e`
+set -gx EDITOR nvim
+set -gx VISUAL nvim
 set -gx TERMINAL kitty
 set -gx BROWSER firefox
 set -gx BROWSER_MIN luakit

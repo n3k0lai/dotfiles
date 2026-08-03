@@ -167,11 +167,11 @@ in {
     
     # Environment variables for Doom Emacs
     # Use ${} syntax to ensure proper variable expansion at runtime
+    # EDITOR/VISUAL are owned by modules.editors.vim (nvim) for TUI chores;
+    # open Emacs via `e` / desktop entry / emacsclient, not as the default $EDITOR.
     environment.sessionVariables = {
       DOOMDIR = "\${HOME}/.config/doom";
       EMACSDIR = "\${HOME}/.config/emacs";
-      # Set EDITOR based on daemon mode: emacsclient if daemon enabled, emacs otherwise
-      EDITOR = if cfg.enableDaemon then "emacsclient -c" else "emacs";
       # Wayland-specific settings for emacs-pgtk
       MOZ_ENABLE_WAYLAND = "1";
     };
