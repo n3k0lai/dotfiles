@@ -15,8 +15,8 @@ let
   comfysh = pkgs.fetchFromGitHub {
     owner = "n3k0lai";
     repo = "comfy.sh";
-    rev = "main";
-    sha256 = "sha256-X+6bYuF/VVc1GnAZfqigrK8TVxyYemdnuVby1XVrkrw=";
+    rev = "5001ca4ca6a62194c37b22135f464ff6cf6f3a7e";
+    sha256 = "sha256-nl/cDb/R8qZAZC+O/MQ9xanmer7V6AC3QGYqKlwwgxo=";
   };
 in
 {
