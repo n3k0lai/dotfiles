@@ -200,12 +200,27 @@ in
 
   # CouchDB / Obsidian LiveSync removed 2026-07-28 — vault uses paid Obsidian Sync (ob).
 
-  # === HOME AUTOMATION ===
+  # === HOME AUTOMATION (primary HA + Matter fabric) ===
+  # UI: Tailscale-only (8123 not opened on LAN). MQTT :1883 for edge nodes (pati0).
+  # Matter server :5580 localhost only — commission via HA UI.
+  # Bluetooth: Intel USB 8087:0a2b (hci0) — enabled for BLE commissioning.
   modules.servers.homeAssistant = {
     enable = true;
     port = 8123;
     enableMqtt = true;
+    enableMatter = true;
+    enableBluetooth = true;
+    matterBluetoothCommissioning = true;
     enableWebhookBridge = true;
+    # Fairfax County, VA only in public git (not more specific)
+    latitude = 38.8462;
+    longitude = -77.3064;
+    elevation = 100;
+    timeZone = "America/New_York";
+    unitSystem = "us_customary";
+    edgeMqttPeers = [
+      "pati0" # patio Pi — edge node (cameras, fans); see hosts/pati0.nix
+    ];
   };
 
   # === DRONEFORGE HANGAR ===
