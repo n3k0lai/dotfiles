@@ -9,7 +9,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
-DEFAULT_RESET_NEXT = datetime(2026, 8, 3, 12, 7, tzinfo=ET)
+DEFAULT_RESET_NEXT = datetime(2026, 8, 10, 12, 7, tzinfo=ET)
 LONG_LIVED_SEC = 3 * 86400
 SCHEMA_VERSION = 1
 

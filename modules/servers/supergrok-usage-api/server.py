@@ -57,12 +57,28 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(400, {"error": "invalid_weeks"})
                 return
 
+        reset_next = None
+        if "reset_next" in qs:
+            try:
+                from datetime import datetime
+                from zoneinfo import ZoneInfo
+                ET = ZoneInfo("America/New_York")
+                raw = qs["reset_next"][0]
+                reset_next = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                if reset_next.tzinfo is None:
+                    reset_next = reset_next.replace(tzinfo=ET)
+            except Exception as e:
+                self._send(400, {"error": "invalid_reset_next", "detail": str(e)})
+                return
+
         host = os.environ.get("SUPERGROK_USAGE_HOST", "rook")
         db = os.environ.get("HERMES_STATE_DB") or os.environ.get("SUPERGROK_STATE_DB")
         db_path = Path(db) if db else None
 
         try:
-            payload = build_weekly_payload(host=host, db_path=db_path, weeks=weeks)
+            payload = build_weekly_payload(
+                host=host, db_path=db_path, weeks=weeks, reset_next=reset_next
+            )
         except FileNotFoundError as e:
             self._send(503, {"error": "state_db_missing", "detail": str(e)})
             return
