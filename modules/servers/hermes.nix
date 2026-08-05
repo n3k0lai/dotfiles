@@ -401,7 +401,7 @@ in
           options = {
             url = lib.mkOption {
               type = lib.types.str;
-              description = "Peer A2A base URL (e.g. http://chat.tailnet:9900).";
+              description = "Peer A2A base URL (e.g. http://rook.bushbaby-mercat.ts.net:9900).";
             };
             capabilities = lib.mkOption {
               type = lib.types.listOf lib.types.str;
