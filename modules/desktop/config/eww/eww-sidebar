@@ -1,6 +1,12 @@
 #!/usr/bin/env fish
 
 # Eww Sidebar Manager Script
+# Handles start/stop/toggle with retries so a late monitor (or DPMS wake)
+# does not leave the daemon running with no sidebar open.
+
+set -g SIDEBAR_WINDOW sidebar
+set -g OPEN_RETRIES 15
+set -g OPEN_SLEEP 1
 
 function show_help
     echo "Eww Sidebar Manager"
@@ -13,54 +19,132 @@ function show_help
     echo "  restart     Restart the sidebar"
     echo "  reload      Reload configuration without closing"
     echo "  toggle      Toggle sidebar visibility"
+    echo "  ensure      Open sidebar if daemon is up but window is missing"
     echo "  status      Show sidebar status"
     echo "  help        Show this help message"
 end
 
+function daemon_running
+    eww ping >/dev/null 2>&1
+end
+
+function sidebar_open
+    eww active-windows 2>/dev/null | string match -q '*sidebar*'
+end
+
+function open_sidebar_with_retry
+    set -l attempts $OPEN_RETRIES
+    set -l i 1
+    while test $i -le $attempts
+        if eww open $SIDEBAR_WINDOW 2>/dev/null
+            # Confirm the layer actually registered
+            sleep 0.2
+            if sidebar_open
+                return 0
+            end
+        end
+        sleep $OPEN_SLEEP
+        set i (math $i + 1)
+    end
+    return 1
+end
+
+function ensure_daemon
+    if daemon_running
+        return 0
+    end
+    eww daemon 2>/dev/null
+    set -l i 1
+    while test $i -le 10
+        if daemon_running
+            return 0
+        end
+        sleep 0.3
+        set i (math $i + 1)
+    end
+    return 1
+end
+
 function start_sidebar
     echo "Starting Eww sidebar..."
-    eww daemon 2>/dev/null
-    sleep 1
-    eww open sidebar
-    echo "Sidebar started!"
+    if not ensure_daemon
+        echo "Failed to start eww daemon" >&2
+        return 1
+    end
+    if sidebar_open
+        echo "Sidebar already open"
+        return 0
+    end
+    if open_sidebar_with_retry
+        echo "Sidebar started!"
+        return 0
+    end
+    echo "Failed to open sidebar (is the target monitor connected?)" >&2
+    return 1
 end
 
 function stop_sidebar
     echo "Stopping Eww sidebar..."
-    eww close sidebar 2>/dev/null
+    eww close $SIDEBAR_WINDOW 2>/dev/null
     eww kill 2>/dev/null
     echo "Sidebar stopped!"
 end
 
 function restart_sidebar
     echo "Restarting Eww sidebar..."
-    stop_sidebar
-    sleep 1
+    eww close $SIDEBAR_WINDOW 2>/dev/null
+    eww kill 2>/dev/null
+    sleep 0.5
     start_sidebar
 end
 
 function reload_sidebar
     echo "Reloading Eww configuration..."
+    if not daemon_running
+        start_sidebar
+        return $status
+    end
     eww reload
+    # Reload can drop windows on some eww versions; ensure it is back
+    sleep 0.3
+    if not sidebar_open
+        open_sidebar_with_retry
+    end
     echo "Configuration reloaded!"
 end
 
+function ensure_sidebar
+    # Idempotent: used from hyprland exec-once and DPMS wake hooks
+    if not daemon_running
+        start_sidebar
+        return $status
+    end
+    if sidebar_open
+        return 0
+    end
+    open_sidebar_with_retry
+end
+
 function toggle_sidebar
-    if eww active-windows | grep -q sidebar
+    if not daemon_running
+        start_sidebar
+        return $status
+    end
+    if sidebar_open
         echo "Closing sidebar..."
-        eww close sidebar
+        eww close $SIDEBAR_WINDOW
     else
         echo "Opening sidebar..."
-        eww open sidebar
+        open_sidebar_with_retry
     end
 end
 
 function show_status
     echo "Eww Sidebar Status:"
     echo ""
-    if pgrep eww > /dev/null
+    if daemon_running
         echo "✓ Eww daemon is running"
-        if eww active-windows | grep -q sidebar
+        if sidebar_open
             echo "✓ Sidebar is open"
         else
             echo "✗ Sidebar is closed"
@@ -90,6 +174,8 @@ switch $argv[1]
         reload_sidebar
     case toggle
         toggle_sidebar
+    case ensure
+        ensure_sidebar
     case status
         show_status
     case help
