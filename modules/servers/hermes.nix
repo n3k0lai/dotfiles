@@ -450,15 +450,24 @@ in
 
     # Secrets (decrypted at activation by agenix).
     # SoT is modules/servers/secrets/hermes_env.age (secrets.nix → ene + nicho).
-    # Owner MUST be hermes so hermes-agent EnvironmentFile can read it.
+    # Owner MUST be hermes so the hermes-agent-setup seeder can cat this file.
     # Do NOT tell operators to echo keys into ~/.hermes/.env — edit the age blob.
+    #
+    # CRITICAL: do NOT set path = "${stateDir}/.hermes/.env".
+    # Upstream hermes-agent-setup does:
+    #   install -m 0640 /dev/null $HERMES_HOME/.env   # truncate
+    #   cat Nix environment >> .env
+    #   cat each environmentFiles >> .env
+    # If environmentFiles points at the same path as .env, the truncate wipes the
+    # age secret and `cat file >> file` fails (gen 105 / 2026-08-05 outage:
+    # Discord token gone, gateway a2a-only, activation hermes-agent-setup exit 1).
+    # Default agenix path /run/agenix/hermes-env is the correct source; the seeder
+    # materializes the merged result at $HERMES_HOME/.env for EnvironmentFile=.
     age.secrets.hermes-env = {
       file = cfg.envFile;
       owner = cfg.user;
       group = cfg.user;
       mode = "0400";
-      # Stable path for service EnvironmentFile + optional human inspect as hermes
-      path = "${cfg.stateDir}/.hermes/.env";
     };
 
     age.secrets.hermes-ssh-config = {
@@ -764,7 +773,9 @@ in
   '';
 
   # A2A: merge outbound peers + enable a2a toolset in soul config.yaml.
-  # Tokens read from $HERMES_HOME/.env (A2A_OUTBOUND_TOKEN_* from age secret).
+  # Tokens read from $HERMES_HOME/.env after hermes-agent-setup merges the age
+  # secret (A2A_OUTBOUND_TOKEN_*, A2A_PEER_TOKENS). Missing keys warn on stderr
+  # but must not hard-fail activation — Discord/API keys already landed in .env.
   # Runs after hermes-agent-setup (which writes .env) and dynamic-config.
   system.activationScripts.hermes-a2a-config = lib.mkIf cfg.a2a.enable (
     let
@@ -891,8 +902,10 @@ in
       CHROME_BIN = lib.mkForce "${pkgs.chromium}/bin/chromium";
     };
     serviceConfig = {
-      # Secrets SoT: agenix hermes_env.age → ${stateDir}/.hermes/.env (see age.secrets.hermes-env).
-      # Optional second file for local non-secret overrides only (ignored if missing).
+      # Merged env: upstream hermes-agent-setup writes $HERMES_HOME/.env from
+      # services.hermes-agent.environment + age secret (/run/agenix/hermes-env).
+      # Optional .env.local for non-secret local overrides only (ignored if missing).
+      # Never point age.secrets.hermes-env.path at .env — see age.secrets comment.
       EnvironmentFile = [
         "-${cfg.stateDir}/.hermes/.env"
         "-${cfg.stateDir}/.hermes/.env.local"
