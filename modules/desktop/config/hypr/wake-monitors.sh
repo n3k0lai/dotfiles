@@ -14,3 +14,10 @@ if [[ -n "$VERT" ]]; then
 fi
 
 bash ~/.config/hypr/set-wallpaper.sh
+
+# Layer-shell clients (eww) often lose their surface across DPMS on NVIDIA.
+# Re-open the sidebar if the daemon is up but the window is gone.
+if [[ -x "$HOME/.config/eww/eww-sidebar" ]]; then
+    sleep 0.5
+    "$HOME/.config/eww/eww-sidebar" ensure >/dev/null 2>&1 &
+fi

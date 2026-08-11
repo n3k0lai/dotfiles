@@ -33,6 +33,7 @@
 (deflisten current_workspace :initial "1" "scripts/current-workspace.fish")
 
 ;; Main sidebar window
+;; Monitor matches hyprland model string for the primary gaming display.
 (defwindow sidebar
   :monitor "BenQ EX2710Q"
   :geometry (geometry :x "0px"
