@@ -55,11 +55,6 @@ in
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;
   boot.consoleLogLevel = lib.mkDefault 7;
-  boot.kernelParams = [
-    "console=ttyS0,115200n8"
-    "console=ttyAMA0,115200n8"
-    "console=tty0"
-  ];
 
   # Write camera lines into the firmware config that the Pi GPU bootloader reads.
   # generic-extlinux still boots the NixOS kernel; start.elf applies overlays first.
@@ -84,6 +79,44 @@ in
     "imx219"
     "ov5647"
   ];
+
+  # CMA for libcamera / ISP (default often too tight under load).
+  boot.kernelParams = [
+    "console=ttyS0,115200n8"
+    "console=ttyAMA0,115200n8"
+    "console=tty0"
+    "cma=256M"
+  ];
+
+  # config.txt dtoverlay is not enough under u-boot+FDTDIR — apply rpi kernel overlay at boot.
+  systemd.services.pati0-camera-overlay = {
+    description = "Apply ${cameraOverlay} CSI device-tree overlay";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "local-fs.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = pkgs.writeShellScript "pati0-camera-overlay" ''
+        set -e
+        DTBS=/run/current-system/dtbs/overlays
+        BIN=${pkgs.libraspberrypi}/bin/dtoverlay
+        if [ -x "$BIN" ] && [ -f "$DTBS/${cameraOverlay}.dtbo" ]; then
+          "$BIN" -d "$DTBS" ${cameraOverlay} || true
+        fi
+      '';
+    };
+  };
+
+  # libcamera needs dma_heap + vcsm accessible to video group
+  services.udev.extraRules = ''
+    SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
+    KERNEL=="vcsm-cma", GROUP="video", MODE="0660"
+  '';
+
+  environment.sessionVariables = {
+    # Helps IPA modules resolve under Nix store paths
+    LIBCAMERA_IPA_MODULE_PATH = "${pkgs.libcamera}/lib/libcamera";
+  };
 
   # --- users / ssh ---
   users.mutableUsers = true;
