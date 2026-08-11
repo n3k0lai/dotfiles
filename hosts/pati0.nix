@@ -256,27 +256,28 @@ in
       ];
       ExecStart = pkgs.writeShellScript "pati0-mjpeg" ''
         set -euo pipefail
+        export LIBCAMERA_IPA_MODULE_PATH=${pkgs.libcamera}/lib/libcamera
         FIFO=/run/pati0-mjpeg/cam.fifo
-        rm -f "$FIFO"
-        mkfifo "$FIFO"
-        cleanup() {
-          kill $CAM_PID 2>/dev/null || true
+        # Loop: ffmpeg -listen 1 exits after each client (HA reconnects OK).
+        while true; do
           rm -f "$FIFO"
-        }
-        trap cleanup EXIT INT TERM
-
-        # Continuous XRGB8888 frames @ 640x480 (~15fps) into FIFO
-        ${pkgs.libcamera}/bin/cam -c1 --capture=0 \
-          --stream width=640,height=480,role=viewfinder \
-          --file="$FIFO" &
-        CAM_PID=$!
-
-        # Multipart JPEG HTTP for HA generic/ffmpeg camera
-        exec ${pkgs.ffmpeg}/bin/ffmpeg -hide_banner -loglevel warning \
-          -f rawvideo -pix_fmt rgba -s 640x480 -framerate 12 -i "$FIFO" \
-          -an -c:v mjpeg -q:v 7 \
-          -f mpjpeg -boundary_tag ffmpeg \
-          -listen 1 http://0.0.0.0:8081/stream.mjpg
+          mkfifo "$FIFO"
+          ${pkgs.libcamera}/bin/cam -c1 --capture=0 \
+            --stream width=640,height=480,role=viewfinder \
+            --file="$FIFO" &
+          CAM_PID=$!
+          # Give cam a moment; ffmpeg blocks on accept until HA/curl connects
+          ${pkgs.ffmpeg}/bin/ffmpeg -hide_banner -loglevel warning \
+            -f rawvideo -pix_fmt rgba -video_size 640x480 -framerate 12 \
+            -thread_queue_size 64 -i "$FIFO" \
+            -an -c:v mjpeg -q:v 7 \
+            -f mpjpeg -boundary_tag ffmpeg \
+            -listen 1 http://0.0.0.0:8081/stream.mjpg \
+            || true
+          kill "$CAM_PID" 2>/dev/null || true
+          wait "$CAM_PID" 2>/dev/null || true
+          sleep 1
+        done
       '';
     };
   };
