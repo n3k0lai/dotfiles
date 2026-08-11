@@ -148,9 +148,7 @@ in
     enable = true;
     allowedTCPPorts = [
       22
-      # optional RTSP / still HTTP when we add a streamer
-      # 8554
-      # 8081
+      8081 # patio MJPEG for Home Assistant (LAN)
     ];
   };
 
@@ -210,9 +208,10 @@ in
     fans = fans;
   };
 
-  # Camera device contract for future streamer unit
+  # Camera device contract + HA stream URL
   environment.etc."pati0/cameras.json".text = builtins.toJSON {
     rook_ha_url = rookHaUrl;
+    mjpeg_url = "http://192.168.68.60:8081/stream.mjpg";
     devices = [
       {
         name = "patio";
@@ -220,6 +219,66 @@ in
         overlay = cameraOverlay;
       }
     ];
+  };
+
+  # MJPEG HTTP stream for rook HA (generic/ffmpeg camera).
+  # cam (libcamera) → FIFO → ffmpeg mpjpeg listen on :8081
+  # Prefer this over libcamerify+V4L when CMA is tight; still wants cma=256M.
+  systemd.services.pati0-mjpeg = {
+    description = "Patio IMX219 MJPEG stream (HA)";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "network-online.target"
+      "pati0-camera-overlay.service"
+    ];
+    wants = [ "pati0-camera-overlay.service" ];
+    path = with pkgs; [
+      coreutils
+      libcamera
+      ffmpeg
+      bash
+    ];
+    serviceConfig = {
+      Type = "simple";
+      User = "nixos";
+      Group = "video";
+      SupplementaryGroups = [ "video" ];
+      Restart = "always";
+      RestartSec = "5";
+      RuntimeDirectory = "pati0-mjpeg";
+      # Camera + network need real devices
+      PrivateDevices = false;
+      ProtectHome = true;
+      NoNewPrivileges = true;
+      MemoryDenyWriteExecute = false;
+      Environment = [
+        "LIBCAMERA_IPA_MODULE_PATH=${pkgs.libcamera}/lib/libcamera"
+      ];
+      ExecStart = pkgs.writeShellScript "pati0-mjpeg" ''
+        set -euo pipefail
+        FIFO=/run/pati0-mjpeg/cam.fifo
+        rm -f "$FIFO"
+        mkfifo "$FIFO"
+        cleanup() {
+          kill $CAM_PID 2>/dev/null || true
+          rm -f "$FIFO"
+        }
+        trap cleanup EXIT INT TERM
+
+        # Continuous XRGB8888 frames @ 640x480 (~15fps) into FIFO
+        ${pkgs.libcamera}/bin/cam -c1 --capture=0 \
+          --stream width=640,height=480,role=viewfinder \
+          --file="$FIFO" &
+        CAM_PID=$!
+
+        # Multipart JPEG HTTP for HA generic/ffmpeg camera
+        exec ${pkgs.ffmpeg}/bin/ffmpeg -hide_banner -loglevel warning \
+          -f rawvideo -pix_fmt rgba -s 640x480 -framerate 12 -i "$FIFO" \
+          -an -c:v mjpeg -q:v 7 \
+          -f mpjpeg -boundary_tag ffmpeg \
+          -listen 1 http://0.0.0.0:8081/stream.mjpg
+      '';
+    };
   };
 
   # --- nix ---

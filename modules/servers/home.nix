@@ -233,6 +233,17 @@ in {
 
         default_config = {};
 
+        # Patio CSI camera on pati0 (MJPEG HTTP — see hosts/pati0.nix pati0-mjpeg)
+        ffmpeg = { };
+        camera = [
+          {
+            platform = "ffmpeg";
+            name = "Patio";
+            input = "http://192.168.68.60:8081/stream.mjpg";
+            # extra_arguments optional; keep light for Pi
+          }
+        ];
+
         # Recorder / history stay on default_config defaults unless we outgrow SD/disk
       };
     };
@@ -266,7 +277,9 @@ in {
       mkIf cfg.enableMqtt [ 1883 ];
 
     # Ensure HA starts after matter-server when both enabled
-    systemd.services.home-assistant = mkIf cfg.enableMatter {
+    systemd.services.home-assistant = {
+      path = [ pkgs.ffmpeg ];
+    } // optionalAttrs cfg.enableMatter {
       after = [ "matter-server.service" ];
       wants = [ "matter-server.service" ];
     };
