@@ -168,6 +168,8 @@ in {
         # Lighting
         "hue"
         "nanoleaf"
+        # HVAC — Venstar local API (see vault Projects/home-automation/thermostat)
+        "venstar"
         # Media
         "cast"
         # IoT protocols
