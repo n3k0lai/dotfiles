@@ -1,5 +1,5 @@
 {
-  description = "NixOS configurations for kiss (desktop), ene (server), rook (work agent server), droid (Android), and waves (macOS)";
+  description = "NixOS configurations for kiss, ene, rook, pati0 (patio Pi), droid, and waves";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
@@ -110,6 +110,16 @@
           {
             nixpkgs.overlays = [ agenix.overlays.default ];
           }
+        ];
+      };
+
+      # Patio edge Pi (aarch64) — camera + BT fans; NOT a second HA
+      # Switch on-device: nixos-rebuild switch --flake .#pati0
+      pati0 = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        modules = [
+          ./hosts/pati0-hardware.nix
+          ./hosts/pati0.nix
         ];
       };
     };
