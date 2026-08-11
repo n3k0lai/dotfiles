@@ -208,10 +208,11 @@ in
     fans = fans;
   };
 
-  # Camera device contract + HA stream URL
+  # Camera device contract + HA stream URLs
   environment.etc."pati0/cameras.json".text = builtins.toJSON {
     rook_ha_url = rookHaUrl;
     mjpeg_url = "http://192.168.68.60:8081/stream.mjpg";
+    snapshot_url = "http://192.168.68.60:8081/snapshot.jpg";
     devices = [
       {
         name = "patio";
@@ -221,14 +222,251 @@ in
     ];
   };
 
-  # MJPEG HTTP stream for rook HA (generic/ffmpeg camera).
-  # cam (libcamera) → FIFO → ffmpeg mpjpeg listen on :8081
-  # Prefer this over libcamerify+V4L when CMA is tight; still wants cma=256M.
+  # Stable multi-client HTTP camera for HA.
+  # Previous cam→FIFO→ffmpeg path dropped frames (1.2MB frames vs 64KB pipe)
+  # and -listen 1 died after each client. This loop:
+  #   1) grabs discrete frames with libcamera cam
+  #   2) JPEG encodes with ffmpeg
+  #   3) serves latest snapshot + multipart MJPEG to many clients
+  environment.etc."pati0/mjpeg-server.py".source = pkgs.writeText "pati0-mjpeg-server.py" ''
+    #!/usr/bin/env python3
+    import os, io, time, threading, subprocess, signal, sys
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    WIDTH = int(os.environ.get("PATI0_CAM_WIDTH", "1280"))
+    HEIGHT = int(os.environ.get("PATI0_CAM_HEIGHT", "720"))
+    FPS = float(os.environ.get("PATI0_CAM_FPS", "8"))
+    QUALITY = os.environ.get("PATI0_CAM_QUALITY", "6")  # ffmpeg -q:v (2-31, lower=better)
+    HOST = os.environ.get("PATI0_CAM_HOST", "0.0.0.0")
+    PORT = int(os.environ.get("PATI0_CAM_PORT", "8081"))
+    CAM = os.environ.get("PATI0_CAM_BIN", "cam")
+    FFMPEG = os.environ.get("PATI0_FFMPEG_BIN", "ffmpeg")
+    RUNDIR = os.environ.get("RUNTIME_DIRECTORY", "/run/pati0-mjpeg")
+
+    latest = None
+    lock = threading.Lock()
+    stop = threading.Event()
+
+    def log(msg: str) -> None:
+        print(msg, flush=True)
+
+    def capture_once(ppm_path: str, jpg_path: str) -> bytes | None:
+        # One still via libcamera → PPM → JPEG
+        r1 = subprocess.run(
+            [
+                CAM, "-c1", "--capture=1",
+                f"--stream=width={WIDTH},height={HEIGHT},role=viewfinder",
+                f"--file={ppm_path}",
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=12,
+            check=False,
+        )
+        if r1.returncode != 0 or not os.path.exists(ppm_path) or os.path.getsize(ppm_path) < 100:
+            # cam may write frame-0.bin style if path wrong; also try .ppm extension force
+            return None
+        # If not ppm magic, still try ffmpeg
+        r2 = subprocess.run(
+            [
+                FFMPEG, "-hide_banner", "-loglevel", "error", "-y",
+                "-i", ppm_path,
+                "-frames:v", "1",
+                "-q:v", QUALITY,
+                jpg_path,
+            ],
+            check=False,
+        )
+        if r2.returncode != 0 or not os.path.exists(jpg_path):
+            return None
+        with open(jpg_path, "rb") as f:
+            return f.read()
+
+    def capture_loop() -> None:
+        global latest
+        os.makedirs(RUNDIR, exist_ok=True)
+        # Prefer PPM so ffmpeg can decode without raw size guessing
+        ppm = os.path.join(RUNDIR, "frame.ppm")
+        jpg = os.path.join(RUNDIR, "frame.jpg")
+        period = 1.0 / max(FPS, 0.5)
+        failures = 0
+        while not stop.is_set():
+            t0 = time.monotonic()
+            try:
+                # cam writes PPM when filename ends with .ppm
+                data = None
+                r1 = subprocess.run(
+                    [
+                        CAM, "-c1", "--capture=1",
+                        f"--stream=width={WIDTH},height={HEIGHT},role=still",
+                        f"--file={ppm}",
+                    ],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    timeout=15,
+                    check=False,
+                )
+                src = ppm
+                if r1.returncode != 0 or not os.path.exists(ppm) or os.path.getsize(ppm) < 64:
+                    # fallback: raw XRGB dump + size
+                    raw = os.path.join(RUNDIR, "frame.raw")
+                    r1b = subprocess.run(
+                        [
+                            CAM, "-c1", "--capture=1",
+                            f"--stream=width={WIDTH},height={HEIGHT},role=viewfinder",
+                            f"--file={raw}",
+                        ],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.PIPE,
+                        timeout=15,
+                        check=False,
+                    )
+                    if r1b.returncode != 0 or not os.path.exists(raw):
+                        failures += 1
+                        if failures <= 3 or failures % 20 == 0:
+                            err = (r1.stderr or r1b.stderr or b"").decode("utf-8", "replace")[:300]
+                            log(f"capture fail n={failures}: {err}")
+                        time.sleep(0.5)
+                        continue
+                    r2 = subprocess.run(
+                        [
+                            FFMPEG, "-hide_banner", "-loglevel", "error", "-y",
+                            "-f", "rawvideo", "-pix_fmt", "rgba",
+                            "-video_size", f"{WIDTH}x{HEIGHT}",
+                            "-i", raw,
+                            "-frames:v", "1", "-q:v", QUALITY, jpg,
+                        ],
+                        check=False,
+                    )
+                else:
+                    r2 = subprocess.run(
+                        [
+                            FFMPEG, "-hide_banner", "-loglevel", "error", "-y",
+                            "-i", ppm,
+                            "-frames:v", "1", "-q:v", QUALITY, jpg,
+                        ],
+                        check=False,
+                    )
+                if r2.returncode == 0 and os.path.exists(jpg):
+                    with open(jpg, "rb") as f:
+                        data = f.read()
+                if data and data[:2] == b"\xff\xd8":
+                    with lock:
+                        latest = data
+                    failures = 0
+                else:
+                    failures += 1
+            except subprocess.TimeoutExpired:
+                failures += 1
+                log("capture timeout")
+            except Exception as e:
+                failures += 1
+                log(f"capture exception: {e}")
+            dt = time.monotonic() - t0
+            time.sleep(max(0.0, period - dt))
+
+    class Handler(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
+        def log_message(self, fmt, *args):
+            # quieter access log
+            if self.path.startswith("/snapshot") or self.path.startswith("/stream"):
+                return
+            log("%s - %s" % (self.address_string(), fmt % args))
+
+        def _send_jpeg(self, data: bytes):
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):
+            path = self.path.split("?", 1)[0]
+            if path in ("/", "/health"):
+                with lock:
+                    ok = latest is not None
+                body = b"ok\n" if ok else b"warming\n"
+                self.send_response(200 if ok else 503)
+                self.send_header("Content-Type", "text/plain")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            if path in ("/snapshot.jpg", "/snapshot", "/snap.jpg"):
+                with lock:
+                    data = latest
+                if not data:
+                    self.send_error(503, "No frame yet")
+                    return
+                self._send_jpeg(data)
+                return
+            if path in ("/stream.mjpg", "/stream", "/stream.mjpeg"):
+                boundary = b"frame"
+                self.send_response(200)
+                self.send_header(
+                    "Content-Type",
+                    "multipart/x-mixed-replace; boundary=" + boundary.decode(),
+                )
+                self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Connection", "close")
+                self.end_headers()
+                period = 1.0 / max(FPS, 0.5)
+                try:
+                    while not stop.is_set():
+                        with lock:
+                            data = latest
+                        if data:
+                            header = (
+                                b"--" + boundary + b"\r\n"
+                                b"Content-Type: image/jpeg\r\n"
+                                b"Content-Length: " + str(len(data)).encode() + b"\r\n\r\n"
+                            )
+                            self.wfile.write(header)
+                            self.wfile.write(data)
+                            self.wfile.write(b"\r\n")
+                            self.wfile.flush()
+                        time.sleep(period)
+                except (BrokenPipeError, ConnectionResetError):
+                    return
+                return
+            self.send_error(404, "try /snapshot.jpg or /stream.mjpg")
+
+    def main():
+        def _sig(*_):
+            stop.set()
+        signal.signal(signal.SIGTERM, _sig)
+        signal.signal(signal.SIGINT, _sig)
+
+        t = threading.Thread(target=capture_loop, name="capture", daemon=True)
+        t.start()
+        # wait briefly for first frame
+        for _ in range(50):
+            with lock:
+                if latest:
+                    break
+            time.sleep(0.1)
+        httpd = ThreadingHTTPServer((HOST, PORT), Handler)
+        httpd.daemon_threads = True
+        log(f"pati0 camera http on {HOST}:{PORT} ({WIDTH}x{HEIGHT} @{FPS}fps)")
+        try:
+            httpd.serve_forever(poll_interval=0.5)
+        finally:
+            stop.set()
+            httpd.server_close()
+
+    if __name__ == "__main__":
+        main()
+  '';
+
   systemd.services.pati0-mjpeg = {
-    description = "Patio IMX219 MJPEG stream (HA)";
+    description = "Patio IMX219 HTTP snapshot/MJPEG for Home Assistant";
     wantedBy = [ "multi-user.target" ];
     after = [
-      "network-online.target"
+      "network.target"
       "pati0-camera-overlay.service"
     ];
     wants = [ "pati0-camera-overlay.service" ];
@@ -236,7 +474,7 @@ in
       coreutils
       libcamera
       ffmpeg
-      bash
+      python3
     ];
     serviceConfig = {
       Type = "simple";
@@ -244,41 +482,24 @@ in
       Group = "video";
       SupplementaryGroups = [ "video" ];
       Restart = "always";
-      RestartSec = "5";
+      RestartSec = "2";
       RuntimeDirectory = "pati0-mjpeg";
-      # Camera + network need real devices
+      RuntimeDirectoryMode = "0755";
       PrivateDevices = false;
       ProtectHome = true;
       NoNewPrivileges = true;
       MemoryDenyWriteExecute = false;
       Environment = [
         "LIBCAMERA_IPA_MODULE_PATH=${pkgs.libcamera}/lib/libcamera"
+        "PATI0_CAM_BIN=${pkgs.libcamera}/bin/cam"
+        "PATI0_FFMPEG_BIN=${pkgs.ffmpeg}/bin/ffmpeg"
+        "PATI0_CAM_WIDTH=1280"
+        "PATI0_CAM_HEIGHT=720"
+        "PATI0_CAM_FPS=8"
+        "PATI0_CAM_QUALITY=5"
+        "PATI0_CAM_PORT=8081"
       ];
-      ExecStart = pkgs.writeShellScript "pati0-mjpeg" ''
-        set -euo pipefail
-        export LIBCAMERA_IPA_MODULE_PATH=${pkgs.libcamera}/lib/libcamera
-        FIFO=/run/pati0-mjpeg/cam.fifo
-        # Loop: ffmpeg -listen 1 exits after each client (HA reconnects OK).
-        while true; do
-          rm -f "$FIFO"
-          mkfifo "$FIFO"
-          ${pkgs.libcamera}/bin/cam -c1 --capture=0 \
-            --stream width=640,height=480,role=viewfinder \
-            --file="$FIFO" &
-          CAM_PID=$!
-          # Give cam a moment; ffmpeg blocks on accept until HA/curl connects
-          ${pkgs.ffmpeg}/bin/ffmpeg -hide_banner -loglevel warning \
-            -f rawvideo -pix_fmt rgba -video_size 640x480 -framerate 12 \
-            -thread_queue_size 64 -i "$FIFO" \
-            -an -c:v mjpeg -q:v 7 \
-            -f mpjpeg -boundary_tag ffmpeg \
-            -listen 1 http://0.0.0.0:8081/stream.mjpg \
-            || true
-          kill "$CAM_PID" 2>/dev/null || true
-          wait "$CAM_PID" 2>/dev/null || true
-          sleep 1
-        done
-      '';
+      ExecStart = "${pkgs.python3}/bin/python3 /etc/pati0/mjpeg-server.py";
     };
   };
 

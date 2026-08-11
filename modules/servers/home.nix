@@ -233,14 +233,15 @@ in {
 
         default_config = {};
 
-        # Patio CSI camera on pati0 (MJPEG HTTP — see hosts/pati0.nix pati0-mjpeg)
+        # Patio CSI camera on pati0 — snapshot + MJPEG multi-client HTTP
         ffmpeg = { };
         camera = [
           {
-            platform = "ffmpeg";
+            platform = "generic";
             name = "Patio";
-            input = "http://192.168.68.60:8081/stream.mjpg";
-            # extra_arguments optional; keep light for Pi
+            still_image_url = "http://192.168.68.60:8081/snapshot.jpg";
+            stream_source = "http://192.168.68.60:8081/stream.mjpg";
+            framerate = 5;
           }
         ];
 
