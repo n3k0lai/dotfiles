@@ -303,6 +303,16 @@ in
       default = ./secrets/hermes_env.age;
       description = "Path to the agenix-encrypted env file for Hermes";
     };
+    # hermes_ssh_config.age was historically ene-only; rook must opt in after re-encrypt.
+    enableSshConfig = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Decrypt modules/servers/secrets/hermes_ssh_config.age to ~/.ssh/config.
+        Recipients must include this host's SSH host key (see secrets.nix).
+        Set false on hosts not yet in the age recipients list (avoids agenixInstall fail).
+      '';
+    };
     stateDir = lib.mkOption {
       type = lib.types.path;
       default = "/var/lib/hermes";
@@ -470,7 +480,7 @@ in
       mode = "0400";
     };
 
-    age.secrets.hermes-ssh-config = {
+    age.secrets.hermes-ssh-config = lib.mkIf cfg.enableSshConfig {
       file = ./secrets/hermes_ssh_config.age;
       owner = cfg.user;
       group = "users";

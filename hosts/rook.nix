@@ -43,6 +43,9 @@ in
   modules.servers.hermes = {
     enable = true;
     envFile = ../modules/servers/secrets/rook_env.age;
+    # hermes_ssh_config.age is recipients ene+nicho only until re-encrypted for rook.
+    # Without this, agenixInstall fails: "no identity matched any of the recipients".
+    enableSshConfig = false;
     a2a = {
       enable = true;
       agentName = "rook";

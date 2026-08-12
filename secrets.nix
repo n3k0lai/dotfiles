@@ -43,7 +43,8 @@ in
   # ===========================================
   "modules/servers/secrets/xai_api_key.age".publicKeys = servers ++ [ nicho ];
   "modules/servers/secrets/hermes_env.age".publicKeys = [ ene nicho ];
-  "modules/servers/secrets/hermes_ssh_config.age".publicKeys = [ ene nicho ];
+  # Include rook so agent host can decrypt SSH config (re-encrypt after changing recipients).
+  "modules/servers/secrets/hermes_ssh_config.age".publicKeys = [ ene rook nicho ];
 
   # ===========================================
   # ARTEMIS SECRETS (artemis VPS)
