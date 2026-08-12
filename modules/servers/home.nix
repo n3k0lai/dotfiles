@@ -238,21 +238,24 @@ in {
           ExecStartPre = [ "+${render} /var/lib/go2rtc/go2rtc.yaml" ];
           ExecStart = lib.mkForce "${pkgs.go2rtc}/bin/go2rtc -config /var/lib/go2rtc/go2rtc.yaml";
           StateDirectory = "go2rtc";
+          # Drop DynamicUser sandbox — Seccomp was blocking V4L2 ioctls (BRIO 0-byte frames).
+          DynamicUser = lib.mkForce false;
+          User = "hass";
+          Group = "hass";
           SupplementaryGroups = [ "video" ];
-          # V4L access for BRIO (DynamicUser sandbox otherwise cannot open /dev/video*)
-          PrivateDevices = false;
-          DeviceAllow = [
-            "char-video4linux rw"
-            "char-usb_device rw"
-          ];
-          BindReadOnlyPaths = [
-            "/dev/v4l"
-            "/dev/video0"
-            "/dev/video1"
-            "/dev/video2"
-            "/dev/video3"
+          PrivateDevices = lib.mkForce false;
+          DevicePolicy = lib.mkForce "auto";
+          NoNewPrivileges = lib.mkForce false;
+          SystemCallFilter = lib.mkForce [ ];
+          RestrictAddressFamilies = lib.mkForce [
+            "AF_UNIX"
+            "AF_INET"
+            "AF_INET6"
+            "AF_NETLINK"
           ];
           ReadWritePaths = [ "/var/lib/go2rtc" ];
+          # conf readable by hass
+          UMask = "0022";
         };
       }
     );
