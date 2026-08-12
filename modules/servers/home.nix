@@ -211,18 +211,19 @@ in {
             echo "  bin: $ff"
             echo "streams:"
             echo "  # Entryway — Logitech BRIO on rack USB"
-            echo "  rack_entryway: ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720"
-            echo "  entryway: ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720"
+            # Quote values: bare & is a YAML anchor and drops the stream.
+            echo "  rack_entryway: \"ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720\""
+            echo "  entryway: \"ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720\""
             if [ -r /run/agenix/tapo-c200-rtsp ]; then
               url=$(tr -d '\n\r' </run/agenix/tapo-c200-rtsp)
               if [ -n "$url" ] && [ "$url" != "PENDING_CREATE_ON_ROOK" ]; then
-                echo "  elon: $url"
-                echo "  rack_elon: $url"
-                echo "  elon_hd: $url"
+                echo "  elon: \"$url\""
+                echo "  rack_elon: \"$url\""
+                echo "  elon_hd: \"$url\""
               fi
             fi
           } >"$conf"
-          chmod 0640 "$conf" || true
+          chmod 0664 "$conf" || true
         '';
       in
       {
