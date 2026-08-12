@@ -215,10 +215,7 @@ in
     enableBluetooth = true;
     matterBluetoothCommissioning = true;
     enableWebhookBridge = true;
-    # Northern Virginia, VA only in public git (not more specific)
-    latitude = 38.8462;
-    longitude = -77.3064;
-    elevation = 100;
+    # Location: HA UI only (not configuration.yaml / not public git)
     timeZone = "America/New_York";
     unitSystem = "us_customary";
     edgeMqttPeers = [
