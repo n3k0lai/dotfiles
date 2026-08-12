@@ -68,24 +68,9 @@ in {
       description = "Extra CIDRs/IPs trusted as reverse proxies";
     };
 
-    # Public repo: no more precise than Fairfax County, VA (Northern Virginia).
-    latitude = mkOption {
-      type = types.float;
-      default = 38.8462;
-      description = "Home latitude (Fairfax County centroid — do not refine in public git)";
-    };
-
-    longitude = mkOption {
-      type = types.float;
-      default = -77.3064;
-      description = "Home longitude (Fairfax County centroid — do not refine in public git)";
-    };
-
-    elevation = mkOption {
-      type = types.int;
-      default = 100;
-      description = "Home elevation (meters)";
-    };
+    # Location (lat/long/elevation) is intentionally NOT set in configuration.yaml.
+    # Public git must not carry residence coords. Set once in HA UI
+    # (Settings → System → General); stored in .storage, not regenerated from Nix.
 
     timeZone = mkOption {
       type = types.str;
@@ -204,15 +189,13 @@ in {
       config = {
         homeassistant = {
           name = "Home";
-          latitude = cfg.latitude;
-          longitude = cfg.longitude;
-          elevation = cfg.elevation;
+          # No latitude / longitude / elevation — set in HA UI (.storage).
+          # Keeps residence coords out of public n3k0lai/dotfiles.
           unit_system = cfg.unitSystem;
           time_zone = cfg.timeZone;
           currency = "USD";
           country = "US";
           allowlist_external_dirs = [ "/tmp" ];
-          # External / edge nodes reach HA over Tailscale; trusted proxies optional
         };
 
         http = {
