@@ -126,6 +126,7 @@ in
       "wheel"
       "video"
       "dialout"
+      "plugdev" # rtl-sdr udev
       "networkmanager"
     ];
     openssh.authorizedKeys.keys = sshKeys;
@@ -149,6 +150,7 @@ in
     allowedTCPPorts = [
       22
       8081 # patio MJPEG for Home Assistant (LAN)
+      1234 # rtl_tcp — RTL-SDR IQ over LAN
     ];
   };
 
@@ -168,7 +170,74 @@ in
   };
   services.blueman.enable = false;
 
-  # --- camera + edge packages (cam.nix / fans.nix folded in) ---
+  # --- RTL-SDR (USB 0bda:2838) — surface on LAN via rtl_tcp ---
+  # Blacklists DVB kernel modules so librtlsdr can claim the stick.
+  hardware.rtl-sdr.enable = true;
+  # Extra blacklist: stock image bound rtl2832_sdr / dvb stack
+  boot.blacklistedKernelModules = [
+    "dvb_usb_rtl28xxu"
+    "dvb_usb_v2"
+    "rtl2832"
+    "rtl2832_sdr"
+    "r820t"
+  ];
+
+  # IQ sample server — GQRX / SDR# / dump1090 / etc. connect to pati0:1234
+  systemd.services.rtl-tcp = {
+    description = "rtl_tcp — RTL-SDR over TCP (LAN)";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "network.target"
+      "systemd-udev-settle.service"
+    ];
+    wants = [ "network.target" ];
+    serviceConfig = {
+      Type = "simple";
+      User = "nixos";
+      Group = "plugdev";
+      SupplementaryGroups = [
+        "plugdev"
+        "dialout"
+      ];
+      Restart = "on-failure";
+      RestartSec = "5";
+      PrivateDevices = false;
+      ExecStart = "${pkgs.rtl-sdr}/bin/rtl_tcp -a 0.0.0.0 -p 1234";
+      Nice = 5;
+    };
+  };
+
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    publish = {
+      enable = true;
+      addresses = true;
+      userServices = true;
+    };
+  };
+  environment.etc."avahi/services/rtl-tcp.service".text = ''
+    <?xml version="1.0" standalone='no'?>
+    <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+    <service-group>
+      <name replace-wildcards="yes">pati0 RTL-SDR (%h)</name>
+      <service>
+        <type>_rtl_tcp._tcp</type>
+        <port>1234</port>
+        <txt-record>device=RTL2838</txt-record>
+        <txt-record>path=pati0</txt-record>
+      </service>
+    </service-group>
+  '';
+
+  environment.etc."pati0/rtlsdr.env".text = ''
+    RTL_TCP_HOST=192.168.68.60
+    RTL_TCP_PORT=1234
+    RTL_TCP_URL=rtl_tcp=192.168.68.60:1234
+    # GQRX: rtl_tcp=192.168.68.60:1234
+  '';
+
+  # --- camera + edge packages ---
   environment.systemPackages = with pkgs; [
     git
     tmux
@@ -183,6 +252,8 @@ in
     i2c-tools
     libraspberrypi
     raspberrypi-eeprom
+    rtl-sdr
+    rtl_433
   ]
   ++ lib.optionals (pkgs ? rpicam-apps) [ pkgs.rpicam-apps ]
   ++ lib.optionals (pkgs ? rpicam-apps-lite) [ pkgs.rpicam-apps-lite ];
