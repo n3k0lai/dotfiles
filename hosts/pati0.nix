@@ -427,6 +427,13 @@ in
                     failures = 0
                 else:
                     failures += 1
+                # never leave multi-hundred-MB dumps in /run
+                for p in (ppm, jpg, os.path.join(RUNDIR, "frame.raw")):
+                    try:
+                        if os.path.exists(p):
+                            os.remove(p)
+                    except OSError:
+                        pass
             except subprocess.TimeoutExpired:
                 failures += 1
                 log("capture timeout")
