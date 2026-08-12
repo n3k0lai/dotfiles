@@ -210,16 +210,11 @@ in {
             echo "ffmpeg:"
             echo "  bin: $ff"
             echo "streams:"
-            echo "  # Entryway — Logitech BRIO on rack USB"
-            # Quote values: bare & is a YAML anchor and drops the stream.
-            # Prefer /dev/video0 (by-id can fail inside some sandboxes); MJPEG then YUYV fallback list.
-            echo "  rack_entryway:"
-            echo "    - \"ffmpeg:device?video=/dev/video0&input_format=mjpeg&video_size=1280x720\""
-            echo "    - \"ffmpeg:device?video=/dev/video0&input_format=yuyv422&video_size=1280x720\""
-            echo "    - \"ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720\""
-            echo "  entryway:"
-            echo "    - \"ffmpeg:device?video=/dev/video0&input_format=mjpeg&video_size=1280x720\""
-            echo "    - \"ffmpeg:device?video=/dev/video0&input_format=yuyv422&video_size=1280x720\""
+            echo "  # Entryway — Logitech BRIO (exec ffmpeg; device? URL flaky under go2rtc)"
+            echo "  rack_entryway: \"exec:${ffmpegBin} -hide_banner -loglevel error -f v4l2 -input_format mjpeg -video_size 1280x720 -i /dev/video0 -c:v copy -f mjpeg -\""
+            echo "  entryway: \"exec:${ffmpegBin} -hide_banner -loglevel error -f v4l2 -input_format mjpeg -video_size 1280x720 -i /dev/video0 -c:v copy -f mjpeg -\""
+            # fallbacks if exec template fails at runtime (quoted device URL)
+            echo "  rack_entryway_v4l: \"ffmpeg:device?video=/dev/video0&input_format=mjpeg&video_size=640x480\""
             if [ -r /run/agenix/tapo-c200-rtsp ]; then
               url=$(tr -d '\n\r' </run/agenix/tapo-c200-rtsp)
               if [ -n "$url" ] && [ "$url" != "PENDING_CREATE_ON_ROOK" ]; then
@@ -263,6 +258,42 @@ in {
     services.udev.extraRules = mkIf cfg.enableGo2rtc ''
       SUBSYSTEM=="video4linux", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="085e", GROUP="video", MODE="0660"
     '';
+
+    # BRIO entryway fallback: plain ffmpeg MJPEG HTTP (if go2rtc V4L stays broken)
+    # HA: http://127.0.0.1:1985/stream.mjpg  still via periodic? use stream as both
+    systemd.services.rack-brio-mjpeg = mkIf cfg.enableGo2rtc {
+      description = "Logitech BRIO MJPEG on :1985 for HA entryway";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network.target" ];
+      serviceConfig = {
+        Type = "simple";
+        User = "hass";
+        Group = "video";
+        SupplementaryGroups = [ "video" ];
+        Restart = "always";
+        RestartSec = "3";
+        PrivateDevices = false;
+        NoNewPrivileges = false;
+        SystemCallFilter = lib.mkForce [ ];
+        # Loop: ffmpeg -listen 1 exits after each client
+        ExecStart = pkgs.writeShellScript "rack-brio-mjpeg" ''
+          set -euo pipefail
+          FF=${lib.escapeShellArg (lib.getExe pkgs.ffmpeg-headless)}
+          DEV=/dev/video0
+          if [ ! -e "$DEV" ]; then
+            DEV=${lib.escapeShellArg cfg.brioDevice}
+          fi
+          while true; do
+            "$FF" -hide_banner -loglevel warning \
+              -f v4l2 -input_format mjpeg -video_size 1280x720 -framerate 15 -i "$DEV" \
+              -c:v copy -an -f mpjpeg -q:v 5 \
+              -listen 1 http://127.0.0.1:1985/stream.mjpg \
+              || true
+            sleep 1
+          done
+        '';
+      };
+    };
 
     services.home-assistant = {
       enable = true;
