@@ -233,7 +233,19 @@ in {
           ExecStart = lib.mkForce "${pkgs.go2rtc}/bin/go2rtc -config /var/lib/go2rtc/go2rtc.yaml";
           StateDirectory = "go2rtc";
           SupplementaryGroups = [ "video" ];
-          # Allow reading the rendered config + v4l
+          # V4L access for BRIO (DynamicUser sandbox otherwise cannot open /dev/video*)
+          PrivateDevices = false;
+          DeviceAllow = [
+            "char-video4linux rw"
+            "char-usb_device rw"
+          ];
+          BindReadOnlyPaths = [
+            "/dev/v4l"
+            "/dev/video0"
+            "/dev/video1"
+            "/dev/video2"
+            "/dev/video3"
+          ];
           ReadWritePaths = [ "/var/lib/go2rtc" ];
         };
       }
