@@ -233,17 +233,11 @@ in {
 
         default_config = {};
 
-        # Patio CSI camera on pati0 — snapshot + MJPEG multi-client HTTP
+        # Stream/ffmpeg for camera proxy + future RTSP. Patio camera is a
+        # config-entry only (Settings → Generic Camera); YAML platform:generic
+        # is rejected by HA 2025+ ("Unused YAML configuration for generic").
         ffmpeg = { };
-        camera = [
-          {
-            platform = "generic";
-            name = "Patio";
-            still_image_url = "http://192.168.68.60:8081/snapshot.jpg";
-            stream_source = "http://192.168.68.60:8081/stream.mjpg";
-            framerate = 5;
-          }
-        ];
+        # Live entry: camera.192_168_68_60 → http://192.168.68.60:8081/{snapshot.jpg,stream.mjpg}
 
         # Recorder / history stay on default_config defaults unless we outgrow SD/disk
       };
