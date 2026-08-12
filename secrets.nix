@@ -68,6 +68,8 @@ in
   # ===========================================
   "modules/servers/secrets/ha_long_lived_token.age".publicKeys = [ rook nicho ];
   "modules/servers/secrets/ha_webhook_secret.age".publicKeys = [ rook nicho ];
+  # Tapo C200 RTSP URL (one line) — create with: agenix -e modules/servers/secrets/tapo_c200_rtsp.age
+  "modules/servers/secrets/tapo_c200_rtsp.age".publicKeys = [ rook nicho ];
 
   # ===========================================
   # MESH DB SECRETS (agent → Postgres on Rook)

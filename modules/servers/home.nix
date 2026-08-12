@@ -69,6 +69,21 @@ in {
       description = "V4L capture node for rack entryway BRIO (use by-id, not video0)";
     };
 
+    # Tapo C200 (Elon) — one-line RTSP URL in agenix, not public git.
+    # File contents example:
+    #   rtsp://camuser:campass@192.168.68.60:554/stream1
+    c200RtspSecretFile = mkOption {
+      type = types.path;
+      default = ../servers/secrets/tapo_c200_rtsp.age;
+      description = "Agenix file: single-line RTSP URL for Tapo C200 (Elon cam)";
+    };
+
+    c200Host = mkOption {
+      type = types.str;
+      default = "192.168.68.60";
+      description = "Tapo C200 LAN IP (MAC dc:62:79:a6:33:9b); reserve in DHCP";
+    };
+
     longLivedTokenFile = mkOption {
       type = types.path;
       default = ../servers/secrets/ha_long_lived_token.age;
@@ -158,29 +173,70 @@ in {
       };
     };
 
-    # --- go2rtc: rack cameras (BRIO entryway; C200 Elon when RTSP ready) ---
-    # API: http://127.0.0.1:1984  (not opened on LAN firewall)
-    # HA Generic Camera:
-    #   still:  http://127.0.0.1:1984/api/frame.jpeg?src=rack_entryway
-    #   stream: http://127.0.0.1:1984/api/stream.mjpeg?src=rack_entryway
-    #   rtsp:   rtsp://127.0.0.1:8554/rack_entryway
+    # --- go2rtc: BRIO entryway + C200 Elon (RTSP URL from agenix) ---
+    # API: http://127.0.0.1:1984
+    #   rack_entryway / entryway — USB BRIO
+    #   elon / rack_elon         — C200 (when secret present + RTSP enabled in Tapo)
+    # HA still:  http://127.0.0.1:1984/api/frame.jpeg?src=rack_entryway
+    # HA stream: http://127.0.0.1:1984/api/stream.mjpeg?src=elon
+    age.secrets.tapo-c200-rtsp = mkIf (cfg.enableGo2rtc && builtins.pathExists cfg.c200RtspSecretFile) {
+      file = cfg.c200RtspSecretFile;
+      mode = "0400";
+      owner = "root";
+      group = "root";
+    };
+
     services.go2rtc = mkIf cfg.enableGo2rtc {
       enable = true;
-      settings = {
-        api.listen = "127.0.0.1:1984";
-        rtsp.listen = "127.0.0.1:8554";
-        ffmpeg.bin = lib.getExe pkgs.ffmpeg-headless;
-        streams = {
-          # Primary entryway — Logitech BRIO on rook USB (promoted from printer)
-          # MJPEG capture; software path (6600K — no fragile #hardware dependency)
-          rack_entryway = "ffmpeg:device?video=${cfg.brioDevice}&input_format=mjpeg&video_size=1280x720";
-          entryway = "ffmpeg:device?video=${cfg.brioDevice}&input_format=mjpeg&video_size=1280x720";
-          # Elon / printer — C200 upside-down. Set RTSP after cam is on LAN:
-          # elon = "rtsp://USER:PASS@IP:554/stream1";
-          # Prefer Tapo app Rotate 180; or elon_flip with vflip,hflip.
-        };
-      };
+      # settings unused — config written at start so Elon URL stays out of the nix store
+      settings = { };
     };
+
+    systemd.services.go2rtc = mkIf cfg.enableGo2rtc (
+      let
+        ffmpegBin = lib.getExe pkgs.ffmpeg-headless;
+        brio = cfg.brioDevice;
+        render = pkgs.writeShellScript "go2rtc-render-config" ''
+          set -euo pipefail
+          umask 077
+          conf="$1"
+          ff=${lib.escapeShellArg ffmpegBin}
+          brio=${lib.escapeShellArg brio}
+          {
+            echo "api:"
+            echo "  listen: 127.0.0.1:1984"
+            echo "rtsp:"
+            echo "  listen: 127.0.0.1:8554"
+            echo "ffmpeg:"
+            echo "  bin: $ff"
+            echo "streams:"
+            echo "  # Entryway — Logitech BRIO on rack USB"
+            echo "  rack_entryway: ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720"
+            echo "  entryway: ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720"
+            if [ -r /run/agenix/tapo-c200-rtsp ]; then
+              url=$(tr -d '\n\r' </run/agenix/tapo-c200-rtsp)
+              if [ -n "$url" ] && [ "$url" != "PENDING_CREATE_ON_ROOK" ]; then
+                echo "  elon: $url"
+                echo "  rack_elon: $url"
+                echo "  elon_hd: $url"
+              fi
+            fi
+          } >"$conf"
+          chmod 0640 "$conf" || true
+        '';
+      in
+      {
+        # "+" = run as root under DynamicUser so we can read agenix + write state
+        serviceConfig = {
+          ExecStartPre = [ "+${render} /var/lib/go2rtc/go2rtc.yaml" ];
+          ExecStart = lib.mkForce "${pkgs.go2rtc}/bin/go2rtc -config /var/lib/go2rtc/go2rtc.yaml";
+          StateDirectory = "go2rtc";
+          SupplementaryGroups = [ "video" ];
+          # Allow reading the rendered config + v4l
+          ReadWritePaths = [ "/var/lib/go2rtc" ];
+        };
+      }
+    );
 
     services.udev.extraRules = mkIf cfg.enableGo2rtc ''
       SUBSYSTEM=="video4linux", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="085e", GROUP="video", MODE="0660"
