@@ -204,15 +204,11 @@ in {
           trusted_proxies = trustedProxies;
         };
 
-        mqtt = mkIf cfg.enableMqtt {
-          broker = "127.0.0.1";
-          port = 1883;
-          discovery = true;
-          discovery_prefix = "homeassistant";
-        };
-
-        # Matter is configured in the UI → ws://127.0.0.1:<matterPort>/ws
-        # (do not bake secrets into yaml)
+        # MQTT broker settings are NOT valid in configuration.yaml on HA 2022+.
+        # Mosquitto still runs locally (services.mosquitto below). Add once in UI:
+        #   Settings → Devices & services → MQTT → broker 127.0.0.1 port 1883
+        #   (discovery on, no user/pass — allow_anonymous on local listener)
+        # Matter is UI → ws://127.0.0.1:<matterPort>/ws
 
         default_config = { };
 
