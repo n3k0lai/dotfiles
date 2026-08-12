@@ -56,6 +56,19 @@ in {
       description = "Enable HA alert webhook bridge to Hermes (requires Hermes on same host)";
     };
 
+    enableGo2rtc = mkOption {
+      type = types.bool;
+      default = true;
+      description = "go2rtc on localhost for rack USB cams + optional Tapo RTSP (HA consumes streams)";
+    };
+
+    # Stable V4L path for Logitech BRIO on the rack (entryway promotion)
+    brioDevice = mkOption {
+      type = types.str;
+      default = "/dev/v4l/by-id/usb-046d_Logitech_BRIO_873011C9-video-index0";
+      description = "V4L capture node for rack entryway BRIO (use by-id, not video0)";
+    };
+
     longLivedTokenFile = mkOption {
       type = types.path;
       default = ../servers/secrets/ha_long_lived_token.age;
@@ -144,6 +157,34 @@ in {
         SupplementaryGroups = [ "dialout" ];
       };
     };
+
+    # --- go2rtc: rack cameras (BRIO entryway; C200 Elon when RTSP ready) ---
+    # API: http://127.0.0.1:1984  (not opened on LAN firewall)
+    # HA Generic Camera:
+    #   still:  http://127.0.0.1:1984/api/frame.jpeg?src=rack_entryway
+    #   stream: http://127.0.0.1:1984/api/stream.mjpeg?src=rack_entryway
+    #   rtsp:   rtsp://127.0.0.1:8554/rack_entryway
+    services.go2rtc = mkIf cfg.enableGo2rtc {
+      enable = true;
+      settings = {
+        api.listen = "127.0.0.1:1984";
+        rtsp.listen = "127.0.0.1:8554";
+        ffmpeg.bin = lib.getExe pkgs.ffmpeg-headless;
+        streams = {
+          # Primary entryway — Logitech BRIO on rook USB (promoted from printer)
+          # MJPEG capture; software path (6600K — no fragile #hardware dependency)
+          rack_entryway = "ffmpeg:device?video=${cfg.brioDevice}&input_format=mjpeg&video_size=1280x720";
+          entryway = "ffmpeg:device?video=${cfg.brioDevice}&input_format=mjpeg&video_size=1280x720";
+          # Elon / printer — C200 upside-down. Set RTSP after cam is on LAN:
+          # elon = "rtsp://USER:PASS@IP:554/stream1";
+          # Prefer Tapo app Rotate 180; or elon_flip with vflip,hflip.
+        };
+      };
+    };
+
+    services.udev.extraRules = mkIf cfg.enableGo2rtc ''
+      SUBSYSTEM=="video4linux", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="085e", GROUP="video", MODE="0660"
+    '';
 
     services.home-assistant = {
       enable = true;
