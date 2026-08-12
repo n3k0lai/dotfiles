@@ -240,9 +240,9 @@ in {
           StateDirectory = "go2rtc";
           # Drop DynamicUser sandbox — Seccomp was blocking V4L2 ioctls (BRIO 0-byte frames).
           DynamicUser = lib.mkForce false;
-          User = "hass";
-          Group = "hass";
-          SupplementaryGroups = [ "video" ];
+          User = lib.mkForce "hass";
+          Group = lib.mkForce "hass";
+          SupplementaryGroups = lib.mkForce [ "video" ];
           PrivateDevices = lib.mkForce false;
           DevicePolicy = lib.mkForce "auto";
           NoNewPrivileges = lib.mkForce false;
