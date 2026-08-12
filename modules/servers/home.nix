@@ -212,8 +212,14 @@ in {
             echo "streams:"
             echo "  # Entryway — Logitech BRIO on rack USB"
             # Quote values: bare & is a YAML anchor and drops the stream.
-            echo "  rack_entryway: \"ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720\""
-            echo "  entryway: \"ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720\""
+            # Prefer /dev/video0 (by-id can fail inside some sandboxes); MJPEG then YUYV fallback list.
+            echo "  rack_entryway:"
+            echo "    - \"ffmpeg:device?video=/dev/video0&input_format=mjpeg&video_size=1280x720\""
+            echo "    - \"ffmpeg:device?video=/dev/video0&input_format=yuyv422&video_size=1280x720\""
+            echo "    - \"ffmpeg:device?video=$brio&input_format=mjpeg&video_size=1280x720\""
+            echo "  entryway:"
+            echo "    - \"ffmpeg:device?video=/dev/video0&input_format=mjpeg&video_size=1280x720\""
+            echo "    - \"ffmpeg:device?video=/dev/video0&input_format=yuyv422&video_size=1280x720\""
             if [ -r /run/agenix/tapo-c200-rtsp ]; then
               url=$(tr -d '\n\r' </run/agenix/tapo-c200-rtsp)
               if [ -n "$url" ] && [ "$url" != "PENDING_CREATE_ON_ROOK" ]; then
