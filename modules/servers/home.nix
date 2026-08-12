@@ -214,7 +214,16 @@ in {
         # Matter is configured in the UI → ws://127.0.0.1:<matterPort>/ws
         # (do not bake secrets into yaml)
 
-        default_config = {};
+        default_config = { };
+
+        # UI editors write these YAML files under /var/lib/hass. Without the
+        # includes, script/automation/scene setup times out ("saved but waiting
+        # for setup has timed out" / configuration.yaml parse message).
+        # NixOS keeps configuration.yaml as a store symlink; the *include targets*
+        # stay writable in the state dir.
+        "automation ui" = "!include automations.yaml";
+        "script ui" = "!include scripts.yaml";
+        "scene ui" = "!include scenes.yaml";
 
         # Stream/ffmpeg for camera proxy + future RTSP. Patio camera is a
         # config-entry only (Settings → Generic Camera); YAML platform:generic
@@ -253,6 +262,14 @@ in {
     # - matter-server stays on localhost; no public 5580
     networking.firewall.allowedTCPPorts =
       mkIf cfg.enableMqtt [ 1883 ];
+
+    # Writable stubs for HA UI script/automation/scene editors (include targets).
+    # Create only if missing so we never clobber user content.
+    systemd.tmpfiles.rules = [
+      "f /var/lib/hass/automations.yaml 0644 hass hass - {}"
+      "f /var/lib/hass/scripts.yaml 0644 hass hass - {}"
+      "f /var/lib/hass/scenes.yaml 0644 hass hass - {}"
+    ];
 
     # Ensure HA starts after matter-server when both enabled
     systemd.services.home-assistant = {
