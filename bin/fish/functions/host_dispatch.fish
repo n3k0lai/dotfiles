@@ -239,6 +239,20 @@ systemctl status hermes-agent --no-pager -l | head -20
                 return 1
             end
 
+        case upload up put
+            # Generic kiss/on-host → hermes-owned path upload (fixes perms once).
+            #   ene upload finance ~/Downloads/wf.csv ~/Downloads/amex.csv
+            #   ene upload inbox ./report.pdf
+            #   rook upload workspace/mcp/foo ./bar.csv
+            #   ene upload /var/lib/hermes/.hermes/private/finance/inbox f.csv
+            _host_dispatch_upload \
+                --target $target \
+                --ssh $ssh_dest \
+                --on-target $on_target \
+                --on-kiss $on_kiss \
+                -- $argv
+            return $status
+
         case a2a
             # A2A ops: status | smoke | card | restart | tools
             set -l a2a_sub status
@@ -390,6 +404,14 @@ echo \"Interactive tools: $target do hermes tools\"
             echo "    $target logs|l       follow hermes-agent journal"
             echo "    $target restart|rs   sudo systemctl restart hermes-agent"
             echo "    $target a2a …        A2A status/smoke/card/tools/restart (see $target a2a help)"
+            echo "    $target upload|up …  copy files → hermes-owned path (finance/inbox/workspace)"
+            echo ""
+            echo "  Upload presets (mode 0600 · owner hermes:hermes)"
+            echo "    $target upload finance FILE…     private finance CSV inbox"
+            echo "    $target upload inbox FILE…       /var/lib/hermes/inbox (general drop)"
+            echo "    $target upload workspace/… FILE  under hermes workspace"
+            echo "    $target upload /abs/path FILE…   explicit dest dir"
+            echo "    $target upload help              full upload help"
             echo ""
             echo "  host:   $this_host"
             echo "  user:   $current_user"
@@ -410,4 +432,223 @@ echo \"Interactive tools: $target do hermes tools\"
             echo "unknown command: $cmd (try: $target help)" >&2
             return 1
     end
+end
+
+# Shared upload helper for ene/rook (sourced as function alongside host_dispatch).
+function _host_dispatch_upload --description 'ene/rook upload → hermes-owned dest'
+    argparse 'target=' 'ssh=' 'on-target=' 'on-kiss=' -- $argv
+    or return 2
+
+    set -l target $_flag_target
+    set -l ssh_dest $_flag_ssh
+    set -l on_target $_flag_on_target
+    set -l on_kiss $_flag_on_kiss
+
+    set -l hermes_home /var/lib/hermes
+    set -l hermes_soul $hermes_home/.hermes
+    set -l hermes_ws $hermes_soul/workspace
+    set -l finance_inbox $hermes_soul/private/finance/inbox
+    set -l general_inbox $hermes_home/inbox
+
+    function __hd_upload_help --inherit-variable target --inherit-variable finance_inbox --inherit-variable general_inbox --inherit-variable hermes_ws
+        echo "$target upload — copy local files onto $target as hermes (no Discord, correct perms)"
+        echo ""
+        echo "Usage:"
+        echo "  $target upload <preset|dest-dir> FILE [FILE…]"
+        echo "  $target up <preset|dest-dir> FILE [FILE…]"
+        echo ""
+        echo "Presets:"
+        echo "  finance|fin|money     $finance_inbox"
+        echo "  inbox|drop|in         $general_inbox"
+        echo "  workspace|ws PATH…    $hermes_ws/PATH  (PATH may include more segments)"
+        echo "  /absolute/dir         that directory on $target"
+        echo "  relative/path         treated as under $hermes_ws/"
+        echo ""
+        echo "Examples:"
+        echo "  $target upload finance ~/Downloads/wf.csv ~/Downloads/amex.csv"
+        echo "  $target upload inbox ~/Desktop/scan.pdf"
+        echo "  $target upload workspace/mcp/guns/competition/inbox ./rules.pdf"
+        echo "  $target upload /var/lib/hermes/.hermes/private/finance/inbox f.csv"
+        echo ""
+        echo "What it does:"
+        echo "  1) stages via scp/rsync to nicho tmp on host (or local tmp if already on $target)"
+        echo "  2) sudo mkdir -p dest · chown hermes:hermes · chmod 2770 (or 0750 for workspace)"
+        echo "  3) sudo install -m 600 -o hermes -g hermes FILE… dest/"
+        echo "  4) wipes staging"
+        echo ""
+        echo "Finance follow-up (on ene, after CSV land):"
+        echo "  tell Ene: import finance inbox label YYYY-MM-DD-initial"
+        echo "  or: $target do python3 $hermes_ws/mcp/finance/scripts/import_csv.py --scan-inbox --label …"
+    end
+
+    if test (count $argv) -eq 0
+        __hd_upload_help
+        return 2
+    end
+
+    set -l dest_arg $argv[1]
+    set -e argv[1]
+
+    if contains -- (string lower -- $dest_arg) help h -h --help
+        __hd_upload_help
+        return 0
+    end
+
+    if test (count $argv) -eq 0
+        echo "$target upload: need at least one FILE after dest" >&2
+        __hd_upload_help
+        return 2
+    end
+
+    # Resolve destination directory on remote/host
+    set -l dest_dir
+    set -l dest_key (string lower -- $dest_arg)
+    switch $dest_key
+        case finance fin money private-finance
+            set dest_dir $finance_inbox
+        case inbox drop in general
+            set dest_dir $general_inbox
+        case workspace ws
+            if test (count $argv) -lt 2
+                echo "$target upload workspace: need SUBPATH FILE…" >&2
+                echo "  e.g. $target upload workspace mcp/finance/inbox ./wf.csv" >&2
+                return 2
+            end
+            set -l sub $argv[1]
+            set -e argv[1]
+            # strip leading workspace/ if user double-prefixed
+            set sub (string replace -r '^/+|workspace/+' '' -- $sub)
+            set dest_dir $hermes_ws/$sub
+        case '*'
+            if string match -q '/*' -- $dest_arg
+                set dest_dir $dest_arg
+            else if string match -qr '^(workspace|ws)/' -- $dest_arg
+                set -l sub (string replace -r '^(workspace|ws)/' '' -- $dest_arg)
+                set dest_dir $hermes_ws/$sub
+            else
+                # bare relative → under workspace
+                set dest_dir $hermes_ws/$dest_arg
+            end
+    end
+
+    # Safety: only allow under /var/lib/hermes (hermes tree)
+    if not string match -q '/var/lib/hermes/*' -- $dest_dir
+        echo "$target upload: refusing dest outside /var/lib/hermes → $dest_dir" >&2
+        return 1
+    end
+
+    # Validate local files
+    set -l files
+    for f in $argv
+        if not test -f -- $f
+            echo "$target upload: not a file: $f" >&2
+            return 1
+        end
+        set -a files $f
+    end
+
+    if test (count $files) -eq 0
+        echo "$target upload: no files" >&2
+        return 1
+    end
+
+    # Mode for dest dir: private finance → 2770; general inbox 2775; else 0750
+    set -l dir_mode 0750
+    if string match -q '*/.hermes/private/*' -- $dest_dir
+        set dir_mode 2770
+    else if test "$dest_dir" = $general_inbox
+        set dir_mode 2775
+    else if string match -q '*/inbox' -- $dest_dir
+        or string match -q '*/inbox/*' -- $dest_dir
+        set dir_mode 2775
+    end
+
+    set -l stamp (date +%Y%m%d-%H%M%S)
+    set -l stage_name "host-upload-$target-$stamp-$fish_pid"
+    set -l remote_stage /tmp/$stage_name
+    set -l st 1
+
+    echo "→ $target:$dest_dir  ("(count $files)" file(s), hermes:hermes 0600)"
+
+    if test "$on_target" = true
+        set -l local_stage /tmp/$stage_name
+        mkdir -p $local_stage
+        or return 1
+        for f in $files
+            cp -f -- $f $local_stage/
+            or begin
+                rm -rf $local_stage
+                return 1
+            end
+        end
+        set -l basenames
+        for f in $files
+            set -a basenames (basename -- $f)
+        end
+        set -l bn_joined (string join ' ' -- $basenames)
+        set -l install_script "set -euo pipefail
+DEST='$dest_dir'
+STAGE='$local_stage'
+sudo mkdir -p \"\$DEST\"
+sudo chown hermes:hermes \"\$DEST\"
+sudo chmod $dir_mode \"\$DEST\"
+for b in $bn_joined; do
+  sudo install -m 600 -o hermes -g hermes \"\$STAGE/\$b\" \"\$DEST/\$b\"
+  echo \"  ✓ \$DEST/\$b\"
+done
+rm -rf \"\$STAGE\"
+echo \"✓ uploaded "(count $files)" file(s) → \$DEST\"
+"
+        printf '%s\n' "$install_script" | bash --noprofile --norc -s
+        set st $status
+    else if test "$on_kiss" = true
+        # stage on remote as nicho, then sudo install as hermes
+        set -l basenames
+        for f in $files
+            set -a basenames (basename -- $f)
+        end
+        set -l bn_joined (string join ' ' -- $basenames)
+        ssh -q $ssh_dest -- mkdir -p $remote_stage
+        or return 1
+        # scp each file (preserve basename)
+        for f in $files
+            set -l b (basename -- $f)
+            scp -q -- $f $ssh_dest:$remote_stage/$b
+            or begin
+                ssh -q $ssh_dest -- rm -rf $remote_stage
+                echo "$target upload: scp failed for $f" >&2
+                return 1
+            end
+        end
+        set -l install_script "set -euo pipefail
+DEST='$dest_dir'
+STAGE='$remote_stage'
+sudo mkdir -p \"\$DEST\"
+sudo chown hermes:hermes \"\$DEST\"
+sudo chmod $dir_mode \"\$DEST\"
+for b in $bn_joined; do
+  sudo install -m 600 -o hermes -g hermes \"\$STAGE/\$b\" \"\$DEST/\$b\"
+  echo \"  ✓ \$DEST/\$b\"
+done
+rm -rf \"\$STAGE\"
+echo \"✓ uploaded "(count $files)" file(s) → \$DEST\"
+"
+        printf '%s\n' "$install_script" | ssh $ssh_dest bash --noprofile --norc -s
+        set st $status
+    else
+        echo "$target upload: run from kiss or on $target" >&2
+        return 1
+    end
+
+    if test $st -ne 0
+        return $st
+    end
+
+    # Hints
+    if string match -q '*private/finance/inbox*' -- $dest_dir
+        echo ""
+        echo "Next: tell Ene  →  import finance inbox label "(date +%Y-%m-%d)"-initial"
+        echo "  or: $target do python3 $hermes_ws/mcp/finance/scripts/import_csv.py --scan-inbox --label "(date +%Y-%m-%d)"-initial"
+    end
+    return 0
 end
