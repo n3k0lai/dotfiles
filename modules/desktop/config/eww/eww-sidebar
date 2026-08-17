@@ -8,6 +8,15 @@ set -g SIDEBAR_WINDOW sidebar
 set -g OPEN_RETRIES 15
 set -g OPEN_SLEEP 1
 
+function sidebar_screen
+    set -l script (status dirname)/scripts/sidebar-monitor.fish
+    if test -x $script
+        $script
+    else
+        echo 0
+    end
+end
+
 function show_help
     echo "Eww Sidebar Manager"
     echo ""
@@ -36,7 +45,7 @@ function open_sidebar_with_retry
     set -l attempts $OPEN_RETRIES
     set -l i 1
     while test $i -le $attempts
-        if eww open $SIDEBAR_WINDOW 2>/dev/null
+        if eww open $SIDEBAR_WINDOW --screen (sidebar_screen) 2>/dev/null
             # Confirm the layer actually registered
             sleep 0.2
             if sidebar_open

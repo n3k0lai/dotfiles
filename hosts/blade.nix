@@ -17,10 +17,32 @@
 
 with lib;
 
+let
+  fortune-zh-module = import ../modules/core/fortune-zh.nix { inherit pkgs; };
+in
 {
   imports = [
-    # fcitx5 needs home-manager — add when you wire HM into the blade flake
-    # ../modules/desktop/fcitx5.nix
+    # Same desktop/user stack as configuration.nix. Host extras (VM, OBD)
+    # stay below. Games / work / cad / emacs later, same pattern as kiss.nix.
+    ../users/nicho.nix
+    ../bin/default.nix
+    ../modules/core/dev-mode.nix
+    ../modules/core/kitty.nix
+    ../modules/core/foot.nix
+    ../modules/core/mpv.nix
+    ../modules/core/zathura.nix
+    ../modules/core/tmux.nix
+    ../modules/core/ssh.nix
+    ../modules/desktop/hypr.nix
+    ../modules/desktop/fcitx5.nix
+    ../modules/desktop/greetd.nix
+    ../modules/desktop/sddm.nix
+    ../modules/desktop/audio-idle-inhibit.nix
+    ../modules/desktop/theme/default.nix
+    ../modules/desktop/theme/waves.nix
+    ../modules/browsers/firefox.nix
+    ../modules/work/rdp.nix
+    ../modules/servers/work-server.nix
     # opencode: unstable nixpkgs smoke test segfaults on blade (exit 139); enable when fixed
     # ../modules/editors/opencode.nix
   ];
@@ -66,8 +88,7 @@ with lib;
     # and daily desktop. MX150 (Pascal, 2 GB) stays a secondary device:
     #   nvidia-offload <app>     GL/Vulkan on the dGPU
     #   CUDA / nvidia-smi        works without the wrapper
-    # Do not import modules/desktop/hypr.nix as-is — it forces NVIDIA as
-    # GBM/GLX/VAAPI, which is correct for kiss (RTX 3070) and wrong here.
+    # hypr.nix nvidia=false below — do not export GBM/GLX/VAAPI=nvidia.
     hardware.graphics = {
       enable = true;
       extraPackages = with pkgs; [
@@ -104,8 +125,106 @@ with lib;
     };
 
     ##################################################################################
-    #                        Virtualisation — Forscan VM
-    virtualisation.libvirtd.enable = true;
+    #                        Virtualisation — Forscan (Windows) + USB OBD
+    #
+    # Forscan is a lightweight Win32 diagnostic UI. It needs a COM port, not a
+    # GPU. Do not VFIO the MX150 for this guest:
+    #   - 2 GB Pascal, no panel output, NVIDIA code-43 is common on Optimus
+    #   - binding vfio-pci steals CUDA / nvidia-offload from the host
+    #   - inspect IOMMU groups after the first boot with intel_iommu=on before
+    #     even considering it (`find /sys/kernel/iommu_groups -type l`)
+    # Guest display: SPICE + virtio-gpu. Attach OBD via virt-manager USB
+    # redirect (Redirect USB device) or a USB hostdev on the domain.
+    # Suggested domain: q35, OVMF, TPM 2.0 (swtpm), 6G RAM, 4 vCPU, virtio
+    # disk/net. VirtIO driver ISO is at /etc/virtio-win.
+    modules.servers.workVm = {
+      enable = true;
+      memoryMB = 6144;
+      cores = 4;
+      iommu = true;
+      gpuPassthrough = false;
+    };
+
+    # OBDLink EX (ScanTool, FTDI 0403:6015, serial 223230387593) — live on
+    # bus 1-3 as /dev/ttyUSB0. Stable host node: /dev/obdlink
+    #   tio /dev/obdlink
+    # For Forscan: close tio, then virt-manager → Redirect USB device
+    # (host ftdi_sio must not hold it). Other adapters stay on the generic
+    # vendor matches below.
+    services.udev.extraRules = ''
+      # This OBDLink EX — tty + USB device node
+      SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", ATTRS{serial}=="223230387593", SYMLINK+="obdlink", GROUP="dialout", MODE="0660", TAG+="uaccess"
+      SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="6015", ATTR{serial}=="223230387593", MODE="0660", GROUP="libvirtd", TAG+="uaccess"
+
+      # Other FTDI (OBDLink SX, many ELM cables)
+      SUBSYSTEM=="usb", ATTR{idVendor}=="0403", MODE="0660", GROUP="libvirtd", TAG+="uaccess"
+      # Silicon Labs CP210x (ELM327, some OBDLink)
+      SUBSYSTEM=="usb", ATTR{idVendor}=="10c4", ATTR{idProduct}=="ea60", MODE="0660", GROUP="libvirtd", TAG+="uaccess"
+      # Prolific PL2303 (cheap clones — flaky, but people have them)
+      SUBSYSTEM=="usb", ATTR{idVendor}=="067b", MODE="0660", GROUP="libvirtd", TAG+="uaccess"
+      # Flipper Zero CDC
+      SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="5740", MODE="0660", GROUP="libvirtd", TAG+="uaccess"
+    '';
+
+    ##################################################################################
+    #                        Session — same modules as kiss
+    #
+    # leftover ~/.config from the 2024 dao checkout is renamed *.hm-bak
+    home-manager.useGlobalPkgs = true;
+    home-manager.useUserPackages = true;
+    home-manager.backupFileExtension = "hm-bak";
+    # blade tracks nixpkgs-unstable (26.11); the flake pins HM 25.05 like kiss.
+    home-manager.users.nicho.home.enableNixpkgsReleaseCheck = false;
+    home-manager.users.nicho.home.stateVersion = "24.05";
+
+    modules.core.devMode.enable = true;
+    modules.core.devMode.repoPath = "/home/nicho/dotfiles";
+    modules.core.kitty.enable = true;
+    modules.core.foot.enable = true;
+    modules.core.mpv.enable = true;
+    modules.core.zathura.enable = true;
+    modules.core.tmux.enable = true;
+    modules.core.ssh.enable = true;
+
+    modules.desktop.theme.waves.enable = true;
+    modules.desktop.hyprland.enable = true;
+    modules.desktop.hyprland.nvidia = false;
+    modules.desktop.hyprland.monitorsLayout = "blade";
+    modules.desktop.fcitx5.enable = true;
+    modules.desktop.greetd.enable = true;
+    modules.desktop.audioIdleInhibit.enable = true;
+    modules.browsers.firefox.enable = true;
+    modules.work.rdp.enable = true;
+    age.identityPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+
+    # WiFi PSKs live in KWallet from the old Plasma install (psk-flags=1).
+    services.gnome.gnome-keyring.enable = true;
+    security.pam.services.greetd.enableGnomeKeyring = true;
+    security.pam.services.login.enableGnomeKeyring = true;
+    programs.nm-applet.enable = true;
+    networking.networkmanager.wifi.powersave = false;
+    networking.networkmanager.wifi.scanRandMacAddress = false;
+    # USB ethernet vanish is "down" with the device already gone. NM often
+    # leaves wifi disconnected; poke it back onto the best saved network.
+    networking.networkmanager.dispatcherScripts = [{
+      type = "basic";
+      source = pkgs.writeText "wifi-on-ethernet-down" ''
+        #!/bin/sh
+        IFACE="$1"
+        STATUS="$2"
+        case "$IFACE" in
+          en*|eth*) ;;
+          *) exit 0 ;;
+        esac
+        case "$STATUS" in
+          down|pre-down|off) ;;
+          *) exit 0 ;;
+        esac
+        nmcli radio wifi on >/dev/null 2>&1 || true
+        nmcli device set wlo1 autoconnect yes >/dev/null 2>&1 || true
+        nmcli device connect wlo1 >/dev/null 2>&1 || true
+      '';
+    }];
 
     ##################################################################################
     #                        User Account
@@ -125,18 +244,12 @@ with lib;
       ];
       shell = pkgs.fish;
       packages = with pkgs; [
-        # UI
-        hyprland
-        wofi
-        eww
-        foot
+        fortune-zh-module.fortune-with-zh
 
-        # streaming
+        # streaming / work — dedicated modules later
         chatterino2
         obs-studio
         discord
-
-        # work
         zoom-us
         freerdp
         slack
@@ -161,12 +274,6 @@ with lib;
       fd
       clang
 
-      # VM / Car diagnostic host
-      qemu
-      qemu_kvm
-      virt-manager
-      spice-gtk
-
       # Services
       tailscale
 
@@ -174,6 +281,7 @@ with lib;
       fish
       ranger
       bat
+      fortune-zh-module.fortune-with-zh
 
       # GPU: Intel = display, MX150 = offload/CUDA
       intel-gpu-tools        # intel_gpu_top
@@ -205,6 +313,8 @@ with lib;
       # __GLX_VENDOR_LIBRARY_NAME to nvidia — that makes Hyprland grab the MX150.
       LIBVA_DRIVER_NAME = "iHD";
       VDPAU_DRIVER = "va_gl";
+      # fish_greeting.fish — skip the /nix/store scan
+      CHINESE_FORTUNE_FILE = "${fortune-zh-module.fortune-with-zh}/share/games/fortunes/chinese";
     };
   };
 }

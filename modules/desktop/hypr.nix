@@ -8,6 +8,22 @@ let
 in {
   options.modules.desktop.hyprland = {
     enable = mkEnableOption "Hyprland window manager";
+
+    # kiss is NVIDIA-primary. blade is Intel-primary (MX150 offload only) —
+    # importing this module there must not export GBM/GLX/VAAPI=nvidia.
+    nvidia = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Set NVIDIA GBM/GLX/VAAPI session variables. Disable on Intel-primary hosts.";
+    };
+
+    # Sourced as ~/.config/hypr-host/monitors.conf (outside the hypr/ dir
+    # symlink). kiss = desk grid; blade = eDP at 0x0.
+    monitorsLayout = mkOption {
+      type = types.enum [ "kiss" "blade" ];
+      default = "kiss";
+      description = "Which monitors-*.conf to source from hyprland.conf.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -24,14 +40,15 @@ in {
     # Environment variables for Wayland/Hyprland
     environment.sessionVariables = {
       NIXOS_OZONE_WL = "1";
+      XMODIFIERS = "@im=fcitx";  # For XWayland apps
+      SDL_IM_MODULE = "fcitx";
+      GLFW_IM_MODULE = "ibus";  # Fallback for some games
+    } // optionalAttrs cfg.nvidia {
       LIBVA_DRIVER_NAME = "nvidia";
       GBM_BACKEND = "nvidia-drm";
       __GLX_VENDOR_LIBRARY_NAME = "nvidia";
       WLR_NO_HARDWARE_CURSORS = "1";
       NVD_BACKEND = "direct";
-      XMODIFIERS = "@im=fcitx";  # For XWayland apps
-      SDL_IM_MODULE = "fcitx";
-      GLFW_IM_MODULE = "ibus";  # Fallback for some games
 
       # Firefox + NVIDIA + Wayland stability
       # MOZ_DISABLE_RDD_SANDBOX=1 avoids RDD sandbox + VA-API presentation hangs
@@ -85,6 +102,7 @@ in {
       cliphist  # Clipboard manager
       wtype  # Key simulation for fcitx5 emoji picker
       swaylock
+      brightnessctl
       
       # Launcher
       wofi
@@ -111,12 +129,30 @@ in {
       # Symlink hyprland configs (out-of-store in dev mode for hot-reload)
       xdg.configFile."hypr" = mkDirConfig "modules/desktop/config/hypr" ./config/hypr;
 
+      # Host monitor grid — not inside hypr/ because that directory is a
+      # single out-of-store symlink in dev mode.
+      xdg.configFile."hypr-host/monitors.conf".source =
+        mkFileSource
+          "modules/desktop/config/hypr/monitors-${cfg.monitorsLayout}.conf"
+          (./config/hypr + "/monitors-${cfg.monitorsLayout}.conf");
+
+      xdg.configFile."hypr-host/extras.conf".source =
+        mkFileSource
+          "modules/desktop/config/hypr/extras-${cfg.monitorsLayout}.conf"
+          (./config/hypr + "/extras-${cfg.monitorsLayout}.conf");
+
       # Symlink eww configs
       xdg.configFile."eww" = mkDirConfig "modules/desktop/config/eww" ./config/eww;
 
       # Symlink dunst config (without enabling service, systemd handles it in bspwm)
       xdg.configFile."dunst/dunstrc".source =
         mkFileSource "modules/desktop/config/dunst/dunstrc" ./config/dunst/dunstrc;
+
+      # wofi default paths — Hyprland exec does not expand ~ in -s ~/.config/...
+      xdg.configFile."wofi/style.css".source =
+        mkFileSource "modules/desktop/config/hypr/wofi.css" ./config/hypr/wofi.css;
+      xdg.configFile."wofi/config".source =
+        mkFileSource "modules/desktop/config/hypr/wofi.conf" ./config/hypr/wofi.conf;
     };
 
     # XDG portals for Hyprland
@@ -139,7 +175,8 @@ in {
         font-awesome
         noto-fonts
         noto-fonts-cjk-sans
-        noto-fonts-emoji
+        # 25.05: noto-fonts-emoji. unstable 26.11: renamed to color-emoji.
+        (pkgs.noto-fonts-color-emoji or pkgs.noto-fonts-emoji)
       ];
       fontconfig = {
         defaultFonts = {

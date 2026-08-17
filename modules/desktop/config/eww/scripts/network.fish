@@ -15,9 +15,51 @@ if test -z "$interface"
     set interface "lo"
 end
 
+# Human-readable label for the sidebar. WiFi → SSID. Known USB NICs by
+# MAC. Otherwise NM connection name, then udev model, then iface.
+function iface_label --argument-names iface
+    set -l type (nmcli -t -g GENERAL.TYPE device show $iface 2>/dev/null)
+    if test "$type" = wifi
+        set -l ssid (nmcli -t -g GENERAL.CONNECTION device show $iface 2>/dev/null)
+        if test -n "$ssid"; and test "$ssid" != "--"
+            echo $ssid
+            return
+        end
+    end
+
+    set -l mac (string lower (cat /sys/class/net/$iface/address 2>/dev/null))
+    switch $mac
+        case 00:e0:4c:86:5d:b3
+            echo "MGC Dongle"
+            return
+    end
+
+    set -l conn (nmcli -t -g GENERAL.CONNECTION device show $iface 2>/dev/null)
+    if test -n "$conn"; and test "$conn" != "--"; and not string match -qr '^Wired connection' -- $conn
+        echo $conn
+        return
+    end
+
+    set -l model (udevadm info -q property /sys/class/net/$iface 2>/dev/null \
+        | string match -r '^ID_MODEL_FROM_DATABASE=(.*)' \
+        | string replace -r '^ID_MODEL_FROM_DATABASE=' '')
+    if test -z "$model"
+        set model (udevadm info -q property /sys/class/net/$iface 2>/dev/null \
+            | string match -r '^ID_MODEL=(.*)' \
+            | string replace -r '^ID_MODEL=' '' \
+            | string replace -a '_' ' ')
+    end
+    if test -n "$model"
+        echo $model
+        return
+    end
+
+    echo $iface
+end
+
 # Handle interface and status queries early (no stats needed)
 if test "$argv[1]" = "interface"
-    echo $interface
+    iface_label $interface
     exit 0
 else if test "$argv[1]" = "status"
     if ip link show $interface | grep -q "state UP"

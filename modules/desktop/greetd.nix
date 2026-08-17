@@ -5,6 +5,7 @@ with lib;
 let
   cfg = config.modules.desktop.greetd;
   sessionData = config.services.displayManager.sessionData.desktops;
+  tuigreet = if pkgs ? tuigreet then pkgs.tuigreet else pkgs.greetd.tuigreet;
 in {
   options.modules.desktop.greetd = {
     enable = mkEnableOption "greetd display manager with tuigreet";
@@ -21,7 +22,7 @@ in {
       settings = {
         default_session = {
           command = concatStringsSep " " [
-            "${pkgs.greetd.tuigreet}/bin/tuigreet"
+            "${tuigreet}/bin/tuigreet"
             "--time"
             "--remember"
             "--remember-user-session"
@@ -34,6 +35,6 @@ in {
     };
 
     # tuigreet needs to be available system-wide for session listing
-    environment.systemPackages = [ pkgs.greetd.tuigreet ];
+    environment.systemPackages = [ tuigreet ];
   };
 }

@@ -27,20 +27,22 @@
 (defpoll network_ping :interval "3s" :initial "0" "scripts/ping.fish")
 
 (defpoll input_lang :interval "1s" :initial "EN" "scripts/input-method.fish")
+(defpoll host_name :interval "1h" :initial "..." "hostname")
 
 ;; Workspace tracking
 (deflisten workspaces :initial "[]" "scripts/workspaces.fish")
 (deflisten current_workspace :initial "1" "scripts/current-workspace.fish")
 
 ;; Main sidebar window
-;; Monitor matches hyprland model string for the primary gaming display.
+;; Monitor comes from eww-sidebar --screen (kiss = BenQ, elsewhere = model).
+;; left+center + exclusive = left reserve only. Do not add top to the
+;; anchor or gtk-layer-shell treats this as a top bar.
 (defwindow sidebar
-  :monitor "BenQ EX2710Q"
   :geometry (geometry :x "0px"
                       :y "0px"
                       :width "140px"
                       :height "100%"
-                      :anchor "left center")
+                      :anchor "center left")
   :stacking "fg"
   :exclusive true
   :focusable false
@@ -82,7 +84,7 @@
     ;; System info at bottom
     (box :class "footer-section" :orientation "v" :space-evenly false
       (label :class "uptime" :text "⏱  ${uptime}")
-      (label :class "hostname" :text "󰌢  kiss")
+      (label :class "hostname" :text "󰌢  ${host_name}")
       (label :class "input-lang" :text "󰌌  ${input_lang}"))))
 
 ;; Workspaces widget
@@ -160,10 +162,12 @@
         (label :class "stat-icon" :text "󰕒")
         (label :class "spark-label" :text network_up)))
     
-    ;; Interface
-    (box :class "stat-item" :orientation "h" :space-evenly false
-      (label :class "stat-icon" :text "󰈀")
-      (label :class "stat-label" :text "${network_interface}"))
+    ;; Interface — click opens nmtui (there is no tray on this session)
+    (button :class "stat-item net-picker"
+            :onclick "kitty -e nmtui"
+      (box :orientation "h" :space-evenly false
+        (label :class "stat-icon" :text "󰈀")
+        (label :class "stat-label" :text "${network_interface}")))
     
     ;; Ping
     (box :class "stat-item" :orientation "h" :space-evenly false

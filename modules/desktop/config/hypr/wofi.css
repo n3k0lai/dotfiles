@@ -1,0 +1,51 @@
+window {
+  font-family: "Martian Mono", monospace;
+  font-size: 14px;
+  background-color: #191919;
+  color: #fef3e9;
+  border: 2px solid #6f95fc;
+  border-radius: 10px;
+}
+
+#outer-box {
+  margin: 4px;
+  background-color: #191919;
+  border-radius: 8px;
+}
+
+#input {
+  margin: 16px;
+  padding: 8px;
+  background-color: #3f3f3f;
+  color: #fef3e9;
+  border: 0;
+  border-radius: 6px;
+}
+
+#inner-box {
+  margin: 0 12px 12px;
+  background-color: #191919;
+}
+
+#scroll {
+  margin: 0;
+  background-color: #191919;
+}
+
+#entry {
+  padding: 6px 10px;
+  color: #fef3e9;
+  border-radius: 4px;
+}
+
+#entry #text {
+  color: #fef3e9;
+}
+
+#entry:selected {
+  background-color: #6f95fc;
+}
+
+#entry:selected #text {
+  color: #191919;
+}
