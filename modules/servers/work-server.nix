@@ -1,4 +1,5 @@
-# Windows VM module for work using libvirt/QEMU
+# Windows guest host: libvirt/QEMU + SPICE USB + optional VFIO.
+# Used by blade (Forscan / OBD) and any future work VM.
 { config, pkgs, lib, ... }:
 
 with lib;
@@ -7,62 +8,62 @@ let
   cfg = config.modules.servers.workVm;
 in {
   options.modules.servers.workVm = {
-    enable = mkEnableOption "Windows VM for work";
+    enable = mkEnableOption "Windows VM host (libvirt/QEMU)";
 
     memoryMB = mkOption {
       type = types.int;
       default = 8192;
-      description = "Memory allocated to the VM in MB";
+      description = "Suggested guest RAM in MB (documented; set in the domain XML)";
     };
 
     cores = mkOption {
       type = types.int;
       default = 4;
-      description = "Number of CPU cores allocated to the VM";
+      description = "Suggested guest vCPU count (documented; set in the domain XML)";
+    };
+
+    # IOMMU on, but do not bind any host GPU to vfio-pci.
+    iommu = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable Intel VT-d (needed before any PCI/USB-controller passthrough)";
     };
 
     gpuPassthrough = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable GPU passthrough (requires IOMMU setup)";
+      description = "Load vfio-pci. Bind specific IDs in the host config — do not enable blindly on Optimus.";
     };
   };
 
   config = mkIf cfg.enable {
-    # Libvirt virtualization
+    programs.virt-manager.enable = true;
+    security.polkit.enable = true;
+
     virtualisation.libvirtd = {
       enable = true;
+      onBoot = "ignore";
+      onShutdown = "shutdown";
       qemu = {
         package = pkgs.qemu_kvm;
         runAsRoot = true;
-
-        # UEFI support for Windows 11
-        ovmf = {
-          enable = true;
-          packages = [ pkgs.OVMFFull.fd ];
-        };
-
-        # TPM support for Windows 11
+        # OVMF/UEFI firmware ships with QEMU now; qemu.ovmf was removed.
         swtpm.enable = true;
       };
     };
 
-    # Enable spice for VM display
+    # Click-attach USB from virt-manager / spicy (OBD adapters, Flipper, etc.)
     virtualisation.spiceUSBRedirection.enable = true;
 
-    # User groups for virtualization
     users.users.nicho.extraGroups = [ "libvirtd" "kvm" ];
 
-    # Management tools
-    environment.systemPackages = with pkgs; [
-      virt-manager
-      virt-viewer
-      spice-gtk
-      win-virtio  # VirtIO drivers for Windows
-    ];
+    # Windows guests often hit ignored MSRs; don't fatal them.
+    boot.extraModprobeConfig = ''
+      options kvm ignore_msrs=1
+      options kvm report_ignored_msrs=0
+    '';
 
-    # GPU passthrough configuration (disabled by default)
-    boot.kernelParams = mkIf cfg.gpuPassthrough [
+    boot.kernelParams = mkIf cfg.iommu [
       "intel_iommu=on"
       "iommu=pt"
     ];
@@ -71,7 +72,20 @@ in {
       "vfio"
       "vfio_iommu_type1"
       "vfio_pci"
-      "vfio_virqfd"
     ];
+
+    networking.firewall.trustedInterfaces = [ "virbr0" ];
+
+    environment.systemPackages = with pkgs; [
+      virt-viewer
+      spice-gtk
+      spice-protocol
+      usbredir
+      virtio-win
+      swtpm
+    ];
+
+    # virt-manager "CDROM" → /etc/virtio-win  (virtio guest drivers)
+    environment.etc."virtio-win".source = pkgs.virtio-win;
   };
 }

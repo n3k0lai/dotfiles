@@ -32,7 +32,45 @@ in {
       fd
     ];
 
-    home-manager.users.nicho = {
+    home-manager.users.nicho =
+    let
+      # HM 25.05 programs.neovim.plugins uses a submodule without `runtime`.
+      # nixpkgs-unstable's nvim-treesitter.withPlugins is a derivation with a
+      # `runtime` passthru, so putting it in `plugins` fails eval on blade.
+      # Put plugins on rtp ourselves; same lua on 25.05 and unstable.
+      ts = pkgs.vimPlugins.nvim-treesitter.withPlugins (p: [
+        p.bash
+        p.c
+        p.json
+        p.lua
+        p.markdown
+        p.markdown_inline
+        p.nix
+        p.python
+        p.rust
+        p.toml
+        p.vim
+        p.vimdoc
+        p.yaml
+      ]);
+      pluginPkgs = [
+        ts
+        pkgs.vimPlugins.plenary-nvim
+        pkgs.vimPlugins.telescope-nvim
+        pkgs.vimPlugins.gitsigns-nvim
+        pkgs.vimPlugins.comment-nvim
+      ];
+      rtpLua = concatMapStrings (p: ''
+        vim.opt.runtimepath:prepend("${p}")
+        vim.opt.runtimepath:append("${p}/after")
+      '') pluginPkgs + ''
+        -- nvim 0.12 vim.loader snapshots rtp at start; reset so require()
+        -- sees the prepended nix plugin trees.
+        if vim.loader and vim.loader.reset then
+          vim.loader.reset()
+        end
+      '';
+    in {
       home.packages = with pkgs; [
         ripgrep
         fd
@@ -52,87 +90,55 @@ in {
         withNodeJs = false;
         withPython3 = true;
 
-        plugins = with pkgs.vimPlugins; [
-          # Syntax / structure
-          {
-            plugin = nvim-treesitter.withPlugins (p: [
-              p.bash
-              p.c
-              p.json
-              p.lua
-              p.markdown
-              p.markdown_inline
-              p.nix
-              p.python
-              p.rust
-              p.toml
-              p.vim
-              p.vimdoc
-              p.yaml
-            ]);
-            type = "lua";
-            config = ''
-              require("nvim-treesitter.configs").setup({
-                highlight = { enable = true },
-                indent = { enable = true },
-                -- Grammars are provided by Nix; do not auto-install.
-                auto_install = false,
-              })
-            '';
-          }
+        extraLuaConfig = rtpLua + ''
+          -- 25.05 ships nvim-treesitter 0.9 (`configs`). unstable is 0.10
+          -- (setup lives on nvim-treesitter; highlight is vim.treesitter).
+          local ts_configs = vim.F.npcall(require, "nvim-treesitter.configs")
+          if ts_configs then
+            ts_configs.setup({
+              highlight = { enable = true },
+              indent = { enable = true },
+              auto_install = false,
+            })
+          else
+            require("nvim-treesitter").setup({})
+            vim.api.nvim_create_autocmd("FileType", {
+              callback = function(ev)
+                pcall(vim.treesitter.start, ev.buf)
+              end,
+            })
+          end
 
-          # Fuzzy find (needs ripgrep + fd on PATH)
-          plenary-nvim
-          {
-            plugin = telescope-nvim;
-            type = "lua";
-            config = ''
-              local telescope = require("telescope")
-              local builtin = require("telescope.builtin")
-              telescope.setup({
-                defaults = {
-                  mappings = {
-                    i = {
-                      ["<C-j>"] = "move_selection_next",
-                      ["<C-k>"] = "move_selection_previous",
-                    },
-                  },
+          local telescope = require("telescope")
+          local builtin = require("telescope.builtin")
+          telescope.setup({
+            defaults = {
+              mappings = {
+                i = {
+                  ["<C-j>"] = "move_selection_next",
+                  ["<C-k>"] = "move_selection_previous",
                 },
-              })
-              vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find files" })
-              vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Live grep" })
-              vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Buffers" })
-              vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Help tags" })
-              vim.keymap.set("n", "<leader>/", builtin.current_buffer_fuzzy_find, { desc = "Buffer search" })
-            '';
-          }
+              },
+            },
+          })
+          vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find files" })
+          vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Live grep" })
+          vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Buffers" })
+          vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Help tags" })
+          vim.keymap.set("n", "<leader>/", builtin.current_buffer_fuzzy_find, { desc = "Buffer search" })
 
-          {
-            plugin = gitsigns-nvim;
-            type = "lua";
-            config = ''
-              require("gitsigns").setup({
-                signs = {
-                  add = { text = "+" },
-                  change = { text = "~" },
-                  delete = { text = "_" },
-                  topdelete = { text = "‾" },
-                  changedelete = { text = "~" },
-                },
-              })
-            '';
-          }
+          require("gitsigns").setup({
+            signs = {
+              add = { text = "+" },
+              change = { text = "~" },
+              delete = { text = "_" },
+              topdelete = { text = "‾" },
+              changedelete = { text = "~" },
+            },
+          })
 
-          {
-            plugin = comment-nvim;
-            type = "lua";
-            config = ''
-              require("Comment").setup()
-            '';
-          }
-        ];
-
-        extraLuaConfig = ''
+          require("Comment").setup()
+        '' + ''
           -- Leader
           vim.g.mapleader = " "
           vim.g.maplocalleader = " "

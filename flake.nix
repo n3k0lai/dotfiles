@@ -104,6 +104,9 @@
           { nixpkgs.config.allowUnfree = true; }
           ./hosts/blade-hardware.nix
           ./hosts/blade.nix
+          home-manager.nixosModules.home-manager
+          agenix.nixosModules.default
+          { nixpkgs.overlays = [ agenix.overlays.default ]; }
         ];
       };
 

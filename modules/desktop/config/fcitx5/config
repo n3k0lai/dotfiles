@@ -1,0 +1,34 @@
+# Super+Space is the wofi launcher. Do not bind it here.
+# Super+I toggles IM via hyprland (fcitx5-remote -t).
+[Hotkey]
+EnumerateWithTriggerKeys=True
+EnumerateSkipFirst=False
+
+[Hotkey/TriggerKeys]
+0=Alt+Shift+L
+
+[Hotkey/AltTriggerKeys]
+0=Shift+Shift_R
+
+[Hotkey/EnumerateForwardKeys]
+0=Control+Shift+Shift_R
+
+[Hotkey/ActivateKeys]
+0=Hangul_Hanja
+
+[Hotkey/DeactivateKeys]
+0=Hangul_Romaja
+
+[Behavior]
+ShareInputState=No
+PreeditEnabledByDefault=True
+ShowInputMethodInformation=True
+showInputMethodInformationWhenFocusIn=False
+CompactInputMethodInformation=True
+ShowFirstInputMethodInformation=True
+DefaultPageSize=5
+OverrideXkbOption=False
+CustomXkbOption=
+EnabledAddons=
+DisabledAddons=
+PreloadInputMethod=True
