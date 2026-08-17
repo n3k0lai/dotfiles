@@ -184,7 +184,9 @@ in
     modules.core.mpv.enable = true;
     modules.core.zathura.enable = true;
     modules.core.tmux.enable = true;
-    modules.core.ssh.enable = true;
+    # Do not enable modules.core.ssh — that deploys kiss's agenix user key.
+    # Blade GitHub key is machine-local (~/.ssh/id_ed25519_blade); pubkey in
+    # modules/core/config/ssh/blade_ed25519.pub. Not an age recipient.
 
     modules.desktop.theme.waves.enable = true;
     modules.desktop.hyprland.enable = true;
