@@ -1,5 +1,5 @@
 {
-  description = "NixOS configurations for kiss, ene, rook, pati0 (patio Pi), droid, and waves";
+  description = "NixOS configurations for kiss, blade, ene, rook, pati0 (patio Pi), droid, and waves";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
@@ -92,6 +92,18 @@
           {
             nixpkgs.overlays = [ agenix.overlays.default ];
           }
+        ];
+      };
+
+      # Razer Blade portable workstation + Forscan VM host
+      # Uses unstable nixpkgs: nixos-25.05 lacks modules.builtin.modinfo fix for
+      # linux 6.12 initrd (modules-shrunk build fails). See nixpkgs#484105.
+      blade = nixpkgs-unstable.lib.nixosSystem {
+        inherit system;
+        modules = [
+          { nixpkgs.config.allowUnfree = true; }
+          ./hosts/blade-hardware.nix
+          ./hosts/blade.nix
         ];
       };
 
