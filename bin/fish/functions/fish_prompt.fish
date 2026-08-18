@@ -13,7 +13,7 @@ function fish_prompt --description 'Write out the prompt'
   set hn (string trim -- $hn)
   switch $hn
       case 'ene'
-          set host_icon '🩵'
+          set host_icon 'エネ'
       case 'rook'
           set host_icon '♜'
       case 'kiss'
