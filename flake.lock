@@ -107,6 +107,7 @@
     "hermes-agent": {
       "inputs": {
         "flake-parts": "flake-parts",
+        "home-manager": "home-manager_2",
         "nixpkgs": "nixpkgs",
         "npm-lockfile-fix": "npm-lockfile-fix",
         "pyproject-build-systems": "pyproject-build-systems",
@@ -114,11 +115,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1785778328,
-        "narHash": "sha256-q3QByIwx4XIJ3ks9OdJfCijLcVWTK3z08yi62erOC7U=",
+        "lastModified": 1787623586,
+        "narHash": "sha256-qLivauzvsXqHIO73zk1ULMN0g5YnW7ci/CfhlhX+tGQ=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "7eefb093146274526bf4378605fcf1fdc72a7fdf",
+        "rev": "a08dfab30201abe562953ba3de1e182a355e2465",
         "type": "github"
       },
       "original": {
@@ -151,6 +152,27 @@
     "home-manager_2": {
       "inputs": {
         "nixpkgs": [
+          "hermes-agent",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786487128,
+        "narHash": "sha256-ad60hrRVhH/bo3Jl1YLzO+QcS3mUNZr9LNJdzhMO2P4=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "f404edbfa4117810c96b97048299242fc50e5362",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "home-manager_3": {
+      "inputs": {
+        "nixpkgs": [
           "nixpkgs"
         ]
       },
@@ -169,7 +191,7 @@
         "type": "github"
       }
     },
-    "home-manager_3": {
+    "home-manager_4": {
       "inputs": {
         "nixpkgs": [
           "nix-on-droid",
@@ -254,7 +276,7 @@
     },
     "nix-on-droid": {
       "inputs": {
-        "home-manager": "home-manager_3",
+        "home-manager": "home-manager_4",
         "nix-formatter-pack": "nix-formatter-pack",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-docs": "nixpkgs-docs",
@@ -517,7 +539,7 @@
         "agenix": "agenix",
         "emacs-overlay": "emacs-overlay",
         "hermes-agent": "hermes-agent",
-        "home-manager": "home-manager_2",
+        "home-manager": "home-manager_3",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
         "nix-on-droid": "nix-on-droid",
