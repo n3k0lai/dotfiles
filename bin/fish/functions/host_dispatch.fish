@@ -119,7 +119,26 @@ function host_dispatch
 
         case update u
             echo "🔄 nix flake update — $active_flake"
+            echo "⚠ full flake update (nixpkgs + all inputs). Prefer hermes-bump for agent-only."
             nix flake update --flake $active_flake
+
+        case hermes-watch hw
+            set -l watch $active_flake/scripts/hermes-flake-watch.py
+            if not test -f $watch
+                echo "$target: missing $watch" >&2
+                return 1
+            end
+            python3 $watch $argv
+
+        case hermes-bump hb
+            # Agent-only lock bump + build. Never switch.
+            set -l bump $active_flake/scripts/hermes-flake-bump.sh
+            if not test -f $bump
+                echo "$target: missing $bump" >&2
+                return 1
+            end
+            echo "🔧 hermes-agent input only → lock + nixos-rebuild build #$target (no switch)"
+            bash $bump $target
 
         case pull p
             if test "$on_target" = true
@@ -393,7 +412,9 @@ echo \"Interactive tools: $target do hermes tools\"
             echo "    $target switch|s     build + activate + boot entry"
             echo "    $target build|b      build only"
             echo "    $target diff|d       build + closure diff"
-            echo "    $target update|u     flake update"
+            echo "    $target update|u     flake update (ALL inputs — noisy)"
+            echo "    $target hermes-watch|hw  GitHub vs flake.lock hermes-agent"
+            echo "    $target hermes-bump|hb   update-input hermes-agent + build (no switch)"
             echo "    $target pull|p       git pull --ff-only nicho dotfiles on host"
             echo ""
             echo "  Hermes"
