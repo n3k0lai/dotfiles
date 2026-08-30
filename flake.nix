@@ -21,7 +21,8 @@
     };
 
     hermes-agent = {
-      url = "github:NousResearch/hermes-agent";
+      # Version we manage. PRs go back to NousResearch/hermes-agent.
+      url = "github:n3k0lai/hermes";
     };
 
     nix-on-droid = {
