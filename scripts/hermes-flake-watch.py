@@ -6,7 +6,8 @@ Never updates flake.lock. Never nixos-rebuild switch.
 
 Usage:
   hermes-flake-watch.py            # human + stable report
-  hermes-flake-watch.py --stable   # monitor-safe (same body, no extra chatter)
+  hermes-flake-watch.py --stable   # full report, no clocks
+  hermes-flake-watch.py --monitor  # hash-stable: GitHub versioned release only
   hermes-flake-watch.py --json
 """
 from __future__ import annotations
@@ -331,7 +332,7 @@ def main() -> int:
     ap.add_argument(
         "--monitor",
         action="store_true",
-        help="hash-stable: lock + latest GitHub *release* only (ignore busy main)",
+        help="hash-stable: GitHub versioned release tag + semver only (ignore main/lock/running)",
     )
     args = ap.parse_args()
     info = collect()
@@ -339,18 +340,18 @@ def main() -> int:
         sys.stdout.write(json.dumps(info, indent=2, sort_keys=True) + "\n")
         return 0
     if args.monitor:
-        locked = info["locked"]
+        # Discord ping only when a versioned GitHub release changes.
+        # lock.rev / running binary / HEAD must not hash-churn.
         rel = info["latest_release"]
-        running = info["running"]
+        blob = f"{rel.get('name') or ''} {rel.get('tag') or ''}"
+        m = re.search(r"\b(?:Hermes Agent\s+)?v?(\d+\.\d+\.\d+)\b", blob, re.I)
+        ver = m.group(1) if m else "?"
         sys.stdout.write(
             "\n".join(
                 [
-                    "HERMES_FLAKE_MONITOR v1",
-                    f"lock.rev: {(locked.get('rev') or '?')[:12]}",
+                    "HERMES_FLAKE_MONITOR v2",
                     f"release.tag: {rel.get('tag') or '?'}",
-                    f"release.sha: {(rel.get('sha') or '?')[:12]}",
-                    f"running.version: {running.get('version') or '?'}",
-                    f"running.calendar: {running.get('calendar') or '?'}",
+                    f"release.version: {ver}",
                     "",
                 ]
             )
