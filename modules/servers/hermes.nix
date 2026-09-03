@@ -1025,34 +1025,8 @@ in
     CHROME_BIN = "${pkgs.chromium}/bin/chromium";
   };
 
-  # IWLA Friday open practice — SignupGenius Playwright signup (Thu 5:59:55 PM ET pre-warm)
-  systemd.services.iwla-signup-friday = {
-    description = "IWLA Friday open practice SignupGenius automation";
-    serviceConfig = {
-      Type = "oneshot";
-      User = cfg.user;
-      Group = cfg.group;
-      WorkingDirectory = cfg.workingDirectory;
-      ExecStart = "${pkgs.bash}/bin/bash ${cfg.stateDir}/.hermes/skills/artemis/iwla-signupgenius/scripts/signup-friday.sh";
-      Environment = [
-        "CHROMIUM_PATH=${pkgs.chromium}/bin/chromium"
-        "HERMES_HOME=${cfg.stateDir}/.hermes"
-        "IWLA_SIGNUP_ENV_FILE=${cfg.stateDir}/.config/iwla-signupgenius.env"
-      ];
-      TimeoutStartSec = "10min";
-    };
-    wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-  };
-
-  systemd.timers.iwla-signup-friday = {
-    description = "IWLA Friday SignupGenius signup timer (Thursday 5:59:55 PM ET)";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "Thu *-*-* 17:59:55 America/New_York";
-      Persistent = true;
-    };
-  };
+  # Personal skill schedules belong in Hermes cron / soul skills, not here.
+  # Chromium PATH above is the capability; domain races stay off this module.
 
   };
 }
