@@ -72,6 +72,22 @@ in {
       };
     };
 
+    # mpvpaper 1.8 leaks GL sync fences (and RSS grows ~2.4 MB/min per
+    # looping instance). 1.9 stubs glFenceSync / reports swap to libmpv.
+    nixpkgs.overlays = [
+      (final: prev: {
+        mpvpaper = prev.mpvpaper.overrideAttrs (old: rec {
+          version = "1.9";
+          src = final.fetchFromGitHub {
+            owner = "GhostNaN";
+            repo = "mpvpaper";
+            rev = version;
+            hash = "sha256-FpwMhzYmbjwvbpJd6xDRka6h2bvgsqdopqP5deQKXSA=";
+          };
+        });
+      })
+    ];
+
     # Hyprland ecosystem packages
     environment.systemPackages = with pkgs; [
       # Hyprland components

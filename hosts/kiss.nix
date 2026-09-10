@@ -18,12 +18,13 @@ in {
   imports = [
     ../modules/hardware/scarlett.nix
     ../modules/hardware/unicorne.nix
+    ../modules/hardware/clicks.nix
     ../modules/hardware/svalbard.nix
     ../modules/hardware/sammy.nix
-    ../modules/servers/garmin.nix
     ../modules/desktop/fcitx5.nix
     ../modules/editors/cad.nix
     ../modules/editors/opencode.nix
+    ../modules/editors/opencut.nix
   ];
 
   options.hardware.kiss.gpu = {
@@ -48,6 +49,10 @@ in {
 
   config = {
     modules.editors.opencode.enable = true;
+    modules.editors.opencut.enable = true;
+    # cargo run from ~/Code/OpenCut when present; else the Nix binary.
+    modules.editors.opencut.dev.enable = true;
+    modules.editors.opencut.dev.repoPath = "/home/nicho/Code/OpenCut";
 
     # Agenix CLI for managing encrypted secrets
     environment.systemPackages = with pkgs; [
@@ -80,6 +85,9 @@ in {
     
     # Enable Unicorne keyboard
     hardware.unicorne.enable = true;
+
+    # Clicks Power Keyboard over BLE (Intel AX200). Channel 2 suggested.
+    hardware.clicks.enable = true;
 
     # Enable Svalbard RAID array auto-mounting
     hardware.svalbard.enable = true;

@@ -18,6 +18,8 @@ in
     ../modules/servers/obsidian-headless.nix
     # Svalbard RAID storage
     ../modules/hardware/svalbard.nix
+    # Clicks Power Keyboard (BLE HID; BlueZ already on via home.nix)
+    ../modules/hardware/clicks.nix
     # Home automation (lights, IoT)
     ../modules/servers/home.nix
     # Droneforge Nimbus hangar (USB on Rook)
@@ -34,6 +36,10 @@ in
   ] ++ lib.optional (builtins.pathExists ./rook-local.nix) ./rook-local.nix;
 
   networking.hostName = "rook";
+
+  # Clicks Power Keyboard — pair on channel 3 (`clicks pair`). Bond is
+  # adapter-local; do not copy /var/lib/bluetooth from kiss.
+  hardware.clicks.enable = true;
 
   # MagicDNS used to advertise as "chat"; pin Tailscale machine name to match NixOS.
   # (extraSetFlags → systemd tailscaled-set on every boot/switch)

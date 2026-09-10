@@ -24,6 +24,7 @@
 (defpoll network_up :interval "2s" :initial "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁" "scripts/network-spark.fish up")
 (defpoll network_down :interval "2s" :initial "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁" "scripts/network-spark.fish down")
 (defpoll network_interface :interval "10s" :initial "..." "scripts/network.fish interface")
+(defpoll network_icon :interval "10s" :initial "󰈀" "scripts/network.fish icon")
 (defpoll network_ping :interval "3s" :initial "0" "scripts/ping.fish")
 
 (defpoll input_lang :interval "1s" :initial "EN" "scripts/input-method.fish")
@@ -162,12 +163,12 @@
         (label :class "stat-icon" :text "󰕒")
         (label :class "spark-label" :text network_up)))
     
-    ;; Interface — click opens nmtui (there is no tray on this session)
-    (button :class "stat-item net-picker"
-            :onclick "kitty -e nmtui"
+    ;; Interface — wifi shows SSID + wireless icon; names are capped in
+    ;; network.fish because eww grows with text instead of honoring max-width
+    (box :class "stat-item" :orientation "v" :space-evenly false
       (box :orientation "h" :space-evenly false
-        (label :class "stat-icon" :text "󰈀")
-        (label :class "stat-label" :text "${network_interface}")))
+        (label :class "stat-icon" :text network_icon)
+        (label :class "stat-label" :text "${network_interface}" :limit-width 12)))
     
     ;; Ping
     (box :class "stat-item" :orientation "h" :space-evenly false

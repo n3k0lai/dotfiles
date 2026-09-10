@@ -102,26 +102,6 @@ in
       owner = "root";
       mode = "0400";
     };
-    garmin_email = {
-      file = ./modules/core/config/secrets/garmin_email.age;
-      owner = "root";
-      mode = "0400";
-    };
-    garmin_password = {
-      file = ./modules/core/config/secrets/garmin_password.age;
-      owner = "root";
-      mode = "0400";
-    };
-    gdrive_credentials = {
-      file = ./modules/core/config/secrets/gdrive_credentials.age;
-      owner = "root";
-      mode = "0400";
-    };
-    gdrive_token = {
-      file = ./modules/core/config/secrets/gdrive_token.age;
-      owner = "root";
-      mode = "0400";
-    };
   };
   home-manager.backupFileExtension = "hm-bak";
   

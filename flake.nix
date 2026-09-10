@@ -37,18 +37,28 @@
     nix-homebrew = {
       url = "github:zhaofengli-wip/nix-homebrew";
     };
+
+    # Core Linux video editor (our fork). flake = false: raw source for rustPlatform.
+    opencut-src = {
+      url = "github:n3k0lai/OpenCut";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, opencut-src, ... }:
   let
     system = "x86_64-linux";
     pkgs-unstable = import nixpkgs-unstable { inherit system; config.allowUnfree = true; };
   in {
+    packages.x86_64-linux.opencut = pkgs-unstable.callPackage ./modules/editors/opencut/package.nix {
+      src = opencut-src;
+    };
+
     nixosConfigurations = {
       # Desktop workstation
       kiss = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit pkgs-unstable; };
+        specialArgs = { inherit pkgs-unstable opencut-src; };
         modules = [
           ./hardware-configuration.nix
           ./configuration.nix
