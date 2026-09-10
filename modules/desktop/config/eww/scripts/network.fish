@@ -1,7 +1,10 @@
 #!/usr/bin/env fish
 
 # Network stats script for eww
-# Usage: network.fish [up|down|interface|status]
+# Usage: network.fish [up|down|interface|icon|status]
+#
+# eww ignores CSS max-width and grows with label text, so auto-generated
+# names are hard-capped. Hand-picked MAC labels are already short.
 
 set -l interface (ip route | grep default | awk '{print $5}' | head -n1)
 
@@ -15,16 +18,32 @@ if test -z "$interface"
     set interface "lo"
 end
 
-# Human-readable label for the sidebar. WiFi → SSID. Known USB NICs by
-# MAC. Otherwise NM connection name, then udev model, then iface.
+function trim_iface_label --argument-names name
+    # eww sizes the window to this text; keep auto names inside the sidebar.
+    set -l max 12
+    if test (string length -- "$name") -gt $max
+        echo (string sub -l (math "$max - 1") -- "$name")"…"
+    else
+        echo $name
+    end
+end
+
+# Human-readable label for the sidebar. WiFi → SSID. kiss ethernet is
+# always the home LAN (d33pwaterbay). One known USB NIC by MAC.
+# Otherwise NM connection name, then udev model, then iface.
 function iface_label --argument-names iface
     set -l type (nmcli -t -g GENERAL.TYPE device show $iface 2>/dev/null)
     if test "$type" = wifi
         set -l ssid (nmcli -t -g GENERAL.CONNECTION device show $iface 2>/dev/null)
         if test -n "$ssid"; and test "$ssid" != "--"
-            echo $ssid
+            trim_iface_label "$ssid"
             return
         end
+    end
+
+    if test (hostname) = kiss; and test "$type" = ethernet
+        echo "d33pwaterbay"
+        return
     end
 
     set -l mac (string lower (cat /sys/class/net/$iface/address 2>/dev/null))
@@ -36,30 +55,44 @@ function iface_label --argument-names iface
 
     set -l conn (nmcli -t -g GENERAL.CONNECTION device show $iface 2>/dev/null)
     if test -n "$conn"; and test "$conn" != "--"; and not string match -qr '^Wired connection' -- $conn
-        echo $conn
+        trim_iface_label "$conn"
         return
     end
 
+    # Glob match only — a capture group makes `string match -r` print the
+    # full line and the group, which concatenated into a doubled name.
     set -l model (udevadm info -q property /sys/class/net/$iface 2>/dev/null \
-        | string match -r '^ID_MODEL_FROM_DATABASE=(.*)' \
+        | string match 'ID_MODEL_FROM_DATABASE=*' \
         | string replace -r '^ID_MODEL_FROM_DATABASE=' '')
     if test -z "$model"
         set model (udevadm info -q property /sys/class/net/$iface 2>/dev/null \
-            | string match -r '^ID_MODEL=(.*)' \
+            | string match 'ID_MODEL=*' \
             | string replace -r '^ID_MODEL=' '' \
             | string replace -a '_' ' ')
     end
     if test -n "$model"
-        echo $model
+        trim_iface_label "$model"
         return
     end
 
-    echo $iface
+    trim_iface_label "$iface"
 end
 
-# Handle interface and status queries early (no stats needed)
+function iface_icon --argument-names iface
+    set -l type (nmcli -t -g GENERAL.TYPE device show $iface 2>/dev/null)
+    if test "$type" = wifi; or test -d /sys/class/net/$iface/wireless
+        echo "󰖩"
+    else
+        echo "󰈀"
+    end
+end
+
+# Handle interface/icon/status queries early (no stats needed)
 if test "$argv[1]" = "interface"
     iface_label $interface
+    exit 0
+else if test "$argv[1]" = "icon"
+    iface_icon $interface
     exit 0
 else if test "$argv[1]" = "status"
     if ip link show $interface | grep -q "state UP"

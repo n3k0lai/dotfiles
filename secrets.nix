@@ -16,7 +16,6 @@ let
   # ===========================================
   # HOST GROUPS - organize by access level
   # ===========================================
-  allHosts = [ kiss ene rook ];
   desktops = [ kiss ];           # kiss only — blade does not hold the user identity
   servers = [ ene rook artemis ]; # server machines only
   streaming = [ rook ];          # stream bouncer
@@ -30,14 +29,6 @@ in
   "modules/core/config/secrets/ssh_config.age".publicKeys = desktops ++ [ nicho ];
   "modules/core/config/secrets/work_creds.age".publicKeys = [ kiss blade nicho ];
   "modules/core/config/secrets/user_password.age".publicKeys = desktops ++ [ nicho ];
-
-  # ===========================================
-  # SHARED SECRETS (all hosts that need them)
-  # ===========================================
-  "modules/core/config/secrets/garmin_email.age".publicKeys = allHosts ++ [ nicho ];
-  "modules/core/config/secrets/garmin_password.age".publicKeys = allHosts ++ [ nicho ];
-  "modules/core/config/secrets/gdrive_credentials.age".publicKeys = allHosts ++ [ nicho ];
-  "modules/core/config/secrets/gdrive_token.age".publicKeys = allHosts ++ [ nicho ];
 
   # ===========================================
   # SERVER SECRETS (ene)

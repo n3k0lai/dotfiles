@@ -115,16 +115,16 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1787623586,
-        "narHash": "sha256-qLivauzvsXqHIO73zk1ULMN0g5YnW7ci/CfhlhX+tGQ=",
-        "owner": "NousResearch",
-        "repo": "hermes-agent",
-        "rev": "a08dfab30201abe562953ba3de1e182a355e2465",
+        "lastModified": 1787986421,
+        "narHash": "sha256-MTHdhMiTE52w4HfmCeYWKlmFZC4GlPT5/9GCd6ATkq4=",
+        "owner": "n3k0lai",
+        "repo": "hermes",
+        "rev": "91608eb20ed1dbd733a84ef305533b4527e83b66",
         "type": "github"
       },
       "original": {
-        "owner": "NousResearch",
-        "repo": "hermes-agent",
+        "owner": "n3k0lai",
+        "repo": "hermes",
         "type": "github"
       }
     },
@@ -484,6 +484,22 @@
         "type": "github"
       }
     },
+    "opencut-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785616082,
+        "narHash": "sha256-E8rLldEiqqJzpMIHC0g13hKWQIJj21G238SkJapNH24=",
+        "owner": "n3k0lai",
+        "repo": "OpenCut",
+        "rev": "400f097becba5db0fbc305d5a65348cb81c20356",
+        "type": "github"
+      },
+      "original": {
+        "owner": "n3k0lai",
+        "repo": "OpenCut",
+        "type": "github"
+      }
+    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -544,7 +560,8 @@
         "nix-homebrew": "nix-homebrew",
         "nix-on-droid": "nix-on-droid",
         "nixpkgs": "nixpkgs_3",
-        "nixpkgs-unstable": "nixpkgs-unstable"
+        "nixpkgs-unstable": "nixpkgs-unstable",
+        "opencut-src": "opencut-src"
       }
     },
     "scss-reset": {
