@@ -33,6 +33,9 @@ in
     ../modules/servers/octoprint.nix
     # SuperGrok weekly buckets API for Ene (Tailscale-only)
     ../modules/servers/supergrok-usage-api.nix
+    # Honcho memory (Docker). Stays off until the xAI key file exists and
+    # embeddingDimensions is set. See modules/servers/honcho.nix.
+    ../modules/servers/honcho.nix
   ] ++ lib.optional (builtins.pathExists ./rook-local.nix) ./rook-local.nix;
 
   networking.hostName = "rook";
@@ -64,6 +67,9 @@ in
       };
     };
   };
+
+  # Off until honcho_xai_api_key.age exists and embeddingDimensions is probed.
+  modules.servers.honcho.enable = false;
 
   # Ene fetches GET /v1/usage/weekly over tailnet (MagicDNS rook.bushbaby-mercat.ts.net:9855)
   modules.servers.supergrokUsageApi = {

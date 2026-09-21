@@ -54,6 +54,9 @@ in
   # ROOK HERMES SECRETS
   # ===========================================
   "modules/servers/secrets/rook_env.age".publicKeys = [ rook nicho ];
+  # Raw xAI API key, one line. Honcho deriver only. Not SuperGrok OAuth.
+  # Create on kiss: agenix -e modules/servers/secrets/honcho_xai_api_key.age
+  "modules/servers/secrets/honcho_xai_api_key.age".publicKeys = [ rook nicho ];
 
   # ===========================================
   # HOME ASSISTANT SECRETS (rook — Hermes + HA bridge)
