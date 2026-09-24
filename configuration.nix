@@ -52,6 +52,7 @@ in
       ./modules/gaming/chatterino.nix
       ./modules/gaming/wine.nix
       ./modules/gaming/runescape.nix
+      ./modules/gaming/bnet.nix
       ./modules/gaming/battlenet.nix
       ./modules/gaming/riot.nix
       ./modules/gaming/eve-online.nix

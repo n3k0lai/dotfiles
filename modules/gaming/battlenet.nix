@@ -1,21 +1,11 @@
-# Battle.net / World of Warcraft — Steam+Proton launcher, WowUp for addons
-{ config, lib, pkgs, ... }:
+# Compatibility shim — real module is modules/gaming/bnet.nix (imported from configuration.nix).
+{ lib, config, ... }:
 
-with lib;
+{
+  options.modules.gaming.battlenet.enable =
+    lib.mkEnableOption "Alias for modules.gaming.bnet.enable";
 
-let
-  cfg = config.modules.gaming.battlenet;
-in {
-  options.modules.gaming.battlenet = {
-    enable = mkEnableOption "Battle.net and World of Warcraft (Steam+Proton, WowUp addons)";
-  };
-
-  config = mkIf cfg.enable {
-    modules.gaming.steam.enable = true;
-
-    environment.systemPackages = with pkgs; [
-      wowup-cf    # addon manager for Retail, Classic Era, and Classic flavors
-      winetricks  # one-off prefix fixes if using the Lutris install scripts
-    ];
+  config = lib.mkIf config.modules.gaming.battlenet.enable {
+    modules.gaming.bnet.enable = true;
   };
 }
