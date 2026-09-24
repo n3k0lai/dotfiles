@@ -21,8 +21,9 @@
     };
 
     hermes-agent = {
-      # Version we manage. PRs go back to NousResearch/hermes-agent.
-      url = "github:n3k0lai/hermes";
+      # Upstream versioned release. PRs still go back to NousResearch/hermes-agent.
+      # n3k0lai/hermes has no release tags (main last moved 2026-08-29).
+      url = "github:NousResearch/hermes-agent/v2026.9.24";
     };
 
     nix-on-droid = {
@@ -58,7 +59,7 @@
       # Desktop workstation
       kiss = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit pkgs-unstable opencut-src; };
+        specialArgs = { inherit pkgs-unstable opencut-src hermes-agent; };
         modules = [
           ./hardware-configuration.nix
           ./configuration.nix

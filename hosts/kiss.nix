@@ -1,17 +1,25 @@
 # My main pc. The motherload. The queen.
 # where I live and where I build.
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, hermes-agent, ... }:
 
 with lib;
 
 let
-  # Mullvad's Electron GUI blanks on native Wayland when switching Hyprland
-  # workspaces on NVIDIA (renderer buffer lost). Force XWayland instead.
+  # Native Wayland + NVIDIA EGL. The stock wrapper forces X11 and the GUI
+  # then paints with SwiftShader; that surface goes white when a display is
+  # replugged or its mode changes, while mullvad-daemon keeps running.
+  # WaylandLinuxDrmSyncobj is the explicit-sync feature that keeps this
+  # Electron GPU process from blanking on NVIDIA workspace switches.
   mullvad-vpn = pkgs.mullvad-vpn.overrideAttrs (oldAttrs: {
     postInstall = (oldAttrs.postInstall or "") + ''
-      wrapProgram $out/bin/mullvad-vpn \
-        --set NIXOS_OZONE_WL 0 \
-        --add-flags "--ozone-platform=x11"
+      libPath="${lib.makeLibraryPath [ pkgs.libglvnd ]}:/run/opengl-driver/lib"
+      for b in mullvad-vpn mullvad-gui; do
+        wrapProgram $out/bin/$b \
+          --set NIXOS_OZONE_WL 1 \
+          --prefix LD_LIBRARY_PATH : "$libPath" \
+          --set __EGL_VENDOR_LIBRARY_DIRS /run/opengl-driver/share/glvnd/egl_vendor.d \
+          --add-flags "--ozone-platform=wayland --enable-features=WaylandLinuxDrmSyncobj"
+      done
     '';
   });
 in {
@@ -19,6 +27,7 @@ in {
     ../modules/hardware/scarlett.nix
     ../modules/hardware/unicorne.nix
     ../modules/hardware/clicks.nix
+    ../modules/hardware/scuf.nix
     ../modules/hardware/svalbard.nix
     ../modules/hardware/sammy.nix
     ../modules/desktop/fcitx5.nix
@@ -48,6 +57,8 @@ in {
   };
 
   config = {
+    hardware.scuf.enable = true;
+
     modules.editors.opencode.enable = true;
     modules.editors.opencut.enable = true;
     # cargo run from ~/Code/OpenCut when present; else the Nix binary.
@@ -80,6 +91,17 @@ in {
       prismlauncher # minecraft
     ];
 
+    # Hermes Desktop (Electron) for nicho — ~/.hermes, not the ene/rook
+    # systemd gateway. CLI + wofi launcher; first run can attach to a
+    # remote gateway or install a local backend.
+    home-manager.users.nicho.imports = [
+      hermes-agent.homeManagerModules.default
+    ];
+    home-manager.users.nicho.programs.hermes-agent = {
+      enable = true;
+      desktop.enable = true;
+    };
+
     # Enable Scarlett audio interface
     hardware.scarlett.enable = true;
     
@@ -105,8 +127,8 @@ in {
     modules.editors.cad.diylc.enable = true;
     modules.editors.cad.hardware.enable = true;
 
-    # Battle.net / WoW — Steam+Proton launcher, WowUp for Classic/Retail addons
-    modules.gaming.battlenet.enable = true;
+    # Battle.net prefix — bnet / bnet-wc3 / bnet-wow / bnet-w3c (umu+Proton)
+    modules.gaming.bnet.enable = true;
 
     # League of Legends — Moonlight client (Vanguard blocks native Linux; needs Windows Sunshine host)
     modules.gaming.riot.enable = true;
@@ -157,8 +179,12 @@ in {
     #                        Graphics - NVIDIA RTX 3070
     hardware.graphics = {
       enable = true;
+      enable32Bit = true;
       extraPackages = with pkgs; [ mesa vulkan-loader ];
-      extraPackages32 = with pkgs; [ pkgsi686Linux.mesa ];
+      extraPackages32 = with pkgs; [
+        pkgsi686Linux.mesa
+        pkgsi686Linux.vulkan-loader
+      ];
     };
     
     services.xserver.videoDrivers = [ "nvidia" ];
@@ -174,6 +200,27 @@ in {
       open = false;
       nvidiaSettings = true;
       package = config.boot.kernelPackages.nvidiaPackages.latest;
+      # Keep the GPU initialized so NVENC/SteamVR do not hitch after DPMS or
+      # when the Frame is the only "display". Runtime PM is a stutter source.
+      nvidiaPersistenced = true;
+      powerManagement.enable = false;
+    };
+
+    # Steam Frame / Steam Link discovery is LAN multicast. Mullvad blocks LAN
+    # by default, which makes the headset fail to find this host (and Tailscale
+    # already occupies another interface that vrlink likes to bind).
+    systemd.services.mullvad-allow-lan = {
+      description = "Allow LAN through Mullvad (Steam Frame / Steam Link)";
+      after = [ "mullvad-daemon.service" ];
+      wants = [ "mullvad-daemon.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = 3;
+        ExecStart = "${config.services.mullvad-vpn.package}/bin/mullvad lan set allow";
+      };
     };
   };
 }
