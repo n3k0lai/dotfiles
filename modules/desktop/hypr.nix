@@ -157,6 +157,9 @@ in {
           "modules/desktop/config/hypr/extras-${cfg.monitorsLayout}.conf"
           (./config/hypr + "/extras-${cfg.monitorsLayout}.conf");
 
+      # Filled by modules.gaming.bnet when enabled; empty so `source` in extras is safe.
+      xdg.configFile."hypr-host/bnet.conf".text = lib.mkDefault "# modules.gaming.bnet disabled\n";
+
       # Symlink eww configs
       xdg.configFile."eww" = mkDirConfig "modules/desktop/config/eww" ./config/eww;
 
