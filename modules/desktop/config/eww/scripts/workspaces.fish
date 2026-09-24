@@ -6,10 +6,11 @@
 
 function get_workspaces
     set active_id (hyprctl activeworkspace -j | jq -r '.id')
-    # Only emit workspaces that have windows, plus always include the active one
+    # Numbered desktops only. Special workspaces (special:wine and friends)
+    # use negative ids and would show up as -98 in the bar.
     hyprctl workspaces -j | jq -c \
         --argjson active "$active_id" \
-        '[.[] | select(.windows > 0 or .id == $active) | {id: .id, windows: .windows}] | sort_by(.id)'
+        '[.[] | select(.id > 0 and (.windows > 0 or .id == $active)) | {id: .id, windows: .windows}] | sort_by(.id)'
 end
 
 # Initial output

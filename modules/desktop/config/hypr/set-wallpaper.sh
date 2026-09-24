@@ -80,7 +80,7 @@ run_watchdog() {
 
 start_watchdog() {
     watchdog_alive && return 0
-    nohup bash "$SCRIPT_PATH" --watchdog >/dev/null 2>&1 &
+    nohup bash "$SCRIPT_PATH" --watchdog >/dev/null 2>&1 200>&- &
     disown
 }
 
@@ -121,7 +121,10 @@ while read -r monitor; do
     fi
 
     # -p: pause when the wallpaper is fully covered (saves CPU; leak is per-frame).
-    nohup mpvpaper -p -o "$MPV_OPTS" "$MONITOR_NAME" "$VIDEO_WALLPAPER" >/dev/null 2>&1 &
+    # 200>&- : this script holds the flock on fd 200. Inherited by mpvpaper,
+    # it pins the lock for the life of the wallpaper and every later
+    # restart (including the RSS watchdog) exits without doing anything.
+    nohup mpvpaper -p -o "$MPV_OPTS" "$MONITOR_NAME" "$VIDEO_WALLPAPER" >/dev/null 2>&1 200>&- &
     disown
 done < <(echo "$MONITOR_DATA" | jq -c '.[]')
 
