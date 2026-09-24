@@ -28,6 +28,9 @@ in
     programs.steam = {
       enable = true;
       remotePlay.openFirewall = cfg.enableRemotePlay;
+      localNetworkGameTransfers.openFirewall = true;
+      extraCompatPackages = with pkgs; [ proton-ge-bin ];
+      protontricks.enable = true;
       # Force xcb for Qt apps inside Steam/SteamVR — the Hyprland env sets
       # QT_QPA_PLATFORM=wayland;xcb but pressure-vessel only ships the xcb plugin,
       # causing SteamVR to crash. This also fixes Steam failing to launch from
@@ -36,12 +39,20 @@ in
         extraEnv = {
           QT_QPA_PLATFORM = "xcb";
         };
-        # Add /run/wrappers/bin to PATH inside the sandbox so SteamVR's
-        # vrsetup.sh can find pkexec for RT scheduling caps.
         extraProfile = ''
+          # pkexec for SteamVR vrsetup.sh (CAP_SYS_NICE on vrcompositor-launcher)
           export PATH=/run/wrappers/bin:$PATH
+          # VRChat (and other Unity titles) mis-handle TZ inside Proton
+          unset TZ
         '';
       };
+    };
+
+    # nixos-25.05's remotePlay.openFirewall is missing SteamVR Link ports
+    # (UDP 10400/10401) and TCP 27037. Added in nixpkgs#446932 (unstable).
+    networking.firewall = mkIf cfg.enableRemotePlay {
+      allowedTCPPorts = [ 27037 ];
+      allowedUDPPorts = [ 10400 10401 ];
     };
 
     programs.gamemode.enable = true;
