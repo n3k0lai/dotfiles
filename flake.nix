@@ -173,6 +173,8 @@
     nixOnDroidConfigurations.droid = nix-on-droid.lib.nixOnDroidConfiguration {
       pkgs = import nixpkgs { system = "aarch64-linux"; config.allowUnfree = true; };
       modules = [ ./hosts/droid.nix ];
+      # nix-on-droid 24.05 otherwise uses its own 2024 home-manager input.
+      home-manager-path = home-manager.outPath;
       extraSpecialArgs = {
         pkgs-unstable = import nixpkgs-unstable {
           system = "aarch64-linux";
