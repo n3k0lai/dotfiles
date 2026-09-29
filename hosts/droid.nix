@@ -1,11 +1,17 @@
-# My phone. Claude Code on the go.
+# Phone terminal. CLI only.
 # Build with: nix-on-droid switch --flake .#droid
 { pkgs, pkgs-unstable, lib, ... }:
 
 {
   system.stateVersion = "24.05";
 
+  # Same zone as kiss. No desktop session on this host.
+  time.timeZone = "America/New_York";
+
   user.shell = "${pkgs.fish}/bin/fish";
+
+  # Keep a pre-existing /etc file out of the way instead of aborting activation.
+  environment.etcBackupExtension = ".bak";
 
   environment.packages = with pkgs; [
     # core
@@ -31,14 +37,25 @@
     curl
     wget
 
+    # text tools the bootstrap shell had, and a terminal expects
+    gnugrep
+    gnused
+    gawk
+    findutils
+    diffutils
+
+    # archives (same CLI set as users/nicho.nix)
+    zip
+    unzip
+    gnutar
+    gzip
+    xz
+
     # nix
     nix-output-monitor
 
     # system
     htop
-
-    # node (for claude code)
-    nodejs
 
     # mosh client (for connecting to ene/rook from the phone)
     mosh
@@ -50,19 +67,21 @@
 
   home-manager = {
     useGlobalPkgs = true;
+    backupFileExtension = "hm-bak";
 
     config = { pkgs, lib, ... }: {
       home.stateVersion = "24.05";
 
       home.sessionVariables = {
         EDITOR = "nvim";
+        VISUAL = "nvim";
         XDG_CONFIG_HOME = "$HOME/.config";
         XDG_DATA_HOME = "$HOME/.local/share";
       };
 
       home.sessionPath = [
+        "$HOME/.grok/bin"
         "$HOME/.local/bin"
-        "$HOME/.npm-global/bin"
       ];
 
       programs.git = {
@@ -79,10 +98,13 @@
       programs.fish = {
         enable = true;
         shellInit = ''
+          # fish_add_path prepends, so the last call is the front of PATH.
           fish_add_path $HOME/.local/bin
-          fish_add_path $HOME/.npm-global/bin
+          # Real grok binary. The kiss fish function wraps grok-update and is desktop-only.
+          fish_add_path $HOME/.grok/bin
 
           set -gx EDITOR nvim
+          set -gx VISUAL nvim
           set -gx XDG_CONFIG_HOME "$HOME/.config"
           set -gx XDG_DATA_HOME "$HOME/.local/share"
         '';
@@ -147,15 +169,6 @@
         '';
       };
 
-      home.activation.installClaude = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        export PATH="${pkgs.nodejs}/bin:$PATH"
-        export NPM_CONFIG_PREFIX="$HOME/.npm-global"
-        mkdir -p "$HOME/.npm-global"
-        if ! command -v claude &> /dev/null && ! test -f "$HOME/.npm-global/bin/claude"; then
-          echo "Installing Claude Code..."
-          ${pkgs.nodejs}/bin/npm install -g @anthropic-ai/claude-code || echo "Claude Code install failed -- run manually"
-        fi
-      '';
     };
   };
 }
