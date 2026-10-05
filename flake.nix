@@ -2,12 +2,21 @@
   description = "NixOS configurations for kiss, blade, ene, rook, pati0 (patio Pi), droid, and waves";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Waves and droid stay on 25.05. nix-darwin is glitchy until Omarchy
+    # runs on M4. nix-on-droid is still release-24.05 and must not ride
+    # the fleet pin.
+    nixpkgs-25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.05";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    home-manager-25_05 = {
+      url = "github:nix-community/home-manager/release-25.05";
+      inputs.nixpkgs.follows = "nixpkgs-25_05";
     };
 
     agenix = {
@@ -32,7 +41,7 @@
 
     nix-darwin = {
       url = "github:LnL7/nix-darwin/nix-darwin-25.05";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-25_05";
     };
 
     nix-homebrew = {
@@ -46,7 +55,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, opencut-src, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, nixpkgs-25_05, home-manager, home-manager-25_05, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, opencut-src, ... }:
   let
     system = "x86_64-linux";
     pkgs-unstable = import nixpkgs-unstable { inherit system; config.allowUnfree = true; };
@@ -158,11 +167,11 @@
         inherit self agenix;
         hostname = "waves";
         username = "nicho";
-        inputs = { inherit nixpkgs agenix; };
+        inputs = { nixpkgs = nixpkgs-25_05; inherit agenix; };
       };
       modules = [
         ./hosts/waves.nix
-        home-manager.darwinModules.home-manager
+        home-manager-25_05.darwinModules.home-manager
         {
           nixpkgs.overlays = [ agenix.overlays.default ];
         }
@@ -171,10 +180,11 @@
 
     # Android phone (nix-on-droid)
     nixOnDroidConfigurations.droid = nix-on-droid.lib.nixOnDroidConfiguration {
-      pkgs = import nixpkgs { system = "aarch64-linux"; config.allowUnfree = true; };
+      pkgs = import nixpkgs-25_05 { system = "aarch64-linux"; config.allowUnfree = true; };
       modules = [ ./hosts/droid.nix ];
       # nix-on-droid 24.05 otherwise uses its own 2024 home-manager input.
-      home-manager-path = home-manager.outPath;
+      # Keep the 25.05 pin. The fleet home-manager is 26.05.
+      home-manager-path = home-manager-25_05.outPath;
       extraSpecialArgs = {
         pkgs-unstable = import nixpkgs-unstable {
           system = "aarch64-linux";

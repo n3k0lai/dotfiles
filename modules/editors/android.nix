@@ -6,7 +6,7 @@ let
   cfg = config.modules.editors.android;
   buildToolsVersion = "34.0.0";
   androidComposition = pkgs.androidenv.composeAndroidPackages {
-    platformToolsVersion = "34.0.5";
+    platformToolsVersion = "36.0.2";
     buildToolsVersions = [ buildToolsVersion ];
     platformVersions = [ "34" ];
     includeNDK = true;
@@ -24,6 +24,7 @@ in {
 
     environment.systemPackages = with pkgs; [
       android-studio
+      android-tools
       androidSdk
       jdk17
       # Android Studio needs these to open browser for Google sign-in on Wayland
@@ -31,7 +32,8 @@ in {
       glib # provides gsettings
     ];
 
-    programs.adb.enable = true;
+    # programs.adb was removed in 26.05. systemd 258 writes the uaccess
+    # rules. android-tools is the adb command.
     users.users.nicho.extraGroups = [ "adbusers" "kvm" ];
 
     # KVM for Android emulator hardware acceleration

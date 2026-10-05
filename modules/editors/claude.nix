@@ -13,7 +13,6 @@ in {
     # Install Node.js for Claude Code
     environment.systemPackages = with pkgs; [
       nodejs
-      nodePackages.npm
     ];
 
     # Install Claude Code via home-manager activation

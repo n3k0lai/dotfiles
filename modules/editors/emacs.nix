@@ -80,7 +80,7 @@ let
     gotests                # Generate tests
     
     # :lang json
-    nodePackages.vscode-langservers-extracted  # Includes json-languageserver
+    vscode-langservers-extracted  # Includes json-languageserver
     
     # :lang javascript
     nodejs                 # Required for many JS tools and copilot
@@ -130,8 +130,8 @@ let
     fish                   # Fish shell (for fish-mode and sh module)
     
     # :lang web
-    nodePackages.stylelint        # CSS linter
-    nodePackages.js-beautify      # JS/HTML/CSS formatter
+    stylelint                     # CSS linter
+    js-beautify                   # JS/HTML/CSS formatter
     html-tidy                     # HTML formatter
     tailwindcss-language-server   # For lsp-tailwindcss package
     
