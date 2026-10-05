@@ -27,6 +27,7 @@ in
       
       # System hardening
       ./modules/core/security.nix
+      ./modules/core/skip-package-docs.nix
 
       # Dev mode (hot-reload configs)
       ./modules/core/dev-mode.nix

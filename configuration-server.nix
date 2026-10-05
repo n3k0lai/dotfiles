@@ -36,6 +36,7 @@
 
   imports = [
     ./modules/core/security.nix
+    ./modules/core/skip-package-docs.nix
     # nicho's account: CLI tools (grok, nvim, PATH, fish init) — same as kiss
     ./users/nicho.nix
     # fish functions (incl. grok.fish) + conf.d for nicho
