@@ -40,14 +40,6 @@ in
       };
 
       # Ene Hermes dashboard: Tailscale Serve on MagicDNS only (see hermes.nix).
-      # Private *.comfy.sh services proxied to Rook — basic auth via auth.conf
-      "rook.comfy.sh" = {
-        extraConfig = ''
-          import /etc/caddy/auth.conf
-          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:9119
-        '';
-      };
-
       # === PLANNED BUT NOT YET LIVE ===
       # Uncomment as DNS records are added and content is ready
 
