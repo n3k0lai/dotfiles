@@ -48,38 +48,6 @@ in
         '';
       };
 
-      # Home Assistant — proxied to Rook via Tailscale
-      "home.comfy.sh" = {
-        extraConfig = ''
-          import /etc/caddy/auth.conf
-          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:8123 {
-            header_up Host {host}
-            header_up X-Forwarded-Proto {scheme}
-          }
-        '';
-      };
-
-      # Calibre-Web (lib) — proxied to Rook via Tailscale
-      "lib.comfy.sh" = {
-        extraConfig = ''
-          import /etc/caddy/auth.conf
-          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:8083
-        '';
-      };
-
-      # OctoPrint — proxied to Rook via Tailscale
-      "factory.comfy.sh" = {
-        extraConfig = ''
-          import /etc/caddy/auth.conf
-          reverse_proxy {$ROOK_TAILSCALE_IP:127.0.0.1}:5000 {
-            header_up Host {host}
-            header_up X-Forwarded-Proto https
-            header_up X-Forwarded-Host {host}
-            header_up X-Scheme https
-          }
-        '';
-      };
-
       # === PLANNED BUT NOT YET LIVE ===
       # Uncomment as DNS records are added and content is ready
 
