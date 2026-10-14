@@ -40,6 +40,7 @@ in
       };
 
       # Ene Hermes dashboard: Tailscale Serve on MagicDNS only (see hermes.nix).
+
       # === PLANNED BUT NOT YET LIVE ===
       # Uncomment as DNS records are added and content is ready
 
