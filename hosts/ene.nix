@@ -90,6 +90,12 @@
       };
     };
   };
+
+  # The leftover Ubuntu BOOT partition (vda16, ext4) gets auto-mounted on /boot
+  # by systemd-gpt-auto as vfat, fails, and breaks sandboxed units (caddy 226).
+  # GRUB (i386-pc) does not use it.
+  boot.kernelParams = [ "systemd.gpt_auto=0" ];
+
   # Grok Bot (Ene) — manages Minecraft and Caddy. Not wheel; minecraft group
   # for /opt/minecraft, systemd-journal for logs, sudo only for these units.
   # No caddy group: it would expose TLS keys in /var/lib/caddy.
