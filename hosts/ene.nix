@@ -90,6 +90,16 @@
       };
     };
   };
+  # Grok Bot (Ene) — manages the Minecraft server. Not wheel; minecraft group
+  # for /opt/minecraft, systemd-journal for logs, sudo only for the unit.
+  modules.users.grokbot.agents.ene = {
+    authorizedKeys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFFUSP6TF/bEUhvh3q9etB25OudbaXEb7snH4wuUIHsK grokbot-ene@box"
+    ];
+    extraGroups = [ "minecraft" "systemd-journal" ];
+    sudoCommands = map (verb: "/run/current-system/sw/bin/systemctl ${verb} minecraft.service")
+      [ "start" "stop" "restart" "status" ];
+  };
   modules.servers.obsidian-headless.enable = true;
   modules.servers.even-g2.enable = true;
   # modules.editors.opencode.enable = true;

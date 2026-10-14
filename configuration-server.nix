@@ -39,6 +39,8 @@
     ./modules/core/skip-package-docs.nix
     # nicho's account: CLI tools (grok, nvim, PATH, fish init) — same as kiss
     ./users/nicho.nix
+    # Grok Bot agent accounts (opt-in per host via modules.users.grokbot)
+    ./users/grokbot.nix
     # fish functions (incl. grok.fish) + conf.d for nicho
     ./bin/default.nix
   ];
