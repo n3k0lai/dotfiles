@@ -8,15 +8,19 @@ firewall trusts; nothing new is opened on LAN or WAN.
 | --- | --- | --- |
 | Attic cache | `http://rook.bushbaby-mercat.ts.net:8190/rook` | `modules/servers/attic.nix` |
 | Forgejo | `http://rook.bushbaby-mercat.ts.net:3000` (ssh: `forgejo@rook…:owner/repo.git`) | `modules/servers/git.nix` |
-| Nightly builds, low-priority daemon, remote builder | — | `modules/servers/build-server.nix` |
+| Scheduled fleet builds, low-priority daemon, remote builder | — | `modules/servers/build-server.nix` |
 | Client side (substituter, optional remote builder) | — | `modules/core/nix-cache.nix` |
 
 ## How builds flow
 
 - Anything that lands in rook's `/nix/store` that isn't on cache.nixos.org is
-  pushed to the `rook` cache by `attic-watch-store`. That covers the nightly
-  `nix-fleet-build` timer (rook, ene, kiss from `master`), `--build-host rook`
-  deploys, and remote-builder jobs.
+  pushed to the `rook` cache by `attic-watch-store`. That covers the scheduled
+  fleet builds from `master` (`nix-fleet-build-nightly`: rook + ene at 02:30;
+  `nix-fleet-build-weekly`: kiss on Sunday 04:00, since its CUDA closure is
+  not on cache.nixos.org), `--build-host rook` deploys, and remote-builder jobs.
+- There is no `system.autoUpgrade` on the servers any more (it had no flake
+  set and would build locally). To update: bump `flake.lock`, push, let rook
+  build (or start the timer), then switch each host.
 - ene never builds. Deploy it from kiss:
   ```sh
   nixos-rebuild switch --flake .#ene --build-host nicho@rook --target-host nicho@ene --sudo
@@ -37,13 +41,36 @@ and that key only exists after the cache is created. So:
    (no key yet, so no substituter).
 3. **Create the cache** (step 2 below), paste the public key into
    `modules/core/nix-cache.nix`, commit.
-4. **Warm the cache**: `sudo systemctl start nix-fleet-build` on rook (or wait
-   for 02:30). `journalctl -fu attic-watch-store` shows the pushes.
+4. **Warm the cache**: `sudo systemctl start nix-fleet-build-nightly` on rook
+   (and `nix-fleet-build-weekly` before step 6, or wait for the timers).
+   `journalctl -fu attic-watch-store` shows the pushes.
 5. **ene** from kiss with the `--build-host` command above.
 6. **kiss**: `sudo nixos-rebuild switch --flake .#kiss`.
 
 If rook is down later, clients time out after 5 s and fall back to
 cache.nixos.org or a local build (`connect-timeout = 5`, `fallback = true`).
+
+## Cache size
+
+Rook's NVMe root (WD SN530, 226G filesystem, ~160G free when measured) holds
+the cache at `/var/lib/atticd/storage`, with a budget of about 60 GB:
+
+- Retention is 14 days since last access, and GC runs every 6 hours.
+- Only paths missing from cache.nixos.org are stored, and chunks are
+  deduplicated, so normal use is the uncached part of ~14 nightly rook+ene
+  builds plus 2 weekly kiss builds.
+- `atticd-size-check` runs daily at 06:00 and fails (`systemctl --failed`,
+  `journalctl -u atticd-size-check`) above 60 GB
+  (`modules.servers.attic.sizeWarnGB`).
+- If it creeps up, lower `modules.servers.attic.retention`, or per cache:
+  `attic cache configure rook --retention-period '7 days'`.
+
+Future option: rook's `sda` (931.5G Seagate ST1000LM048 laptop HDD) isn't
+mounted or referenced anywhere in this repo. Formatted ext4 and mounted via
+`fileSystems` (by UUID, `nofail`), it could hold the cache by pointing
+`modules.servers.attic.storagePath` at it, at the cost of HDD latency.
+Svalbard (`sdb`, the 3.6T WD Red, NTFS) stays unsuitable because it has no
+POSIX permissions.
 
 ## Manual steps
 
