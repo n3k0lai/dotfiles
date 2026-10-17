@@ -20,7 +20,7 @@ let
     nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.makeWrapper ];
     postInstall = ''
       wrapProgram $out/bin/opencode \
-        --run 'CACHE="$HOME/.cache/opencode"; mkdir -p "$CACHE"; if [ ! -d "$CACHE/node_modules/@ai-sdk/openai-compatible" ]; then ${pkgs.nodejs_22}/bin/npm install --prefix "$CACHE" @ai-sdk/openai-compatible@beta >/dev/null 2>&1 || true; fi'
+        --run 'CACHE="$HOME/.cache/opencode"; ${pkgs.coreutils}/bin/mkdir -p "$CACHE"; if [ ! -d "$CACHE/node_modules/@ai-sdk/openai-compatible" ]; then ${pkgs.nodejs_22}/bin/npm install --prefix "$CACHE" @ai-sdk/openai-compatible@beta >/dev/null 2>&1 || true; fi'
     '';
   });
 in

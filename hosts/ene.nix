@@ -15,8 +15,10 @@
     # Obsidian Headless Sync (for vault access + future MCP)
     ../modules/servers/obsidian-headless.nix
     ../modules/servers/even-g2.nix
+    # Forgejo (modules/servers/git.nix) runs on rook now.
+    # Pull from rook's Attic cache instead of building locally.
+    ../modules/core/nix-cache.nix
     # TODO: enable when ready
-    # ../modules/servers/git.nix
     # ../modules/servers/api.nix
     # wiki.nix / CouchDB LiveSync retired — vault uses official Obsidian Sync (ob)
     # grok + nvim + user PATH: users/nicho.nix via configuration-server.nix
@@ -38,6 +40,26 @@
   nix.settings = {
     build-dir = "/var/nix/builds";
     max-jobs = 1;
+  };
+
+  # === BUILDS HAPPEN ON ROOK ===
+  # ene (2 vCPU / 4 GB / small disk) no longer builds its own system. Deploy
+  # from kiss with rook as the build host (docs/rook-build-server.md):
+  #   nixos-rebuild switch --flake .#ene --build-host nicho@rook \
+  #     --target-host nicho@ene --sudo
+  # ene then only receives store paths (or substitutes them from rook's cache).
+  modules.core.nixCache.enable = true;
+
+  # Tighter GC than the shared weekly/30d: daily, keep 7 days of generations,
+  # and let the daemon free space mid-operation when the disk gets tight.
+  nix.gc = {
+    dates = lib.mkForce "daily";
+    options = lib.mkForce "--delete-older-than 7d";
+  };
+  nix.optimise.automatic = true;
+  nix.settings = {
+    min-free = 2 * 1024 * 1024 * 1024; # start GC below 2 GiB free
+    max-free = 6 * 1024 * 1024 * 1024; # stop once 6 GiB are free
   };
 
   # Pre-create (and on activation) so first builds after setting have the dir.
