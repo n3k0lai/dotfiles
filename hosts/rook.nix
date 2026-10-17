@@ -36,6 +36,11 @@ in
     # Honcho memory (Docker). Stays off until the xAI key file exists and
     # embeddingDimensions is set. See modules/servers/honcho.nix.
     ../modules/servers/honcho.nix
+    # Build server: Attic binary cache, Forgejo, nightly fleet builds.
+    # See docs/rook-build-server.md.
+    ../modules/servers/attic.nix
+    ../modules/servers/git.nix
+    ../modules/servers/build-server.nix
   ] ++ lib.optional (builtins.pathExists ./rook-local.nix) ./rook-local.nix;
 
   networking.hostName = "rook";
@@ -466,6 +471,22 @@ in
         metadata JSONB DEFAULT '{}'
       );
     '';
+  };
+
+  # === BUILD SERVER ===
+  # Rook builds for the whole fleet; ene never builds its own system.
+  # Everything here is tailnet-only (tailscale0 is trusted; nothing new on LAN).
+  #   Attic cache  http://rook.bushbaby-mercat.ts.net:8190/rook
+  #   Forgejo      http://rook.bushbaby-mercat.ts.net:3000
+  # atticd and attic-watch-store stay off until their .age files exist.
+  modules.servers.attic.enable = true;
+  modules.servers.git.enable = true;
+  modules.servers.buildServer = {
+    enable = true;
+    # Root pubkeys of hosts that use rook via nix.buildMachines
+    # (modules.core.nixCache.remoteBuilder). Empty = no nix-ssh user.
+    builderKeys = [ ];
+    nightly.enable = true;
   };
 
   # === RESOURCE MANAGEMENT ===
