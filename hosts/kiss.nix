@@ -34,6 +34,8 @@ in {
     ../modules/editors/cad.nix
     ../modules/editors/opencode.nix
     ../modules/editors/opencut.nix
+    # Substitute from rook's Attic cache (tailnet; falls back if unreachable)
+    ../modules/core/nix-cache.nix
   ];
 
   options.hardware.kiss.gpu = {
@@ -58,6 +60,9 @@ in {
 
   config = {
     hardware.scuf.enable = true;
+    # rook cache as substituter. remoteBuilder.enable offloads kiss's builds to
+    # rook too; needs a root key, see docs/rook-build-server.md.
+    modules.core.nixCache.enable = true;
 
     modules.editors.opencode.enable = true;
     modules.editors.opencut.enable = true;

@@ -78,4 +78,13 @@ in
   "modules/servers/secrets/pg_finance_admin_password.age".publicKeys = [ rook nicho ];
   "modules/servers/secrets/pg_personal_admin_password.age".publicKeys = [ rook nicho ];
   "modules/servers/secrets/pg_work_admin_password.age".publicKeys = [ rook nicho ];
+
+  # ===========================================
+  # BUILD SERVER (rook — Attic cache)
+  # ===========================================
+  # One line: ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="<openssl genrsa -traditional 4096 | base64 -w0>"
+  # Create on kiss: agenix -e modules/servers/secrets/attic_env.age
+  "modules/servers/secrets/attic_env.age".publicKeys = [ rook nicho ];
+  # One line: push+pull JWT from `atticd-atticadm make-token` on rook (see docs/rook-build-server.md)
+  "modules/servers/secrets/attic_push_token.age".publicKeys = [ rook nicho ];
 }

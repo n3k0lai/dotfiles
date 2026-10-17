@@ -99,10 +99,7 @@
   # Tailscale for secure networking
   services.tailscale.enable = true;
 
-  # Automatic security updates
-  system.autoUpgrade = {
-    enable = true;
-    allowReboot = false;  # Don't auto-reboot, just stage updates
-    dates = "04:00";
-  };
+  # No system.autoUpgrade: it had no flake set, and it would rebuild locally on
+  # each server. Updates go through rook (docs/rook-build-server.md): bump
+  # flake.lock, rook builds, each host switches from the cache.
 }
