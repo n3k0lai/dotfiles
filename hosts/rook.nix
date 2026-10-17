@@ -36,7 +36,7 @@ in
     # Honcho memory (Docker). Stays off until the xAI key file exists and
     # embeddingDimensions is set. See modules/servers/honcho.nix.
     ../modules/servers/honcho.nix
-    # Build server: Attic binary cache, Forgejo, nightly fleet builds.
+    # Build server: Attic binary cache, Forgejo, scheduled fleet builds.
     # See docs/rook-build-server.md.
     ../modules/servers/attic.nix
     ../modules/servers/git.nix
@@ -486,7 +486,8 @@ in
     # Root pubkeys of hosts that use rook via nix.buildMachines
     # (modules.core.nixCache.remoteBuilder). Empty = no nix-ssh user.
     builderKeys = [ ];
-    nightly.enable = true;
+    # rook + ene nightly 02:30, kiss weekly Sun 04:00 (module defaults).
+    fleetBuild.enable = true;
   };
 
   # === RESOURCE MANAGEMENT ===

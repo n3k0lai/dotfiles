@@ -8,8 +8,18 @@
 # over ntfs-3g/USB, mounted by a oneshot that silently skips if the enclosure is
 # absent (atticd would then write into the bare mount point), and Attic's
 # hundreds of thousands of small chunk files are a bad fit for FUSE NTFS. Same
-# reasoning as Postgres in hosts/rook.nix. GC + retention keep it bounded; the
-# small server.db (holds the signing key) is copied to Svalbard nightly.
+# reasoning as Postgres in hosts/rook.nix. The small server.db (holds the
+# signing key) is copied to Svalbard nightly.
+#
+# Size budget: about 60 GB of rook's NVMe (226G fs, ~160G free). Attic has no
+# size cap, only time-based retention on last access, so: 14-day retention, GC
+# every 6 h, and a daily atticd-size-check that fails (shows up in
+# `systemctl --failed`) above sizeWarnGB. Paths already on cache.nixos.org are
+# never stored, and chunks are deduplicated, so steady state is the uncached
+# delta of ~14 nightly rook+ene builds plus 2 weekly kiss builds. If it creeps
+# up: lower retention (or per cache: attic cache configure rook
+# --retention-period '7 days'). sda (931.5G laptop HDD, unused in this repo)
+# could become a dedicated ext4 cache disk later; see docs/rook-build-server.md.
 #
 # Secrets (agenix, see secrets.nix):
 #   attic_env.age         ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="<base64 RSA PEM>"
@@ -56,13 +66,13 @@ in
 
     retention = mkOption {
       type = types.str;
-      default = "30 days";
+      default = "14 days";
       description = "Default retention for paths not accessed recently (per-cache override: attic cache configure --retention-period).";
     };
 
     gcInterval = mkOption {
       type = types.str;
-      default = "12 hours";
+      default = "6 hours";
       description = "How often atticd garbage-collects expired objects.";
     };
 
@@ -86,6 +96,12 @@ in
         to the cache: nightly fleet builds, --build-host builds, remote-builder
         jobs. Paths already on cache.nixos.org are skipped by Attic.
       '';
+    };
+
+    sizeWarnGB = mkOption {
+      type = types.int;
+      default = 60;
+      description = "atticd-size-check fails when storagePath exceeds this many GB.";
     };
 
     dbBackupDir = mkOption {
@@ -129,6 +145,30 @@ in
 
       # Tailnet only (rook already trusts tailscale0; explicit for other hosts).
       networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
+    })
+
+    (mkIf envReady {
+      systemd.services.atticd-size-check = {
+        description = "Fail if the Attic cache exceeds ${toString cfg.sizeWarnGB} GB";
+        serviceConfig = { Type = "oneshot"; Nice = 19; IOSchedulingClass = "idle"; };
+        path = [ pkgs.coreutils ];
+        script = ''
+          set -euo pipefail
+          dir=${escapeShellArg cfg.storagePath}
+          case "$dir" in /var/lib/atticd/*) dir="/var/lib/private/atticd/''${dir#/var/lib/atticd/}";; esac
+          [ -d "$dir" ] || { echo "no $dir yet"; exit 0; }
+          used=$(du -s --block-size=1G "$dir" | cut -f1)
+          echo "attic storage: ''${used} GB (limit ${toString cfg.sizeWarnGB} GB)"
+          if [ "$used" -gt ${toString cfg.sizeWarnGB} ]; then
+            echo "over budget: lower modules.servers.attic.retention"
+            exit 1
+          fi
+        '';
+      };
+      systemd.timers.atticd-size-check = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = { OnCalendar = "*-*-* 06:00"; Persistent = true; };
+      };
     })
 
     (mkIf (envReady && cfg.dbBackupDir != null) {

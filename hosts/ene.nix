@@ -50,10 +50,6 @@
   # ene then only receives store paths (or substitutes them from rook's cache).
   modules.core.nixCache.enable = true;
 
-  # autoUpgrade (configuration-server.nix) would rebuild locally at 04:00,
-  # which is exactly what ene can't afford. Upgrades go through the deploy above.
-  system.autoUpgrade.enable = lib.mkForce false;
-
   # Tighter GC than the shared weekly/30d: daily, keep 7 days of generations,
   # and let the daemon free space mid-operation when the disk gets tight.
   nix.gc = {
