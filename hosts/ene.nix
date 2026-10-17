@@ -18,6 +18,8 @@
     # Forgejo (modules/servers/git.nix) runs on rook now.
     # Pull from rook's Attic cache instead of building locally.
     ../modules/core/nix-cache.nix
+    # Private F-Droid repo for my own APKs (tailnet only, tailscale serve)
+    ../modules/servers/fdroid-repo.nix
     # TODO: enable when ready
     # ../modules/servers/api.nix
     # wiki.nix / CouchDB LiveSync retired — vault uses official Obsidian Sync (ob)
@@ -125,7 +127,8 @@
     authorizedKeys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFFUSP6TF/bEUhvh3q9etB25OudbaXEb7snH4wuUIHsK grokbot-ene@box"
     ];
-    extraGroups = [ "minecraft" "systemd-journal" ];
+    # fdroid-inbox: scp APKs into /var/lib/fdroid-repo/inbox (no sudo).
+    extraGroups = [ "minecraft" "systemd-journal" "fdroid-inbox" ];
     sudoCommands =
       map (verb: "/run/current-system/sw/bin/systemctl ${verb} minecraft.service")
         [ "start" "stop" "restart" "status" ]
@@ -134,6 +137,11 @@
   };
   modules.servers.obsidian-headless.enable = true;
   modules.servers.even-g2.enable = true;
+
+  # Private F-Droid repo: https://ene.bushbaby-mercat.ts.net/fdroid/repo (tailnet only).
+  # Grok Bot uploads to /var/lib/fdroid-repo/inbox as grokbot-ene; the ingest re-checks
+  # cert pins + versionCode and signs the index. `fdroid-repo-info` prints the fingerprint + QR.
+  modules.servers.fdroid-repo.enable = true;
   # modules.editors.opencode.enable = true;
 
   environment.systemPackages = with pkgs; [
