@@ -43,6 +43,7 @@ in
     ../modules/browsers/firefox.nix
     ../modules/work/rdp.nix
     ../modules/servers/work-server.nix
+    ../modules/editors/grok-bot.nix
     # opencode: unstable nixpkgs smoke test segfaults on blade (exit 139); enable when fixed
     # ../modules/editors/opencode.nix
   ];
@@ -197,6 +198,9 @@ in
     modules.desktop.audioIdleInhibit.enable = true;
     modules.browsers.firefox.enable = true;
     modules.work.rdp.enable = true;
+    # Grok Bot desktop — registers blade as a machine so Ene can help debug the CMU
+    # (tio /dev/obdlink, can-utils, Flipper) alongside the Forscan VM.
+    modules.editors.grok-bot.enable = true;
     age.identityPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
     # WiFi PSKs live in KWallet from the old Plasma install (psk-flags=1).
