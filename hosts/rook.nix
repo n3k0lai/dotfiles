@@ -196,6 +196,22 @@ in
     };
   };
 
+  # Grok Bot (Rook) — home/apartment ops: Home Assistant and OctoPrint. Not
+  # wheel; systemd-journal for logs, sudo only for these units. Reached over
+  # Tailscale (tailscale0 is trusted above). No hass/octoprint groups: they
+  # would expose secrets.yaml and OctoPrint API keys.
+  modules.users.grokbot.agents.rook = {
+    authorizedKeys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGOBtiJY17+vZAlc7rtN98XZaBWX2oBjxv+0MWWbPJhr grokbot-rook@box"
+    ];
+    extraGroups = [ "systemd-journal" ];
+    sudoCommands =
+      map (verb: "/run/current-system/sw/bin/systemctl ${verb} home-assistant.service")
+        [ "status" "restart" ]
+      ++ map (verb: "/run/current-system/sw/bin/systemctl ${verb} octoprint.service")
+        [ "status" "restart" ];
+  };
+
   services.fail2ban = {
     enable = true;
     maxretry = 3;
