@@ -5,13 +5,6 @@
 let
   # Static sites fetched from GitHub at build time
   # TODO: fill sha256 hashes (run `nix-prefetch-url --unpack <url>` to get them)
-  bruhxd = pkgs.fetchFromGitHub {
-    owner = "n3k0lai";
-    repo = "bruhxd";
-    rev = "master";
-    sha256 = "sha256-sPxIp9ltNBWeXDioqAxiUMQ6+CD2526YB/LJggkkU4s=";
-  };
-
   comfysh = pkgs.fetchFromGitHub {
     owner = "n3k0lai";
     repo = "comfy.sh";
@@ -20,6 +13,19 @@ let
   };
 in
 {
+  imports = [ ./static-sites.nix ];
+
+  # Pull-deployed sites (see static-sites.nix): follow a branch, not a Nix pin.
+  # Vhost (root * /var/lib/static-sites/<name>/current) is generated there.
+  services.staticSites.bruhxd = {
+    repo = "https://github.com/n3k0lai/bruhxd.git";
+    branch = "main";
+    buildCommand = "npm ci && npx vite build";
+    outDir = "dist";
+    domain = "bruhxd.com";
+    interval = "5min";
+  };
+
   services.caddy = {
     enable = true;
     globalConfig = ''
@@ -32,12 +38,7 @@ in
     virtualHosts = {
       # === ACTIVE SITES ===
 
-      "bruhxd.com" = {
-        extraConfig = ''
-          root * /var/www/bruhxd/dist
-          file_server
-        '';
-      };
+      # bruhxd.com: services.staticSites.bruhxd above.
 
       # Ene Hermes dashboard: Tailscale Serve on MagicDNS only (see hermes.nix).
       # Private *.comfy.sh services proxied to Rook — basic auth via auth.conf
