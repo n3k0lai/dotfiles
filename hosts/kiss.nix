@@ -36,6 +36,7 @@ in {
     ../modules/editors/opencut.nix
     # Substitute from rook's Attic cache (tailnet; falls back if unreachable)
     ../modules/core/nix-cache.nix
+    ../modules/core/rook-git-sync.nix
   ];
 
   options.hardware.kiss.gpu = {
@@ -63,6 +64,9 @@ in {
     # rook cache as substituter. remoteBuilder.enable offloads kiss's builds to
     # rook too; needs a root key, see docs/rook-build-server.md.
     modules.core.nixCache.enable = true;
+
+    # Back up core repos to rook git every 4 h (scripts/rook-git-sync.sh).
+    modules.core.rookGitSync.enable = true;
 
     modules.editors.opencode.enable = true;
     modules.editors.opencut.enable = true;
