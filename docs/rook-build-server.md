@@ -144,6 +144,32 @@ Suggested set: `dotfiles`, `soul`, the hermes fork (`n3k0lai/hermes`),
 To make Forgejo the primary later: convert a mirror to a normal repo and add
 a **push** mirror back to GitHub under Settings → Repository → Mirror settings.
 
+### 4b. Push backups from kiss (what is running now)
+
+Instead of pull mirrors, kiss pushes. `scripts/rook-git-sync.sh` (packaged by
+`modules/core/rook-git-sync.nix`, enabled in `hosts/kiss.nix`) runs every 4 h
+on a user timer. For each repo it fetches GitHub and the local clones, takes
+the newest commit per branch, and pushes branches and tags to a **private**
+repo under the `n3k0lai` org. Normal pushes only: a ref that would need a force
+is logged as `SKIP` and left alone, and nothing is ever deleted on rook. A
+local branch that diverged from GitHub is backed up as `kiss/<branch>`.
+
+Covered: magirecomp, tunes, soul, dotfiles, hermes, saves, and the local-only
+magination decomp (never on GitHub). Edit the list in the script, or override
+it in `~/.config/rook-git/repos`.
+
+Account: Forgejo user `ene` (not a site admin) owns the private `n3k0lai` org.
+Its token (scopes `write:repository`, `write:organization`) lives only on kiss
+in `~/.config/rook-git/token`, mode 600:
+
+```sh
+forgejo-cli admin user create --username ene --email ene@comfy.sh --random-password
+forgejo-cli admin user generate-access-token --username ene --token-name kiss-sync \
+  --scopes write:repository,write:organization --raw   # write to the token file on kiss
+```
+
+Logs: `journalctl --user -u rook-git-sync`. Run now: `systemctl --user start rook-git-sync`.
+
 ### 5. Optional: rook as a remote builder for kiss/ene
 
 ```sh
