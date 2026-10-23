@@ -217,7 +217,7 @@ in
       intel-media-driver   # VAAPI driver for HD 530
       libva                # VA-API runtime
       libva-utils          # vainfo diagnostic
-      xorg.xorgserver      # Xvfb for headless rendering
+      xvfb      # Xvfb for headless rendering
     ];
 
     # Intel VAAPI
@@ -234,7 +234,7 @@ in
       description = "Virtual framebuffer for stream bouncer";
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
-        ExecStart = "${pkgs.xorg.xorgserver}/bin/Xvfb :99 -screen 0 1920x1080x24 -ac";
+        ExecStart = "${pkgs.xvfb}/bin/Xvfb :99 -screen 0 1920x1080x24 -ac";
         Restart = "always";
         Type = "simple";
       };

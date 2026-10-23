@@ -113,7 +113,7 @@ in
     # Playwright needs a real browser on NixOS (can't use dynamically linked downloads)
     chromium
     # X11 forwarding for headful browser sessions from Kiss
-    xorg.xauth
+    xauth
     # Python with Slack SDK — used by AI agent scripts for Slack API access
     (python3.withPackages (ps: [ ps.slack-sdk ]))
     # jackchuka/slackcli v0.3.10 — read-only Slack DM monitoring

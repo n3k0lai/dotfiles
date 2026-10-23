@@ -558,11 +558,11 @@ in
     cups
     libdrm
     mesa
-    xorg.libXcomposite
-    xorg.libXdamage
-    xorg.libXrandr
-    xorg.libXScrnSaver
-    xorg.libxshmfence
+    libxcomposite
+    libxdamage
+    libxrandr
+    libxscrnsaver
+    libxshmfence
     libxkbcommon
     pango
     cairo
@@ -573,16 +573,16 @@ in
     at-spi2-core
     dbus
     expat
-    xorg.libxcb
-    xorg.libX11
-    xorg.libXext
-    xorg.libXfixes
-    xorg.libXrender
-    xorg.libXcursor
-    xorg.libXi
-    xorg.libXinerama
-    xorg.libXtst
-    xorg.libxkbfile
+    libxcb
+    libx11
+    libxext
+    libxfixes
+    libxrender
+    libxcursor
+    libxi
+    libxinerama
+    libxtst
+    libxkbfile
     fontconfig
     freetype
     lcms

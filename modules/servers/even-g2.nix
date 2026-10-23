@@ -17,8 +17,8 @@ let
   simRuntimeLibs = with pkgs; [
     gtk3 webkitgtk_4_1 gdk-pixbuf cairo glib libsoup_3 alsa-lib
     pango harfbuzz freetype fontconfig libepoxy at-spi2-atk libxkbcommon
-    xorg.libX11 xorg.libXext xorg.libXrender xorg.libXi xorg.libXcursor
-    xorg.libXrandr xorg.libXfixes xorg.libxcb patchelf
+    libx11 libxext libxrender libxi libxcursor
+    libxrandr libxfixes libxcb patchelf
     mesa libglvnd dbus at-spi2-core
   ];
 
