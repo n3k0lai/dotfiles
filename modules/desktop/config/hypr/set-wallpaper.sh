@@ -40,13 +40,24 @@ hyprland_alive() {
 }
 
 stop_mpvpaper() {
-    # Nix wrapProgram makes comm `.mpvpaper-wrapp`; killall mpvpaper misses it.
-    killall -TERM mpvpaper .mpvpaper-wrapp 2>/dev/null
+    # Nix wrapProgram sets comm to `.mpvpaper-wrapp`. killall is not on PATH
+    # (psmisc), so a name match never ran and every wake stacked another
+    # instance on top of the old ones. Signal the pids pgrep already finds.
+    local pids
+    pids=$(mpvpaper_pids | sort -u)
+    if [ -n "$pids" ]; then
+        # shellcheck disable=SC2086
+        kill -TERM $pids 2>/dev/null || true
+    fi
     for _ in $(seq 1 20); do
-        mpvpaper_running || break
+        mpvpaper_running || return 0
         sleep 0.25
     done
-    killall -KILL mpvpaper .mpvpaper-wrapp 2>/dev/null
+    pids=$(mpvpaper_pids | sort -u)
+    if [ -n "$pids" ]; then
+        # shellcheck disable=SC2086
+        kill -KILL $pids 2>/dev/null || true
+    fi
 }
 
 rss_over_limit() {
