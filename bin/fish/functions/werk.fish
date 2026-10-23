@@ -1,23 +1,45 @@
 # Windows RDP wrapper — uses xfreerdp (XWayland).
 # Hyprland window rules in hyprland.conf match on /title: strings.
-function werk --argument-names cmd
-    switch "$cmd"
-        case -k --kill
-            __werk_kill
-            return $status
-        case -h --help
-            echo "usage: werk [-l|-s|-k]"
-            echo "  (none)  tiled session on workspace 3 (default)"
-            echo "  -l      fullscreen 2560x1440"
-            echo "  -s      tiled 1920x1080"
-            echo "  -k      kill all werk RDP sessions"
-            return 0
+function werk
+    set -l local_mode 0
+    set -l cmd ""
+    for arg in $argv
+        switch "$arg"
+            case --local -L
+                set local_mode 1
+            case -k --kill
+                __werk_kill
+                return $status
+            case -h --help
+                echo "usage: werk [-l|-s|-k] [-L|--local]"
+                echo "  (none)  tiled session on workspace 3 (default)"
+                echo "  -l      fullscreen 2560x1440"
+                echo "  -s      tiled 1920x1080"
+                echo "  -k      kill all werk RDP sessions"
+                echo "  -L, --local"
+                echo "          use SSH host work-local (LAN) instead of Tailscale"
+                return 0
+            case -l -s
+                set cmd $arg
+            case '*'
+                echo "usage: werk [-l|-s|-k] [-L|--local]" >&2
+                return 1
+        end
     end
 
     if not set -q WORK_IP
         source /run/agenix/work_creds 2>/dev/null
         or begin
             echo "creds not found, choom."
+            return 1
+        end
+    end
+
+    set -l target $WORK_IP
+    if test $local_mode -eq 1
+        set target (command ssh -G work-local 2>/dev/null | awk 'tolower($1)=="hostname" {print $2; exit}')
+        if test -z "$target"; or test "$target" = work-local
+            echo "work-local is not in ssh config" >&2
             return 1
         end
     end
@@ -29,7 +51,7 @@ function werk --argument-names cmd
         sleep 0.5
     end
 
-    echo "logging into $WORK_IP"
+    echo "logging into $target"
 
     set -l clip_opts \
         +clipboard \
@@ -56,11 +78,11 @@ function werk --argument-names cmd
 
     switch "$cmd"
         case -l
-            xfreerdp /w:2560 /h:1440 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-fullscreen $clip_opts &
+            xfreerdp /w:2560 /h:1440 /u:$WORK_USR /p:$WORK_PWD /v:$target /title:werk-fullscreen $clip_opts &
         case -s
-            xfreerdp /w:1920 /h:1080 /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-small $clip_opts &
+            xfreerdp /w:1920 /h:1080 /u:$WORK_USR /p:$WORK_PWD /v:$target /title:werk-small $clip_opts &
         case "*"
-            xfreerdp /w:$mon_w /h:$mon_h /u:$WORK_USR /p:$WORK_PWD /v:$WORK_IP /title:werk-tiled $clip_opts &
+            xfreerdp /w:$mon_w /h:$mon_h /u:$WORK_USR /p:$WORK_PWD /v:$target /title:werk-tiled $clip_opts &
     end
 
     disown
