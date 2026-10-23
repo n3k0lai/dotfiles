@@ -12,6 +12,7 @@ with lib;
     ../modules/hardware/scuf.nix
     ../modules/hardware/svalbard.nix
     ../modules/hardware/sammy.nix
+    ../modules/hardware/ems64m.nix
     ../modules/desktop/fcitx5.nix
     ../modules/editors/cad.nix
     ../modules/editors/cursor.nix
@@ -108,6 +109,9 @@ with lib;
 
     # Enable Samsung USB-C drive auto-mounting
     hardware.sammy.enable = true;
+
+    # EMS GB USB 64M flash cart (ems-flasher + uaccess udev rule)
+    hardware.ems64m.enable = true;
 
     # Input method (fcitx5 with Pinyin)
     modules.desktop.fcitx5.enable = true;
