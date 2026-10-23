@@ -74,6 +74,7 @@ in {
     environment.systemPackages = with pkgs; [
       agenix
       zed-editor
+      bubblewrap # grok --sandbox (interns layer)
       # Qt6 dependencies for PrismLauncher
       qt6.qtwayland
       qt6.qtbase
