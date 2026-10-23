@@ -30,6 +30,7 @@ in
     ../modules/core/kitty.nix
     ../modules/core/foot.nix
     ../modules/core/mpv.nix
+    ../modules/core/imv.nix
     ../modules/core/zathura.nix
     ../modules/core/tmux.nix
     ../modules/core/ssh.nix
@@ -42,6 +43,8 @@ in
     ../modules/desktop/theme/waves.nix
     ../modules/browsers/firefox.nix
     ../modules/work/rdp.nix
+    ../modules/gaming/presence.nix
+    ../modules/editors/cursor.nix
     ../modules/servers/work-server.nix
     ../modules/editors/grok-bot.nix
     # opencode: unstable nixpkgs smoke test segfaults on blade (exit 139); enable when fixed
@@ -59,6 +62,9 @@ in
     ##################################################################################
     #                        Machine Identity
     networking.hostName = "blade";
+    # Same presence module as kiss: WoW and Minecraft on Discord.
+    modules.gaming.presence.enable = true;
+    modules.editors.cursor.enable = true;
     networking.networkmanager.enable = true;
     time.timeZone = "America/New_York";
     i18n.defaultLocale = "en_US.UTF-8";
@@ -174,7 +180,7 @@ in
     home-manager.useGlobalPkgs = true;
     home-manager.useUserPackages = true;
     home-manager.backupFileExtension = "hm-bak";
-    # blade tracks nixpkgs-unstable (26.11); the flake pins HM 25.05 like kiss.
+    # blade tracks nixpkgs-unstable (26.11); home-manager follows the 26.05 pin.
     home-manager.users.nicho.home.enableNixpkgsReleaseCheck = false;
     home-manager.users.nicho.home.stateVersion = "24.05";
 
@@ -183,6 +189,7 @@ in
     modules.core.kitty.enable = true;
     modules.core.foot.enable = true;
     modules.core.mpv.enable = true;
+    modules.core.imv.enable = true;
     modules.core.zathura.enable = true;
     modules.core.tmux.enable = true;
     # Do not enable modules.core.ssh — that deploys kiss's agenix user key.
@@ -259,7 +266,6 @@ in
         zoom-us
         freerdp
         slack
-        code-cursor
 
         # car diagnostic
         tio          # serial terminal (Miia, OBDLink, Flipper)

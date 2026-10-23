@@ -1,0 +1,7 @@
+## Interface: 120005, 120000, 110207, 110200, 100207
+## Title: Kiss Presence
+## Notes: Shows your Forever character, level, and zone on Discord
+## Author: nicho
+## Version: 1.0.0
+## SavedVariables: KissPresenceDB
+KissPresence.lua

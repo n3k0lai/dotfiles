@@ -36,6 +36,7 @@ in
       ./modules/core/kitty.nix
       ./modules/core/foot.nix
       ./modules/core/mpv.nix
+      ./modules/core/imv.nix
       ./modules/core/zathura.nix
       ./modules/core/tmux.nix
       ./modules/core/mpd.nix
@@ -55,6 +56,7 @@ in
       ./modules/gaming/runescape.nix
       ./modules/gaming/bnet.nix
       ./modules/gaming/battlenet.nix
+      ./modules/gaming/presence.nix
       ./modules/gaming/riot.nix
       ./modules/gaming/eve-online.nix
 
@@ -117,6 +119,7 @@ in
   modules.core.kitty.enable = true;
   modules.core.foot.enable = true;
   modules.core.mpv.enable = true;
+  modules.core.imv.enable = true;
   modules.core.zathura.enable = true;
   modules.core.tmux.enable = true;
   modules.core.ssh.enable = true;
