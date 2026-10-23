@@ -66,7 +66,7 @@ in
 
   environment.systemPackages = with pkgs; [
     git
-    nodejs_22
+    nodejs_22 # ships npm
     rsync
     deployPlatform
     htop

@@ -117,8 +117,9 @@
       };
 
       # Razer Blade portable workstation + Forscan VM host
-      # Uses unstable nixpkgs: nixos-25.05 lacks modules.builtin.modinfo fix for
-      # linux 6.12 initrd (modules-shrunk build fails). See nixpkgs#484105.
+      # Stays on nixpkgs-unstable. nixos-25.05 lacked the modules.builtin.modinfo
+      # fix for the linux 6.12 initrd (modules-shrunk). See nixpkgs#484105.
+      # Gen 11 on 26.05 / kernel 6.18 stalled after initrd on UUID-only disks.
       blade = nixpkgs-unstable.lib.nixosSystem {
         inherit system;
         modules = [
