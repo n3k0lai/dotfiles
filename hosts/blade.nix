@@ -71,7 +71,17 @@ in
 
     programs.fish.enable = true;
     security.sudo.wheelNeedsPassword = false;
-    services.openssh.enable = true;
+    services.openssh = {
+      enable = true;
+      # Roaming laptop: keys only. Verify key login works BEFORE deploying.
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+      };
+    };
+    users.users.nicho.openssh.authorizedKeys.keyFiles = [
+      ../modules/core/config/ssh/id_ed25519.pub
+    ];
 
     ##################################################################################
     #                        Bootloader
