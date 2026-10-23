@@ -307,6 +307,8 @@ in {
         "venstar"
         # Media
         "cast"
+        # 3D printer (OctoPrint runs on this host; pulls in pyoctoprintapi)
+        "octoprint"
         # IoT protocols
         "mqtt"
         # Matter (Wi‑Fi devices: Deco, GE Cync Matter, etc.)
