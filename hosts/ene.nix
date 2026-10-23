@@ -10,6 +10,8 @@
     # ../modules/editors/opencode.nix
     # Minecraft server
     ../modules/servers/minecraft.nix
+    # Vanilla Terraria (Steam clients; tailnet :7777)
+    ../modules/servers/terra.nix
     # IRC server (Ergo) — Chatterino + Hermes agent mesh
     ../modules/servers/irc.nix
     # Obsidian Headless Sync (for vault access + future MCP)
@@ -136,6 +138,7 @@
         [ "status" "reload" "restart" ];
   };
   modules.servers.obsidian-headless.enable = true;
+  modules.servers.terraria.enable = true;
   modules.servers.even-g2.enable = true;
 
   # Private F-Droid repo: https://ene.bushbaby-mercat.ts.net/fdroid/repo (tailnet only).
