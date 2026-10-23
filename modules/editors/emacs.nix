@@ -93,7 +93,7 @@ let
     # No additional system packages needed (markdown-mode is pure elisp)
     
     # :lang nix
-    nixfmt-classic         # Nix formatter
+    nixfmt                 # Nix formatter
     nil                    # Nix language server
     
     # :lang ocaml

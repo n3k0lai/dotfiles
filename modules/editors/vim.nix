@@ -89,8 +89,11 @@ in {
         vimdiffAlias = true;
         withNodeJs = false;
         withPython3 = true;
+        # 26.05 defaults this to false. stateVersion 25.05 still means true;
+        # set it so the evaluation warning stays quiet.
+        withRuby = true;
 
-        extraLuaConfig = rtpLua + ''
+        initLua = rtpLua + ''
           -- 25.05 ships nvim-treesitter 0.9 (`configs`). unstable is 0.10
           -- (setup lives on nvim-treesitter; highlight is vim.treesitter).
           local ts_configs = vim.F.npcall(require, "nvim-treesitter.configs")
