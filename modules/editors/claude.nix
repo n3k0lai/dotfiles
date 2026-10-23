@@ -12,7 +12,7 @@ in {
   config = mkIf cfg.enable {
     # Install Node.js for Claude Code
     environment.systemPackages = with pkgs; [
-      nodejs
+      nodejs # ships npm
     ];
 
     # Install Claude Code via home-manager activation
