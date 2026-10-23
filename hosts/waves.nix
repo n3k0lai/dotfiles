@@ -150,7 +150,7 @@ in
     programs.git = {
       enable = true;
       userName = "Nicholai";
-      userEmail = "n3k0lai@proton.me";
+      userEmail = "nicholai@comfy.sh";
       delta.enable = true;
       extraConfig = {
         push.autoSetupRemote = true;
