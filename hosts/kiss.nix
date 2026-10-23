@@ -4,25 +4,7 @@
 
 with lib;
 
-let
-  # Native Wayland + NVIDIA EGL. The stock wrapper forces X11 and the GUI
-  # then paints with SwiftShader; that surface goes white when a display is
-  # replugged or its mode changes, while mullvad-daemon keeps running.
-  # WaylandLinuxDrmSyncobj is the explicit-sync feature that keeps this
-  # Electron GPU process from blanking on NVIDIA workspace switches.
-  mullvad-vpn = pkgs.mullvad-vpn.overrideAttrs (oldAttrs: {
-    postInstall = (oldAttrs.postInstall or "") + ''
-      libPath="${lib.makeLibraryPath [ pkgs.libglvnd ]}:/run/opengl-driver/lib"
-      for b in mullvad-vpn mullvad-gui; do
-        wrapProgram $out/bin/$b \
-          --set NIXOS_OZONE_WL 1 \
-          --prefix LD_LIBRARY_PATH : "$libPath" \
-          --set __EGL_VENDOR_LIBRARY_DIRS /run/opengl-driver/share/glvnd/egl_vendor.d \
-          --add-flags "--ozone-platform=wayland --enable-features=WaylandLinuxDrmSyncobj"
-      done
-    '';
-  });
-in {
+{
   imports = [
     ../modules/hardware/scarlett.nix
     ../modules/hardware/unicorne.nix
@@ -32,6 +14,8 @@ in {
     ../modules/hardware/sammy.nix
     ../modules/desktop/fcitx5.nix
     ../modules/editors/cad.nix
+    ../modules/editors/cursor.nix
+    ../modules/editors/grok-bot.nix
     ../modules/editors/opencode.nix
     ../modules/editors/opencut.nix
     # Substitute from rook's Attic cache (tailnet; falls back if unreachable)
@@ -64,6 +48,8 @@ in {
     # rook too; needs a root key, see docs/rook-build-server.md.
     modules.core.nixCache.enable = true;
 
+    modules.editors.cursor.enable = true;
+    modules.editors.grok-bot.enable = true;
     modules.editors.opencode.enable = true;
     modules.editors.opencut.enable = true;
     # cargo run from ~/Code/OpenCut when present; else the Nix binary.
@@ -90,7 +76,7 @@ in {
     home-manager.users.nicho.home.packages = with pkgs; [
       firefox
       brave        # for usevia.app
-      vesktop
+      discord # official client: Vesktop arRPC accepts presence locally and does not publish it
       obs-studio
       obsidian
       protonmail-desktop
@@ -135,6 +121,8 @@ in {
 
     # Battle.net prefix — bnet / bnet-wc3 / bnet-wow / bnet-w3c (umu+Proton)
     modules.gaming.bnet.enable = true;
+    # Discord: Forever character/level/place, and Minecraft world/dimension.
+    modules.gaming.presence.enable = true;
 
     # League of Legends — Moonlight client (Vanguard blocks native Linux; needs Windows Sunshine host)
     modules.gaming.riot.enable = true;
@@ -142,10 +130,31 @@ in {
     # EVE Online — first-class (dedicated launcher; Steam App 8500 backup)
     modules.gaming.eve-online.enable = true;
 
-    # Mullvad VPN (GUI) — resolved required for DNS resolution
+    # Stub resolver so Tailscale split DNS (*.ts.net) stays in front of the LAN DNS.
     services.resolved.enable = true;
-    services.mullvad-vpn.enable = true;
-    services.mullvad-vpn.package = mullvad-vpn;
+
+    # Firefox network geolocation via BeaconDB (looked up at runtime; the
+    # stock Google endpoint has no API key in this build). Firefox reads
+    # /etc/firefox/policies, so this also covers the home-manager firefox.
+    programs.firefox = {
+      enable = true;
+      preferences."geo.provider.network.url" = "https://api.beacondb.net/v1/geolocate";
+      preferencesStatus = "default";
+    };
+
+    # IPv6 disabled on the wired NIC until router IPv6 is fixed (temporary).
+    # A declared profile, because NetworkManager re-enables IPv6 over a sysctl.
+    # Tailscale IPv6 is unaffected.
+    networking.networkmanager.ensureProfiles.profiles.wired-noipv6 = {
+      connection = {
+        id = "wired-noipv6";
+        type = "ethernet";
+        interface-name = "enp7s0";
+        autoconnect-priority = 10;
+      };
+      ipv4.method = "auto";
+      ipv6.method = "disabled";
+    };
 
     # Machine-specific hostname
     networking.hostName = "kiss";
@@ -212,21 +221,5 @@ in {
       powerManagement.enable = false;
     };
 
-    # Steam Frame / Steam Link discovery is LAN multicast. Mullvad blocks LAN
-    # by default, which makes the headset fail to find this host (and Tailscale
-    # already occupies another interface that vrlink likes to bind).
-    systemd.services.mullvad-allow-lan = {
-      description = "Allow LAN through Mullvad (Steam Frame / Steam Link)";
-      after = [ "mullvad-daemon.service" ];
-      wants = [ "mullvad-daemon.service" ];
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        Restart = "on-failure";
-        RestartSec = 3;
-        ExecStart = "${config.services.mullvad-vpn.package}/bin/mullvad lan set allow";
-      };
-    };
   };
 }
