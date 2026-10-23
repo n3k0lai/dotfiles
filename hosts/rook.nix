@@ -349,9 +349,12 @@ in
       apply_password() {
         local role="$1" file="$2"
         if [ -f "$file" ]; then
-          local pw
-          pw=$(cat "$file")
-          $PSQL -c "ALTER ROLE $role WITH PASSWORD '$pw';" 2>/dev/null || true
+          # Password is read by psql from the file (\set + backticks), so it never
+          # appears in argv/ps or in a quoted SQL literal built by the shell.
+          { printf '\\set pw `cat %s`\n' "$file"
+            printf 'ALTER ROLE "%s" WITH PASSWORD :'"'"'pw'"'"';\n' "$role"
+          } | $PSQL -v ON_ERROR_STOP=1 -q >/dev/null \
+            || echo "pg-password-sync: failed for role $role" >&2
         fi
       }
       apply_password mesh          /run/agenix/pg_mesh_password
