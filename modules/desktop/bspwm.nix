@@ -28,7 +28,7 @@ in {
       # System utilities
       polkit_gnome
       arandr
-      xorg.xsetroot
+      xsetroot
       
       # Application launcher and menus
       rofi
@@ -54,7 +54,7 @@ in {
     pulseaudio
     
     # Brightness control
-    xorg.xbacklight
+    xbacklight
     
     # File manager
     kdePackages.dolphin

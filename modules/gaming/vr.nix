@@ -69,10 +69,10 @@ in
       icu               # Unity Licensing Client needs this
 
       # X11/XWayland fixes
-      xorg.libX11
-      xorg.libXcursor
-      xorg.libXrandr
-      xorg.libXi
+      libx11
+      libxcursor
+      libxrandr
+      libxi
     ];
 
     # WiVRn — disabled, 26.2.3 segfaults on RTX 3070, Meta store fights sideloading.
