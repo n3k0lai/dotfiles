@@ -244,6 +244,8 @@ in
     enable = true;
     port = 8123;
     enableMqtt = true;
+    enableCyncLan = true;
+    cyncLanInterface = "enp0s31f6"; # LAN NIC only
     enableMatter = true;
     enableBluetooth = true;
     matterBluetoothCommissioning = true;

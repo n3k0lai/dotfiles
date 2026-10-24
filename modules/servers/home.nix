@@ -24,6 +24,18 @@ in {
       description = "Enable Mosquitto MQTT broker for IoT devices";
     };
 
+    enableCyncLan = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Local Cync (GE) control via the Proxy-alt cync_lan custom component (TLS listener on TCP 23779)";
+    };
+
+    cyncLanInterface = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Interface to open TCP 23779 on for Cync devices (null = all interfaces)";
+    };
+
     enableMatter = mkOption {
       type = types.bool;
       default = true;
@@ -299,6 +311,41 @@ in {
       enable = true;
       package = pkgs.home-assistant;
 
+      # Local control for GE Cync bulbs (Proxy-alt/cync-lan). The bulbs reach
+      # this listener via a router DNS override, configured separately.
+      # Pinned: read upstream release notes before bumping.
+      customComponents = mkIf cfg.enableCyncLan [
+        (pkgs.buildHomeAssistantComponent rec {
+          owner = "Proxy-alt";
+          domain = "cync_lan";
+          version = "2.15.0";
+          src = pkgs.fetchFromGitHub {
+            owner = "Proxy-alt";
+            repo = "cync-lan";
+            rev = "v${version}";
+            hash = "sha256-655LQlY/U6L3IUgsduGkDIwGlzeSkEPLVOCLUS5fpXQ=";
+          };
+          dependencies = [
+            (pkgs.home-assistant.python3Packages.buildPythonPackage rec {
+              pname = "cync-lan";
+              version = "0.16.1";
+              pyproject = true;
+              src = pkgs.home-assistant.python3Packages.fetchPypi {
+                pname = "cync_lan";
+                inherit version;
+                hash = "sha256-mA+//jRHcOlsOtfXk9Y8/WTH0YqNOCWhAWrTgP04lDo=";
+              };
+              build-system = with pkgs.home-assistant.python3Packages; [ setuptools wheel ];
+              dependencies = with pkgs.home-assistant.python3Packages; [
+                pyyaml pydantic tzlocal cryptography aiohttp
+              ];
+              pythonImportsCheck = [ "cync_lan" ];
+              doCheck = false;
+            })
+          ];
+        })
+      ];
+
       extraComponents = [
         # Lighting
         "hue"
@@ -407,7 +454,12 @@ in {
     # - MQTT open for edge nodes (pati0, bulbs bridges) — prefer Tailscale later
     # - matter-server stays on localhost; no public 5580
     networking.firewall.allowedTCPPorts =
-      mkIf cfg.enableMqtt [ 1883 ];
+      (optionals cfg.enableMqtt [ 1883 ])
+      # Cync devices open a TLS session to this port (DNS-redirected cloud)
+      ++ (optionals (cfg.enableCyncLan && cfg.cyncLanInterface == null) [ 23779 ]);
+    networking.firewall.interfaces = mkIf (cfg.enableCyncLan && cfg.cyncLanInterface != null) {
+      ${cfg.cyncLanInterface}.allowedTCPPorts = [ 23779 ];
+    };
 
     # Writable stubs for HA UI script/automation/scene editors (include targets).
     # Create only if missing so we never clobber user content.
