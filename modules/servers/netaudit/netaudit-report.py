@@ -32,6 +32,7 @@ NEIGH_RE = re.compile(r"^(\S+) dev \S+ lladdr ([0-9a-fA-F:]{17})")
 CT_EVENT_RE = re.compile(r"\[(NEW|DESTROY|UPDATE)\]")
 CT_TS_RE = re.compile(r"^\[(\d+)(?:\.\d+)?\]")
 FW_KV_RE = re.compile(r"(\w+)=(\S*)")
+WAN_KEY = "router/wan"
 
 
 def parse_args(argv):
@@ -137,6 +138,8 @@ class Devices:
         return self.ip_mac.get(ip, ip)
 
     def name(self, key):
+        if key == WAN_KEY:
+            return "router itself / inbound from internet"
         if key in self.known:
             return self.known[key]
         if key in self.mac_host:
@@ -244,7 +247,8 @@ def collect(root, days, window_start, args, devs):
         src, dst = rec["orig"]["src"], rec["orig"]["dst"]
         if not args.include_local and is_local(dst):
             continue
-        dev = devs.key(src)
+        # Flows sourced from a public address are the router's own (WAN side) or inbound.
+        dev = devs.key(src) if is_local(src) else WAN_KEY
         if rec["event"] == "NEW":
             new_flows[dev] += 1
             continue
@@ -271,10 +275,14 @@ def collect(root, days, window_start, args, devs):
         parts = mac.split(":")
         if len(parts) >= 12:
             devs.learn(src, ":".join(parts[6:12]))
-        prefix = msg.split("IN=", 1)[0].strip().rstrip(":") or "fw"
+        prefix = re.sub(r"^\[\s*[\d.]+\]\s*", "", msg.split("IN=", 1)[0]).strip().rstrip(":") or "fw"
+        proto_port = f"{kv.get('PROTO', '?').lower()}/{kv.get('DPT', '-')}"
+        if not is_local(src):
+            # Internet scanners hitting WAN input: aggregate by port, not per source.
+            fw[WAN_KEY][f"{prefix}: {proto_port}"] += 1
+            continue
         dst = kv.get("DST", "?")
-        what = f"{prefix}: {ip_domain.get(dst, dst)} {kv.get('PROTO', '?').lower()}/{kv.get('DPT', '-')}"
-        fw[devs.key(src)][what] += 1
+        fw[devs.key(src)][f"{prefix}: {ip_domain.get(dst, dst)} {proto_port}"] += 1
 
     bw = {}
     header = None
@@ -360,7 +368,7 @@ def render(title, devs, queries, flows, new_flows, fw, bw, new_devices, new_dest
             out.append(f"- `{d}` ({devs.name(d)})")
     out.append("")
 
-    unknown = sorted(d for d in all_devs if not devs.is_known(d))
+    unknown = sorted(d for d in all_devs if not devs.is_known(d) and d != WAN_KEY)
     out.append("## Not in known-devices.json")
     out += [f"- `{d}` ({devs.name(d)})" for d in unknown] or ["- none"]
     out.append("")
@@ -435,7 +443,7 @@ def main(argv=None):
         baseline = not state["devices"]
         day = days[-1]
         for d in set(queries) | set(flows) | set(new_flows) | set(fw):
-            if touch(state["devices"], d, day):
+            if touch(state["devices"], d, day) and d != WAN_KEY:
                 new_devices.add(d)
             dmap = state["dests"].setdefault(d, {})
             for dest in flows.get(d, {}):
