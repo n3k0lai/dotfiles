@@ -22,6 +22,8 @@ in
     ../modules/hardware/clicks.nix
     # Home automation (lights, IoT)
     ../modules/servers/home.nix
+    # Router syslog collector + daily per-device network audit report
+    ../modules/servers/netaudit.nix
     # Droneforge Nimbus hangar (USB on Rook)
     ../modules/servers/hangar.nix
     # Samba NAS sharing
@@ -226,6 +228,14 @@ in
       maxtime = "168h";
       factor = "4";
     };
+  };
+
+  # === NETWORK AUDIT (router syslog -> per-device report) ===
+  # Listener on the LAN NIC only; allowed sender addresses live in a
+  # root-only file on the host (/etc/netaudit/allowed-sources), not in git.
+  modules.servers.netaudit = {
+    enable = true;
+    interface = "enp0s31f6"; # LAN NIC only
   };
 
   # === STORAGE ===
