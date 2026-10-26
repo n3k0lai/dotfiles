@@ -13,6 +13,7 @@ with lib;
     ../modules/hardware/svalbard.nix
     ../modules/hardware/sammy.nix
     ../modules/hardware/ems64m.nix
+    ../modules/hardware/chromatic.nix
     ../modules/desktop/fcitx5.nix
     ../modules/editors/cad.nix
     ../modules/editors/cursor.nix
@@ -112,6 +113,9 @@ with lib;
 
     # EMS GB USB 64M flash cart (ems-flasher + uaccess udev rule)
     hardware.ems64m.enable = true;
+
+    # ModRetro Chromatic (MR Updater + uaccess udev rules)
+    hardware.chromatic.enable = true;
 
     # Input method (fcitx5 with Pinyin)
     modules.desktop.fcitx5.enable = true;
