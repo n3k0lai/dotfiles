@@ -4,7 +4,7 @@
 # the build that was live when this was packaged (Last-Modified 2026-10-10).
 # When ModRetro publishes a new build the fetch fails on the hash; bump
 # `version` and the hash together.
-{ lib, appimageTools, fetchzip, writeTextDir, symlinkJoin }:
+{ lib, runtimeShell, appimageTools, fetchzip, writeTextDir, symlinkJoin }:
 
 let
   pname = "mr-updater";
@@ -22,7 +22,25 @@ let
   app = appimageTools.wrapType2 {
     inherit pname version src;
 
+    # Qt 6.5+ wants xcb-util-cursor for its xcb plugin; the bundled Qt may
+    # still miss it, so the launcher below prefers Wayland.
+    extraPkgs = pkgs: [ pkgs.xcb-util-cursor ];
+
+    # The startup check looks for /etc/udev/rules.d/99-modretro.rules, which
+    # the AppImage sandbox doesn't see on NixOS, and otherwise demands root.
+    # Our rules are installed system-wide, so skip that check.
+    extraBwrapArgs = [ "--ro-bind-try" "/etc/udev" "/etc/udev" ];
+
     extraInstallCommands = ''
+      # Belt and braces for the udev check: pass --dopc
+      # (--disable_os_permissions_check) so it never demands root.
+      mv $out/bin/mr-updater $out/bin/.mr-updater-wrapped
+      cat > $out/bin/mr-updater <<EOS
+      #!${runtimeShell}
+      export QT_QPA_PLATFORM="\''${QT_QPA_PLATFORM:-wayland;xcb}"
+      exec $out/bin/.mr-updater-wrapped --dopc "\$@"
+      EOS
+      chmod +x $out/bin/mr-updater
       install -Dm444 ${contents}/ChromaticFirmwareUpdater.desktop \
         $out/share/applications/mr-updater.desktop
       substituteInPlace $out/share/applications/mr-updater.desktop \
