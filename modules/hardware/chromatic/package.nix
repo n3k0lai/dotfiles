@@ -4,7 +4,8 @@
 # the build that was live when this was packaged (Last-Modified 2026-10-10).
 # When ModRetro publishes a new build the fetch fails on the hash; bump
 # `version` and the hash together.
-{ lib, runtimeShell, appimageTools, fetchzip, writeTextDir, symlinkJoin }:
+{ lib, runtimeShell, appimageTools, fetchzip, runCommand, writeTextDir, writeTextFile
+, symlinkJoin, bash, coreutils }:
 
 let
   pname = "mr-updater";
@@ -19,8 +20,46 @@ let
 
   contents = appimageTools.extractType2 { inherit pname version src; };
 
-  app = appimageTools.wrapType2 {
-    inherit pname version src;
+  # PyInstaller points LD_LIBRARY_PATH at its bundle (which ships its own
+  # libreadline, libsystemd, ...), and children inherit it. The bundled
+  # user-service helper derives a machine ID via `sh -c "hostnamectl ...;
+  # cat /etc/machine-id"`, and NixOS's bash then dies on a readline symbol
+  # mismatch, so the feature/user plugins fail to load ("Failed to generate
+  # Machine ID"). Put an `sh` first on PATH that drops the bundle's
+  # LD_LIBRARY_PATH (restoring the pre-PyInstaller value) before exec'ing bash.
+  shShim = writeTextFile {
+    name = "mr-updater-sh-shim";
+    destination = "/bin/sh";
+    executable = true;
+    text = ''
+      #!${coreutils}/bin/env -S -u LD_LIBRARY_PATH ${bash}/bin/sh
+      if [ -n "''${LD_LIBRARY_PATH_ORIG:-}" ]; then
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH_ORIG"
+      fi
+      exec ${bash}/bin/sh "$@"
+    '';
+  };
+
+  # Both the sandbox's /etc/profile and appimageTools' appimage-exec.sh
+  # prepend their own dirs (the latter puts bash-interactive first), so the
+  # sh shim can only win if it is prepended right before the app starts:
+  # swap AppRun for a script that does that and then runs the original.
+  patched = runCommand "${pname}-${version}-patched" { } ''
+    mkdir $out
+    for f in ${contents}/*; do ln -s "$f" "$out/''${f##*/}"; done
+    rm $out/AppRun
+    ln -s ${contents}/AppRun $out/AppRun.real
+    cat > $out/AppRun <<EOS
+    #!${runtimeShell}
+    export PATH="${shShim}/bin:\$PATH"
+    exec "\''${0%/*}/AppRun.real" "\$@"
+    EOS
+    chmod +x $out/AppRun
+  '';
+
+  app = appimageTools.wrapAppImage {
+    inherit pname version;
+    src = patched;
 
     # Qt 6.5+ wants xcb-util-cursor for its xcb plugin; the bundled Qt may
     # still miss it, so the launcher below prefers Wayland.
@@ -38,6 +77,11 @@ let
       cat > $out/bin/mr-updater <<EOS
       #!${runtimeShell}
       export QT_QPA_PLATFORM="\''${QT_QPA_PLATFORM:-wayland;xcb}"
+      # Device detection shells out to a bundled openFPGALoader that is itself
+      # an AppImage. FUSE can't mount inside the bwrap sandbox, so the probe
+      # failed silently and the Chromatic was never detected. Have the
+      # AppImage runtime extract to /tmp and run instead.
+      export APPIMAGE_EXTRACT_AND_RUN=1
       exec $out/bin/.mr-updater-wrapped --dopc "\$@"
       EOS
       chmod +x $out/bin/mr-updater
