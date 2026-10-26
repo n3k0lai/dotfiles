@@ -29,11 +29,7 @@ let
     # The startup check looks for /etc/udev/rules.d/99-modretro.rules, which
     # the AppImage sandbox doesn't see on NixOS, and otherwise demands root.
     # Our rules are installed system-wide, so skip that check.
-    extraBwrapArgs = [
-      "--ro-bind-try" "/etc/udev" "/etc/udev"
-      # The app derives a machine ID for its plugin manager and fails without it.
-      "--ro-bind-try" "/etc/machine-id" "/etc/machine-id"
-    ];
+    extraBwrapArgs = [ "--ro-bind-try" "/etc/udev" "/etc/udev" ];
 
     extraInstallCommands = ''
       # Belt and braces for the udev check: pass --dopc
