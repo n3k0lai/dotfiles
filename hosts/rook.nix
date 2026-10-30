@@ -86,9 +86,10 @@ in
       sessionTokenFile = "/run/agenix/hermes-desktop-token";
     };
 
-    networking.firewall.interfaces.tailscale0.allowedTCPPorts =
-      [ 9900 9121 ];
   };
+
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts =
+  [ 9900 9121 ];
 
   # Off until honcho_xai_api_key.age exists and embeddingDimensions is probed.
   modules.servers.honcho.enable = false;
