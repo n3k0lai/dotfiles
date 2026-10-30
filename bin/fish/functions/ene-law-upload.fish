@@ -3,7 +3,7 @@
 #   ene-law-upload va bills enrolled ~/Downloads/HB217-SB749.pdf
 #   ene-law-upload md code firearms ~/Downloads/MD-PS-Article-5.pdf
 function ene-law-upload --description "Upload law document kiss → ene"
-    set -l script "$HOME/dotfiles/bin/ene-law-upload.sh"
+    set -l script (set -q DOTFILES; and echo $DOTFILES; or echo $HOME/dotfiles)"/bin/ene-law-upload.sh"
     if not test -f $script
         echo "ene-law-upload: $script not found (git pull dotfiles?)"
         return 1
