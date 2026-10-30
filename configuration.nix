@@ -112,7 +112,6 @@ in
   ##################################################################################
   #                        Dev Mode (symlinks to repo for hot-reload)
   modules.core.devMode.enable = true;
-  modules.core.devMode.repoPath = "/home/nicho/dotfiles";
 
   ##################################################################################
   #                        Core Utilities

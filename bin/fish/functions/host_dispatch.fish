@@ -34,7 +34,7 @@ function host_dispatch
     set -l hermes_home /var/lib/hermes
     set -l hermes_soul $hermes_home/.hermes
     set -l hermes_flake $hermes_home/dotfiles
-    set -l home_flake $HOME/dotfiles
+    set -l home_flake (set -q DOTFILES; and echo $DOTFILES; or echo $HOME/dotfiles)
 
     set -l on_host_flake $home_flake
     if test -e $hermes_flake
@@ -110,11 +110,12 @@ function host_dispatch
                 return 1
             end
             echo "📋 closure diff for #$target..."
-            eval $rebuild_base build
-            and if test "$on_target" = true
-                nix store diff-closures /run/current-system ./result
+            if test "$on_target" = true
+                set -l new (nix build --no-link --print-out-paths "$active_flake#nixosConfigurations.$target.config.system.build.toplevel")
+                and nix store diff-closures /run/current-system $new
             else
-                echo "(built remotely; run diff on-host for local result symlink)"
+                eval $rebuild_base build
+                and echo "(built remotely; run diff on-host for the closure diff)"
             end
 
         case update u

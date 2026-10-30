@@ -195,7 +195,6 @@ in
     home-manager.users.nicho.home.stateVersion = "24.05";
 
     modules.core.devMode.enable = true;
-    modules.core.devMode.repoPath = "/home/nicho/dotfiles";
     modules.core.kitty.enable = true;
     modules.core.foot.enable = true;
     modules.core.mpv.enable = true;
