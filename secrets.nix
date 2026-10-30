@@ -37,7 +37,6 @@ in
   "modules/servers/secrets/hermes_env.age".publicKeys = [ ene nicho ];
   # One line: raw session token for `hermes serve` (Hermes Desktop remote backend on ene).
   # Desktop (kiss) pastes the same value as the Remote gateway session token.
-  "modules/servers/secrets/hermes_desktop_token.age".publicKeys = [ ene nicho ];
   # Include rook so agent host can decrypt SSH config (re-encrypt after changing recipients).
   "modules/servers/secrets/hermes_ssh_config.age".publicKeys = [ ene rook nicho ];
 
@@ -81,6 +80,10 @@ in
   "modules/servers/secrets/pg_finance_admin_password.age".publicKeys = [ rook nicho ];
   "modules/servers/secrets/pg_personal_admin_password.age".publicKeys = [ rook nicho ];
   "modules/servers/secrets/pg_work_admin_password.age".publicKeys = [ rook nicho ];
+
+  # Hermes Desktop remote backend session token (kiss → rook). Same value the
+  # app already stores for rook, so no re-sign-in is needed.
+  "modules/servers/secrets/hermes_desktop_token.age".publicKeys = [ rook nicho ];
 
   # ===========================================
   # BUILD SERVER (rook — Attic cache)

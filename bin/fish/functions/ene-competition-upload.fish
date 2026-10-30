@@ -8,7 +8,7 @@
 # Requires: nix-shell, ssh/rsync to nicho@ene (Tailscale SSH — not hermes@ene)
 
 function ene-competition-upload --description "Upload competition rulebook PDF kiss → ene"
-    set -l script "$HOME/dotfiles/bin/ene-competition-upload.sh"
+    set -l script (set -q DOTFILES; and echo $DOTFILES; or echo $HOME/dotfiles)"/bin/ene-competition-upload.sh"
     if not test -f "$script"
         echo "ene-competition-upload: $script not found (git pull dotfiles?)"
         return 1

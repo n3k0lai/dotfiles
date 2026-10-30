@@ -73,6 +73,21 @@ in
         outboundTokenEnv = "A2A_OUTBOUND_TOKEN_ENE";
       };
     };
+
+    # Remote desktop backend (hermDesk) so this host can be reached as a
+    # Remote gateway from the desktop app.  Same pattern as ene.  The
+    # hermes-dashboard.service keeps occupying 9119 (browser admin panel), so
+    # the backend serves on 9121.
+    services.hermes-agent.backend = {
+      mode = "serve";
+      host = "rook.example.ts.net";
+      waitFor = "hostname";
+      port = 9121;
+      sessionTokenFile = "/run/agenix/hermes-desktop-token";
+    };
+
+    networking.firewall.interfaces.tailscale0.allowedTCPPorts =
+      [ 9900 9121 ];
   };
 
   # Off until honcho_xai_api_key.age exists and embeddingDimensions is probed.

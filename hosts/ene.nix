@@ -114,6 +114,11 @@
         capabilities = [ "work" "tickets" ];
         outboundTokenEnv = "A2A_OUTBOUND_TOKEN_ROOK";
       };
+      peers.kiss = {
+        url = "http://kiss.example.ts.net:9901";
+        capabilities = [ "work" "tickets" ];
+        outboundTokenEnv = "A2A_OUTBOUND_TOKEN_KISS";
+      };
     };
   };
 

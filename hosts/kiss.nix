@@ -96,6 +96,32 @@ with lib;
       desktop.enable = true;
     };
 
+    # Hermes A2A mesh peer (kiss) — own machine-level gateway + A2A server on
+    # the tailnet, per-peer bearer token (same story as rook↔ene).
+    services.hermes-agent = {
+      enable = true;
+      settings = {
+        # kiosk agent profile: a2a toolset + its own agent card
+        gateway.platforms.a2a = {
+          enabled = true;
+          extra.port = 9901;
+        };
+      };
+      backend = {
+        mode = "serve"; # headless web server (desktop app + kiosk agent)
+        host = "kiss.example.ts.net";
+        port = 9901;
+        waitFor = "hostname";
+        sessionTokenFile = null; # keep the deskop's ene remote-gateway entry untouched
+      };
+      environment = {
+        A2A_HOST = "0.0.0.0";
+        A2A_PORT = "9901";
+        A2A_PEER_TOKENS = "ene:<tokE>";
+        A2A_AGENT_NAME = "kiss";
+      };
+    };
+
     # Enable Scarlett audio interface
     hardware.scarlett.enable = true;
     

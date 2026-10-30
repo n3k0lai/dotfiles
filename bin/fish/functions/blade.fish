@@ -1,7 +1,10 @@
 # blade — NixOS rebuild helper for the Razer Blade (flake #blade)
 function blade --argument-names cmd
     set -l target blade
-    set -l flake_dir (test -n "$BLADE_FLAKE_DIR"; and echo "$BLADE_FLAKE_DIR"; or echo "$HOME/dotfiles")
+    # BLADE_FLAKE_DIR > $DOTFILES (set by devMode.repoPath) > ~/dotfiles
+    set -l flake_dir $HOME/dotfiles
+    set -q DOTFILES; and set flake_dir $DOTFILES
+    set -q BLADE_FLAKE_DIR; and set flake_dir $BLADE_FLAKE_DIR
 
     if not test -d "$flake_dir"
         echo "flake dir not found: $flake_dir"
@@ -22,8 +25,8 @@ function blade --argument-names cmd
             $rebuild_cmd build
         case diff d
             echo "📋 showing what would change for #$target..."
-            $rebuild_cmd build 2>/dev/null
-            and nix store diff-closures /run/current-system ./result
+            set -l new (nix build --no-link --print-out-paths "$flake_dir#nixosConfigurations.$target.config.system.build.toplevel")
+            and nix store diff-closures /run/current-system $new
         case update u
             echo "🔄 updating flake inputs for blade..."
             nix flake update --flake "$flake_dir"

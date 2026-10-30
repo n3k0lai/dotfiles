@@ -1,7 +1,7 @@
 # nix build/switch helper — auto-detects hostname for flake target
 function nx --argument-names cmd
     set -l host (hostname)
-    set -l flake_dir "$HOME/Code/nix"
+    set -l flake_dir (set -q DOTFILES; and echo $DOTFILES; or echo $HOME/dotfiles)
 
     if not test -d "$flake_dir"
         echo "flake dir not found: $flake_dir"
@@ -20,8 +20,8 @@ function nx --argument-names cmd
             sudo nixos-rebuild build --flake "$flake_dir#$host"
         case diff d
             echo "📋 showing what would change for #$host..."
-            sudo nixos-rebuild build --flake "$flake_dir#$host" 2>/dev/null
-            and nix store diff-closures /run/current-system ./result
+            set -l new (nix build --no-link --print-out-paths "$flake_dir#nixosConfigurations.$host.config.system.build.toplevel")
+            and nix store diff-closures /run/current-system $new
         case update u
             echo "🔄 updating flake inputs..."
             nix flake update --flake "$flake_dir"
