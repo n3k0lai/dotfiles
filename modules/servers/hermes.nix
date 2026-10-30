@@ -446,6 +446,13 @@ in
     # nixos-rebuild switch (hermes edits without sudo; nicho activates).
     users.users.nicho.extraGroups = lib.mkAfter [ "hermes" ];
 
+    # Inbound SSH as the hermes service user for the kiss Hermes desktop client.
+    # Declared here so a rebuild never drops it; NixOS writes this to
+    # /etc/ssh/authorized_keys.d/hermes as well as the state-dir file.
+    users.users.hermes.openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ3pJ8BVreaSwvtQd7Ytayg+qrzm3JkhAPfd7YIM/3r2 nicholai@comfy.sh"
+    ];
+
     # Dotfiles git repo is owned by hermes; nicho activates via nixos-rebuild.
     # Git refuses foreign-owned repos unless listed in safe.directory (both paths:
     # canonical checkout and ~/dotfiles symlink target).
@@ -751,7 +758,10 @@ in
   system.activationScripts.hermes-shell-profile = lib.stringAfter [ "users" "groups" ] ''
     PROF="${cfg.stateDir}/.profile"
     BPROF="${cfg.stateDir}/.bash_profile"
-    install -d -m 0755 -o ${cfg.user} -g ${cfg.user} "${cfg.stateDir}"
+    # 2750, not 0755: sshd StrictModes refuses a user's key when the home dir is
+    # writable by group or others. Group keeps read/traverse for nicho; inbox
+    # stays 2775 for uploads. Do not widen this without breaking hermes SSH.
+    install -d -m 2750 -o ${cfg.user} -g ${cfg.user} "${cfg.stateDir}"
     install -m 0644 ${hermesBashProfile} "$PROF"
     install -m 0644 ${hermesBashProfile} "$BPROF"
     chown ${cfg.user}:${cfg.user} "$PROF" "$BPROF"
