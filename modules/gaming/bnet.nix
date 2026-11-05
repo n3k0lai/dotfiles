@@ -197,6 +197,24 @@ let
     windowrule = match:class ^(steam_app_default)$, match:title ^$, no_focus on
     windowrule = match:class ^(steam_app_default)$, match:title ^$, border_size 0
     windowrule = match:class ^(steam_app_default)$, match:title ^$, no_shadow on
+    # WoW Forever / Retail (class steam_app_default under umu/Proton; wow.exe under wine).
+    # Config.wtf has GxMaximize=1: the client keeps requesting maximize/fullscreen while
+    # Hyprland's default tile state never satisfies it → fullscreen↔tile loop several
+    # times/sec until the user SUPER+F. Force compositor fullscreen at map and report
+    # fullscreen (2) to the client so the fight stops. Mirror WC3 chrome cleanup.
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), fullscreen on
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), fullscreen_state 2 2
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), border_size 0
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), rounding 0
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), no_shadow on
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), opaque on
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), immediate on
+    windowrule = match:class ^(wow\.exe)$, fullscreen on
+    windowrule = match:class ^(wow\.exe)$, fullscreen_state 2 2
+    windowrule = match:class ^(wow\.exe)$, border_size 0
+    windowrule = match:class ^(wow\.exe)$, rounding 0
+    windowrule = match:class ^(wow\.exe)$, opaque on
+    windowrule = match:class ^(wow\.exe)$, immediate on
     windowrule = match:class ^(steam_app_default)$, match:title ^(Warcraft III), float on
     windowrule = match:class ^(steam_app_default)$, match:title ^(Warcraft III), center on
     windowrule = match:class ^(steam_app_default)$, match:title ^(Warcraft III), monitor DP-3
