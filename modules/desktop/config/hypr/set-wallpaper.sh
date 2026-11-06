@@ -10,17 +10,18 @@ VIDEO_WALLPAPER="$HOME/.local/share/assets/waves.mp4"
 LOCKFILE="/tmp/set-wallpaper.lock"
 WATCHDOG_PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/mpvpaper-watchdog.pid"
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-# auto-copy hwdec sits ~500 MiB per display at start; 1.8 still leaks on top of that.
-# Recycle well before the old 12 GiB-per-instance blow-up, but above the working set.
+# nvdec working set is much smaller than auto-copy (~500 MiB/display); keep headroom
+# for any leftover leak. Recycle well before the old 12 GiB-per-instance blow-up.
 RSS_LIMIT_KB=$((1536 * 1024))
 WATCHDOG_INTERVAL=60
 
 # config=no: ignore ~/.config/mpv (a user cache=yes would undo the caps).
-# hwdec=auto-copy-safe: GPU decode with copy-back — zero-copy EGL interop is
-#   flaky on NVIDIA+Wayland and is the GL-fence leak path in mpvpaper < 1.9.
+# hwdec=nvdec: zero-copy NVDEC (mpvpaper 1.9 stubs the old GL-fence leak).
+#   Fall back to nvdec-copy if interop fails on NVIDIA+Wayland.
+# video-sync=display-vdrop: present at the source fps (25), never resample to 144.
 # cache=no + tiny demuxer: local 6 MiB loop does not need 150 MiB of packets.
 # loop-file=inf: loop this file; plain `loop` is a playlist loop.
-MPV_COMMON="config=no no-audio loop-file=inf hwdec=auto-copy-safe cache=no demuxer-max-bytes=32MiB demuxer-max-back-bytes=16MiB interpolation=no osd-level=0 osc=no terminal=no"
+MPV_COMMON="config=no no-audio loop-file=inf hwdec=nvdec vo=gpu video-sync=display-vdrop interpolation=no cache=no demuxer-max-bytes=32MiB demuxer-max-back-bytes=16MiB osd-level=0 osc=no terminal=no"
 
 mpvpaper_pids() {
     pgrep -x mpvpaper 2>/dev/null
@@ -130,12 +131,14 @@ while read -r monitor; do
     else
         MPV_OPTS="$MPV_COMMON"
     fi
+    MPV_OPTS="$MPV_OPTS input-ipc-server=${XDG_RUNTIME_DIR}/mpvpaper-${MONITOR_NAME}.sock"
 
     # -p: pause when the wallpaper is fully covered (saves CPU; leak is per-frame).
+    # -a full: also pause when any window on that output is fullscreen (WoW).
     # 200>&- : this script holds the flock on fd 200. Inherited by mpvpaper,
     # it pins the lock for the life of the wallpaper and every later
     # restart (including the RSS watchdog) exits without doing anything.
-    nohup mpvpaper -p -o "$MPV_OPTS" "$MONITOR_NAME" "$VIDEO_WALLPAPER" >/dev/null 2>&1 200>&- &
+    nohup mpvpaper -p -a full -o "$MPV_OPTS" "$MONITOR_NAME" "$VIDEO_WALLPAPER" >/dev/null 2>&1 200>&- &
     disown
 done < <(echo "$MONITOR_DATA" | jq -c '.[]')
 
