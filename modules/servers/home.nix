@@ -1,10 +1,11 @@
 # Home Assistant automation server module (rook primary)
 # Matter via python-matter-server; MQTT; Hue/Nanoleaf; weather (NWS + Met.no)
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, privateHosts ? {}, ... }:
 
 with lib;
 
 let
+  hosts = recursiveUpdate (import ../private/hosts.example.nix) privateHosts;
   cfg = config.modules.servers.homeAssistant;
   hermesCfg = config.modules.servers.hermes;
   trustedProxies = [ "127.0.0.1" "::1" ] ++ cfg.trustedProxyCidrs;
@@ -83,7 +84,7 @@ in {
 
     # Tapo C200 (Elon) — one-line RTSP URL in agenix, not public git.
     # File contents example:
-    #   rtsp://camuser:campass@192.0.2.10:554/stream1
+    #   rtsp://user:pass@HOST:554/stream1
     c200RtspSecretFile = mkOption {
       type = types.path;
       default = ../servers/secrets/tapo_c200_rtsp.age;
@@ -92,8 +93,8 @@ in {
 
     c200Host = mkOption {
       type = types.str;
-      default = "192.0.2.10";
-      description = "Tapo C200 LAN IP (MAC 00:00:5E:00:53:0C); reserve in DHCP";
+      default = hosts.lan.c200;
+      description = "Tapo C200 LAN IP; reserve in DHCP";
     };
 
     longLivedTokenFile = mkOption {
@@ -128,7 +129,7 @@ in {
     edgeMqttPeers = mkOption {
       type = types.listOf types.str;
       default = [ ];
-      example = [ "pati0.example.ts.net" ];
+      example = [ "pati0" ];
       description = "Documented MQTT/edge peers (informational; used in comments + firewall notes)";
     };
   };
@@ -365,7 +366,7 @@ in {
         # Bluetooth (adapters, passive monitoring; pairs with matter BLE commission)
         "bluetooth"
         "bluetooth_adapters"
-        # Weather — NWS for Northern Virginia / Northern Virginia; met kept for cleanup/re-add
+        # Weather — NWS for Northern Virginia; met kept for cleanup/re-add
         "met"
         "nws"
         "accuweather"
@@ -424,7 +425,7 @@ in {
         # config-entry only (Settings → Generic Camera); YAML platform:generic
         # is rejected by HA 2025+ ("Unused YAML configuration for generic").
         ffmpeg = { };
-        # Live entry: camera.192_0_2_10 → http://192.0.2.10:8081/{snapshot.jpg,stream.mjpg}
+        # Live entry: patio camera via Generic Camera (pati0 snapshot/stream on :8081)
 
         # Recorder / history stay on default_config defaults unless we outgrow SD/disk
       };

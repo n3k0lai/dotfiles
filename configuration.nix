@@ -27,6 +27,8 @@ in
       
       # System hardening
       ./modules/core/security.nix
+      ./modules/security/agenix.nix
+      ./modules/security/private-inventory.nix
       ./modules/core/skip-package-docs.nix
 
       # Dev mode (hot-reload configs)

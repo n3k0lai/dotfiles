@@ -6,16 +6,18 @@
 #   - patio fan-lights (BT/IR shim) → MQTT entities on rook
 #   - optional meshtastic later (module not imported until hash filled)
 #
-# Network: LAN 192.0.2.10 (DHCP) · MAC 00:00:5E:00:53:0D · Tailscale TBD
-# MQTT / HA: rook Tailscale 203.0.113.11
+# Network: LAN address and MAC live in the private host inventory
+# MQTT / HA: rook via Tailscale (see private inventory)
 #
 # Build / switch ON the Pi (aarch64):
 #   sudo nixos-rebuild switch --flake /path/to/dotfiles#pati0
 # Cross-eval from rook/kiss is OK; full build needs aarch64 or binfmt.
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, privateHosts ? {}, ... }:
 
 let
-  rookTs = "203.0.113.11";
+  hosts = lib.recursiveUpdate (import ../modules/private/hosts.example.nix) privateHosts;
+  rookTs = hosts.tailscale.rook;
+  pati0Lan = hosts.lan.pati0;
   rookMqttHost = rookTs;
   rookHaUrl = "http://${rookTs}:8123";
 
@@ -231,10 +233,10 @@ in
   '';
 
   environment.etc."pati0/rtlsdr.env".text = ''
-    RTL_TCP_HOST=192.0.2.10
+    RTL_TCP_HOST=${pati0Lan}
     RTL_TCP_PORT=1234
-    RTL_TCP_URL=rtl_tcp=192.0.2.10:1234
-    # GQRX: rtl_tcp=192.0.2.10:1234
+    RTL_TCP_URL=rtl_tcp=${pati0Lan}:1234
+    # GQRX: rtl_tcp=${pati0Lan}:1234
   '';
 
   # --- camera + edge packages ---
@@ -264,7 +266,7 @@ in
     ROOK_MQTT_PORT=1883
     ROOK_HA_URL=${rookHaUrl}
     ROOK_TAILSCALE_IP=${rookTs}
-    ROOK_TS_DNS=rook.example.ts.net
+    ROOK_TS_DNS=${hosts.tailscale.rookMagicDns}
     PATI0_CAMERA_OVERLAY=${cameraOverlay}
   '';
 
@@ -282,8 +284,8 @@ in
   # Camera device contract + HA stream URLs
   environment.etc."pati0/cameras.json".text = builtins.toJSON {
     rook_ha_url = rookHaUrl;
-    mjpeg_url = "http://192.0.2.10:8081/stream.mjpg";
-    snapshot_url = "http://192.0.2.10:8081/snapshot.jpg";
+    mjpeg_url = "http://${pati0Lan}:8081/stream.mjpg";
+    snapshot_url = "http://${pati0Lan}:8081/snapshot.jpg";
     devices = [
       {
         name = "patio";

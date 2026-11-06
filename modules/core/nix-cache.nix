@@ -6,11 +6,13 @@
 # not known until then, so `publicKey` defaults to null and the substituter is
 # only added once the key is pasted into the default below. Until then this
 # module only sets the timeout/fallback knobs, so it is safe to enable early.
-{ config, lib, ... }:
+{ config, lib, privateHosts ? {}, ... }:
 
 with lib;
 
 let
+  hosts = lib.recursiveUpdate (import ../private/hosts.example.nix) privateHosts;
+  rookDns = hosts.tailscale.rookMagicDns;
   cfg = config.modules.core.nixCache;
   rookHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKc43hg3+7eZ8JUTNNi+F0k2fjs8nVusG8wcLCj8Xc4A"; # secrets.nix: rook
 in
@@ -20,7 +22,7 @@ in
 
     url = mkOption {
       type = types.str;
-      default = "http://rook.example.ts.net:8190/rook";
+      default = "http://${rookDns}:8190/rook";
       description = "Substituter URL (<atticd api-endpoint>/<cache name>).";
     };
 
@@ -36,7 +38,7 @@ in
       enable = mkEnableOption "rook as a nix.buildMachines remote builder (needs a root SSH key, see below)";
       hostName = mkOption {
         type = types.str;
-        default = "rook.example.ts.net";
+        default = rookDns;
       };
       sshUser = mkOption {
         type = types.str;

@@ -4,9 +4,12 @@
 # Boot:
 #   1. sudo nixos-rebuild switch --flake ~/Code/nix#rook
 #   2. sudo tailscale up
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, privateHosts ? {}, ... }:
 
 let
+  hosts = lib.recursiveUpdate (import ../modules/private/hosts.example.nix) privateHosts;
+  rookDns = hosts.tailscale.rookMagicDns;
+  tsDomain = hosts.tailscale.domain;
   fortune-zh-module = import ../modules/core/fortune-zh.nix { inherit pkgs; };
 in
 {
@@ -65,10 +68,10 @@ in
     a2a = {
       enable = true;
       agentName = "rook";
-      publicUrl = "http://rook.example.ts.net:9900";
+      publicUrl = "http://${rookDns}:9900";
       trustedPeers = [ "ene" ];
       peers.ene = {
-        url = "http://ene.example.ts.net:9900";
+        url = "http://ene.${tsDomain}:9900";
         capabilities = [ "life" "research" ];
         outboundTokenEnv = "A2A_OUTBOUND_TOKEN_ENE";
       };
@@ -78,14 +81,14 @@ in
     # Remote gateway from the desktop app.  Same pattern as ene.  The
     # hermes-dashboard.service keeps occupying 9119 (browser admin panel), so
     # the backend serves on 9121.
-    services.hermes-agent.backend = {
-      mode = "serve";
-      host = "rook.example.ts.net";
-      waitFor = "hostname";
-      port = 9121;
-      sessionTokenFile = "/run/agenix/hermes-desktop-token";
-    };
+  };
 
+  services.hermes-agent.backend = {
+    mode = "serve";
+    host = rookDns;
+    waitFor = "hostname";
+    port = 9121;
+    sessionTokenFile = "/run/agenix/hermes-desktop-token";
   };
 
   networking.firewall.interfaces.tailscale0.allowedTCPPorts =
@@ -94,7 +97,7 @@ in
   # Off until honcho_xai_api_key.age exists and embeddingDimensions is probed.
   modules.servers.honcho.enable = false;
 
-  # Ene fetches GET /v1/usage/weekly over tailnet (MagicDNS rook.example.ts.net:9855)
+  # Ene fetches GET /v1/usage/weekly over tailnet (MagicDNS rook:9855)
   modules.servers.supergrokUsageApi = {
     enable = true;
     hostName = "rook";
@@ -507,8 +510,8 @@ in
   # === BUILD SERVER ===
   # Rook builds for the whole fleet; ene never builds its own system.
   # Everything here is tailnet-only (tailscale0 is trusted; nothing new on LAN).
-  #   Attic cache  http://rook.example.ts.net:8190/rook
-  #   Forgejo      http://rook.example.ts.net:3000
+  #   Attic cache  http://rook:8190/rook
+  #   Forgejo      http://rook:3000
   # atticd and attic-watch-store stay off until their .age files exist.
   modules.servers.attic.enable = true;
   modules.servers.git.enable = true;

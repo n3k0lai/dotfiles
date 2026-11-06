@@ -1,6 +1,11 @@
 # My server in the data center. Currently a DigitalOcean droplet.
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, privateHosts ? {}, ... }:
 
+let
+  hosts = lib.recursiveUpdate (import ../modules/private/hosts.example.nix) privateHosts;
+  rookDns = hosts.tailscale.rookMagicDns;
+  tsDomain = hosts.tailscale.domain;
+in
 {
   imports = [
     # Web server (Caddy)
@@ -107,15 +112,15 @@
     a2a = {
       enable = true;
       agentName = "ene";
-      publicUrl = "http://ene.example.ts.net:9900";
+      publicUrl = "http://ene.${tsDomain}:9900";
       trustedPeers = [ "rook" ];
       peers.rook = {
-        url = "http://rook.example.ts.net:9900";
+        url = "http://${rookDns}:9900";
         capabilities = [ "work" "tickets" ];
         outboundTokenEnv = "A2A_OUTBOUND_TOKEN_ROOK";
       };
       peers.kiss = {
-        url = "http://kiss.example.ts.net:9901";
+        url = "http://kiss.${tsDomain}:9901";
         capabilities = [ "work" "tickets" ];
         outboundTokenEnv = "A2A_OUTBOUND_TOKEN_KISS";
       };
@@ -134,7 +139,7 @@
   };
   services.hermes-agent.backend = {
     mode = "serve"; # headless: no web UI build, /api/ws + /api/pty for Desktop
-    host = "ene.example.ts.net"; # bind name clients use (Host check)
+    host = "ene.${tsDomain}"; # bind name clients use (Host check)
     waitFor = "hostname"; # MagicDNS may resolve after boot
     port = 9119;
     sessionTokenFile = "/run/agenix/hermes-desktop-token";
@@ -166,7 +171,7 @@
   modules.servers.terraria.enable = true;
   modules.servers.even-g2.enable = true;
 
-  # Private F-Droid repo: https://ene.example.ts.net/fdroid/repo (tailnet only).
+  # Private F-Droid repo: https://ene.${tsDomain}/fdroid/repo (tailnet only).
   # Grok Bot uploads to /var/lib/fdroid-repo/inbox as grokbot-ene; the ingest re-checks
   # cert pins + versionCode and signs the index. `fdroid-repo-info` prints the fingerprint + QR.
   modules.servers.fdroid-repo.enable = true;

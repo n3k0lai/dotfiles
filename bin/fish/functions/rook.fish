@@ -1,5 +1,5 @@
 # rook — host ops for the Rook server (rebuild + hermes hop + A2A + upload)
-# On kiss: SSH Host "rook" (agenix ssh_config → rook.example.ts.net).
+# On kiss: SSH Host "rook" (agenix ssh_config → rook).
 # On rook: local. Override with ROOK_SSH if needed.
 # See: rook help · rook a2a help · rook upload help
 function rook

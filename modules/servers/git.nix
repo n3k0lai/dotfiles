@@ -12,11 +12,13 @@
 #   to Svalbard when it is mounted.
 # - Pull mirrors of GitHub repos are created in the web UI or API; see
 #   docs/rook-build-server.md. This module only enables mirroring.
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, privateHosts ? {}, ... }:
 
 with lib;
 
 let
+  hosts = lib.recursiveUpdate (import ../private/hosts.example.nix) privateHosts;
+  rookDns = hosts.tailscale.rookMagicDns;
   cfg = config.modules.servers.git;
   fj = config.services.forgejo;
 in
@@ -31,7 +33,7 @@ in
 
     domain = mkOption {
       type = types.str;
-      default = "rook.example.ts.net";
+      default = rookDns;
     };
 
     offloadDir = mkOption {

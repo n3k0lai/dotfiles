@@ -19,11 +19,13 @@
 #   fdroid-repo-info                          # URL, fingerprint, add-repo QR
 #   journalctl -u fdroid-repo-ingest -n 50    # what got published or rejected
 #   cat /var/lib/fdroid-repo/status/<pkg>_<versionCode>
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, privateHosts ? {}, ... }:
 
 with lib;
 
 let
+  hosts = lib.recursiveUpdate (import ../private/hosts.example.nix) privateHosts;
+  tsDomain = hosts.tailscale.domain;
   cfg = config.modules.servers.fdroid-repo;
 
   repoUrl = "https://${cfg.hostName}${cfg.urlPath}/repo";
@@ -100,8 +102,8 @@ in {
 
     hostName = mkOption {
       type = types.str;
-      default = "${config.networking.hostName}.example.ts.net";
-      defaultText = literalExpression ''"''${networking.hostName}.example.ts.net"'';
+      default = "${config.networking.hostName}.${tsDomain}";
+      defaultText = literalExpression ''"''${networking.hostName}.<tailnet>"'';
       description = "MagicDNS name the repo is served on (needs HTTPS certs enabled on the tailnet).";
     };
 

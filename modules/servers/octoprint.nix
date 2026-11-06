@@ -3,7 +3,7 @@
 # OctoPrint — Web interface for Ender 3 V1
 # Printer: Creality Ender 3 V1 (SKR Mini E3 V2.0, BLTouch, Glass Bed)
 # Webcam: Logitech BRIO (mounted upside-down)
-# Access: Tailscale only (203.0.113.10/8), proxied via octo.comfy.sh (Ene/Caddy)
+# Access: Tailscale only, proxied via octo.comfy.sh (Ene/Caddy)
 
 {
   services.octoprint = {

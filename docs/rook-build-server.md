@@ -6,8 +6,8 @@ firewall trusts; nothing new is opened on LAN or WAN.
 
 | Service | URL | Module |
 | --- | --- | --- |
-| Attic cache | `http://rook.example.ts.net:8190/rook` | `modules/servers/attic.nix` |
-| Forgejo | `http://rook.example.ts.net:3000` (ssh: `forgejo@rook…:owner/repo.git`) | `modules/servers/git.nix` |
+| Attic cache | `http://rook:8190/rook` | `modules/servers/attic.nix` |
+| Forgejo | `http://rook:3000` (ssh: `forgejo@rook…:owner/repo.git`) | `modules/servers/git.nix` |
 | Scheduled fleet builds, low-priority daemon, remote builder | — | `modules/servers/build-server.nix` |
 | Client side (substituter, optional remote builder) | — | `modules/core/nix-cache.nix` |
 
@@ -119,7 +119,7 @@ forgejo-cli admin user create \
   --admin --username nicholai --email nicholai@comfy.sh --random-password
 ```
 
-Log in at `http://rook.example.ts.net:3000`, change the password, add
+Log in at `http://rook:3000`, change the password, add
 your SSH key, and enable 2FA.
 
 ### 4. Pull mirrors of GitHub repos
@@ -131,7 +131,7 @@ be a mirror**, add the token, and set the interval (default 8 h). Or with the
 API:
 
 ```sh
-curl -sS -X POST http://rook.example.ts.net:3000/api/v1/repos/migrate \
+curl -sS -X POST http://rook:3000/api/v1/repos/migrate \
   -H "Authorization: token <forgejo-token>" -H 'Content-Type: application/json' \
   -d '{"clone_addr":"https://github.com/n3k0lai/dotfiles","repo_name":"dotfiles",
        "repo_owner":"nicholai","service":"github","mirror":true,

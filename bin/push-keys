@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Fetch per-host keys and the personal age identity from Bitwarden (rbw)
+# and copy them onto a new machine before install.
+#
+# Usage: push-keys HOST [SSH_TARGET]
+#   HOST        networking.hostName (Bitwarden item suffix)
+#   SSH_TARGET  defaults to root@HOST
+#
+# Expected Bitwarden items (create them yourself; this script is read-only):
+#   dotfiles/host-key/<HOST>       -> /etc/ssh/host_ed25519
+#   dotfiles/age-identity/nicho    -> ~/.config/age/identity  (optional)
+set -euo pipefail
+
+usage() {
+  echo "usage: push-keys HOST [SSH_TARGET]" >&2
+  exit 2
+}
+
+HOST="${1:-}"
+[[ -n "$HOST" ]] || usage
+TARGET="${2:-root@${HOST}}"
+
+item_host="dotfiles/host-key/${HOST}"
+item_user="dotfiles/age-identity/nicho"
+
+if ! command -v rbw >/dev/null 2>&1; then
+  echo "push-keys: rbw is not installed (Bitwarden CLI)" >&2
+  exit 1
+fi
+
+fetch_item() {
+  local name="$1"
+  local value=""
+  if ! rbw get "$name" >/dev/null 2>&1; then
+    return 1
+  fi
+  value="$(rbw get "$name" 2>/dev/null || true)"
+  if [[ -z "$value" ]]; then
+    value="$(rbw get "$name" --field notes 2>/dev/null || true)"
+  fi
+  if [[ -z "$value" ]]; then
+    echo "push-keys: item '$name' exists but password/notes are empty" >&2
+    return 1
+  fi
+  printf '%s' "$value"
+}
+
+if ! key="$(fetch_item "$item_host")"; then
+  echo "push-keys: missing Bitwarden item '$item_host'" >&2
+  echo "Create it first (see docs/secrets.md). Nothing was copied." >&2
+  exit 1
+fi
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+printf '%s
+' "$key" >"$tmp"
+chmod 600 "$tmp"
+
+echo "push-keys: installing host key on ${TARGET}:/etc/ssh/host_ed25519"
+ssh "$TARGET" 'mkdir -p /etc/ssh && chmod 755 /etc/ssh'
+scp -q "$tmp" "${TARGET}:/etc/ssh/host_ed25519"
+ssh "$TARGET" 'chmod 600 /etc/ssh/host_ed25519 && chown root:root /etc/ssh/host_ed25519'
+
+if userkey="$(fetch_item "$item_user")"; then
+  printf '%s
+' "$userkey" >"$tmp"
+  chmod 600 "$tmp"
+  echo "push-keys: installing age identity on ${TARGET}:.config/age/identity"
+  # Prefer the connecting user's home when the target is not root-only.
+  ssh "$TARGET" 'umask 077; mkdir -p ~/.config/age'
+  scp -q "$tmp" "${TARGET}:.config/age/identity"
+  ssh "$TARGET" 'chmod 600 ~/.config/age/identity'
+else
+  echo "push-keys: optional item '$item_user' not found; skipped age identity"
+fi
+
+echo "push-keys: done"

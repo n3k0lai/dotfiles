@@ -1,9 +1,13 @@
 # My main pc. The motherload. The queen.
 # where I live and where I build.
-{ config, lib, pkgs, hermes-agent, ... }:
+{ config, lib, pkgs, hermes-agent, privateHosts ? {}, ... }:
 
 with lib;
 
+let
+  hosts = recursiveUpdate (import ../modules/private/hosts.example.nix) privateHosts;
+  tsDomain = hosts.tailscale.domain;
+in
 {
   imports = [
     ../modules/hardware/scarlett.nix
@@ -109,7 +113,7 @@ with lib;
       };
       backend = {
         mode = "serve"; # headless web server (desktop app + kiosk agent)
-        host = "kiss.example.ts.net";
+        host = "kiss.${tsDomain}";
         port = 9901;
         waitFor = "hostname";
         sessionTokenFile = null; # keep the deskop's ene remote-gateway entry untouched

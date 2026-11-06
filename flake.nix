@@ -53,12 +53,21 @@
       url = "github:n3k0lai/OpenCut";
       flake = false;
     };
+
+    # Private host inventory (LAN / Tailscale / MACs / labels). Stay private.
+    private = {
+      url = "git+ssh://git@github.com/n3k0lai/dotfiles-private";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, nixpkgs-25_05, home-manager, home-manager-25_05, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, opencut-src, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, nixpkgs-25_05, home-manager, home-manager-25_05, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, opencut-src, private, ... }:
   let
     system = "x86_64-linux";
     pkgs-unstable = import nixpkgs-unstable { inherit system; config.allowUnfree = true; };
+    privateHosts = nixpkgs.lib.recursiveUpdate
+      (import ./modules/private/hosts.example.nix)
+      (if builtins.pathExists "${private}/hosts.nix" then import "${private}/hosts.nix" else { });
   in {
     packages.x86_64-linux.opencut = pkgs-unstable.callPackage ./modules/editors/opencut/package.nix {
       src = opencut-src;
@@ -68,13 +77,14 @@
       # Desktop workstation
       kiss = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit pkgs-unstable opencut-src hermes-agent; };
+        specialArgs = { inherit pkgs-unstable opencut-src hermes-agent privateHosts; };
         modules = [
           ./hardware-configuration.nix
           ./configuration.nix
           ./hosts/kiss.nix
           home-manager.nixosModules.home-manager
           agenix.nixosModules.default
+          hermes-agent.nixosModules.default
           {
             nixpkgs.overlays = [
               agenix.overlays.default
@@ -87,7 +97,7 @@
       # DigitalOcean server
       ene = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = { inherit hermes-agent; };
+        specialArgs = { inherit hermes-agent privateHosts; };
         modules = [
           ./hosts/ene-hardware.nix
           ./configuration-server.nix
@@ -104,6 +114,7 @@
       # Artemis telemetry server
       artemis = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+        specialArgs = { inherit privateHosts; };
         modules = [
           ./hosts/artemis-hardware.nix
           ./configuration-server.nix
@@ -122,6 +133,7 @@
       # Gen 11 on 26.05 / kernel 6.18 stalled after initrd on UUID-only disks.
       blade = nixpkgs-unstable.lib.nixosSystem {
         inherit system;
+        specialArgs = { inherit privateHosts; };
         modules = [
           { nixpkgs.config.allowUnfree = true; }
           ./hosts/blade-hardware.nix
@@ -135,7 +147,7 @@
       # Work agent server (formerly Chat)
       rook = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = { inherit hermes-agent; };
+        specialArgs = { inherit hermes-agent privateHosts; };
         modules = [
           ./hosts/rook-hardware.nix
           ./configuration-server.nix
@@ -154,6 +166,7 @@
       # Switch on-device: nixos-rebuild switch --flake .#pati0
       pati0 = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";
+        specialArgs = { inherit privateHosts; };
         modules = [
           ./hosts/pati0-hardware.nix
           ./hosts/pati0.nix

@@ -28,9 +28,32 @@ function trim_iface_label --argument-names name
     end
 end
 
-# Human-readable label for the sidebar. WiFi → SSID. kiss ethernet is
-# always the home LAN (HomeLAN). One known USB NIC by MAC.
+# Human-readable label for the sidebar. WiFi → SSID.
+# kiss ethernet and known NICs read labels from network-labels files.
 # Otherwise NM connection name, then udev model, then iface.
+
+# Labels that would identify the home network live outside this public script.
+# /etc/dotfiles/network-labels is deployed from the private inventory;
+# ~/.config/eww/network-labels can override it.
+#   kiss_ethernet <label>
+#   mac <addr> <label>
+function network_label_lookup --argument-names prefix
+    set -l files /etc/dotfiles/network-labels $HOME/.config/eww/network-labels
+    if set -q XDG_CONFIG_HOME
+        set -p files $XDG_CONFIG_HOME/eww/network-labels
+    end
+    for f in $files
+        if test -f "$f"
+            set -l line (grep -E -- "^$prefix " "$f" | head -n1)
+            if test -n "$line"
+                echo (string replace -r -- "^$prefix\s+" "" $line)
+                return 0
+            end
+        end
+    end
+    return 1
+end
+
 function iface_label --argument-names iface
     set -l type (nmcli -t -g GENERAL.TYPE device show $iface 2>/dev/null)
     if test "$type" = wifi
@@ -42,15 +65,20 @@ function iface_label --argument-names iface
     end
 
     if test (hostname) = kiss; and test "$type" = ethernet
-        echo "HomeLAN"
-        return
+        set -l lan (network_label_lookup kiss_ethernet)
+        if test -n "$lan"
+            echo $lan
+            return
+        end
     end
 
     set -l mac (string lower (cat /sys/class/net/$iface/address 2>/dev/null))
-    switch $mac
-        case 00:00:5E:00:53:0A
-            echo "MGC Dongle"
+    if test -n "$mac"
+        set -l nic (network_label_lookup "mac $mac")
+        if test -n "$nic"
+            echo $nic
             return
+        end
     end
 
     set -l conn (nmcli -t -g GENERAL.CONNECTION device show $iface 2>/dev/null)

@@ -538,6 +538,22 @@
         "type": "github"
       }
     },
+    "private": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793990671,
+        "narHash": "sha256-SDiJGgpbzcYFDU93HJpwP1KS6hYz/YqYlqE0/T+Ux54=",
+        "ref": "refs/heads/master",
+        "rev": "543744a7265ca247a58c36155d96461359d6d206",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github.com/n3k0lai/dotfiles-private"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/n3k0lai/dotfiles-private"
+      }
+    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -601,7 +617,8 @@
         "nixpkgs": "nixpkgs_3",
         "nixpkgs-25_05": "nixpkgs-25_05",
         "nixpkgs-unstable": "nixpkgs-unstable",
-        "opencut-src": "opencut-src"
+        "opencut-src": "opencut-src",
+        "private": "private"
       }
     },
     "scss-reset": {

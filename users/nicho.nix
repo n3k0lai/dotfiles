@@ -63,6 +63,7 @@
     };
 
     home.packages = with pkgs; [
+      rbw
       zip
       unzip
       p7zip

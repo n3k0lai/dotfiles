@@ -26,11 +26,13 @@
 #   attic_push_token.age  a JWT from `atticd-atticadm make-token` (push+pull)
 # Each part stays off (with an eval warning) until its .age file exists, so
 # the repo evaluates before the secrets are created.
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, privateHosts ? {}, ... }:
 
 with lib;
 
 let
+  hosts = lib.recursiveUpdate (import ../private/hosts.example.nix) privateHosts;
+  rookDns = hosts.tailscale.rookMagicDns;
   cfg = config.modules.servers.attic;
   envReady = builtins.pathExists cfg.envSecret;
   tokenReady = builtins.pathExists cfg.pushTokenSecret;
@@ -48,7 +50,7 @@ in
 
     hostName = mkOption {
       type = types.str;
-      default = "rook.example.ts.net";
+      default = rookDns;
       description = "MagicDNS name clients use; becomes the api-endpoint.";
     };
 

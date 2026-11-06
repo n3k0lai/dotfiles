@@ -25,6 +25,8 @@ in
     # Same desktop/user stack as configuration.nix. Host extras (VM, OBD)
     # stay below. Games / work / cad / emacs later, same pattern as kiss.nix.
     ../users/nicho.nix
+    ../modules/security/agenix.nix
+    ../modules/security/private-inventory.nix
     ../bin/default.nix
     ../modules/core/dev-mode.nix
     ../modules/core/kitty.nix

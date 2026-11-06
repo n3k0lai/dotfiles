@@ -286,12 +286,12 @@ systemctl status hermes-agent --no-pager -l | head -20
             set -l a2a_peer_url
             set -l a2a_peer_name
             if test "$target" = ene
-                set a2a_self_url "http://ene.example.ts.net:9900"
-                set a2a_peer_url "http://rook.example.ts.net:9900"
+                set a2a_self_url "http://ene:9900"
+                set a2a_peer_url "http://rook:9900"
                 set a2a_peer_name rook
             else if test "$target" = rook
-                set a2a_self_url "http://rook.example.ts.net:9900"
-                set a2a_peer_url "http://ene.example.ts.net:9900"
+                set a2a_self_url "http://rook:9900"
+                set a2a_peer_url "http://ene:9900"
                 set a2a_peer_name ene
             else
                 set a2a_self_url "http://127.0.0.1:9900"

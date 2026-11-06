@@ -24,7 +24,7 @@ let
       address = mkOption {
         type = types.str;
         description = "Bluetooth identity address from `bluetoothctl info`";
-        example = "00:00:5E:00:53:0B";
+        example = "00:00:5E:00:53:01";
       };
       channel = mkOption {
         type = types.ints.between 1 9;
