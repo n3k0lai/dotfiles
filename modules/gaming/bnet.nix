@@ -186,31 +186,62 @@ let
     ${optionalString (cfg.primaryOutput != null) ''
     exec-once = xrandr --output ${cfg.primaryOutput} --primary
     ''}
-    # Launcher is a resizable CEF window (no min=max size hints). Tile it.
-    # force_rgbx stays: CEF's alpha buffer goes black without it.
-    windowrule = match:class ^(steam_app_default)$, match:title ^(Battle\.net), tile on
+    # Target UX: Drawer TUI stays focused on workspace 4 (portrait Zowie).
+    # Launch from the TUI; Battle.net never appears visibly; Forever maps
+    # fullscreen on workspace 2 on the gaming monitor (BenQ EX2710Q, DP-3)
+    # without stealing focus. Hyprland 0.55: windowrule = match:… form.
+    # $gamingM is not in scope here (extras.conf is sourced before monitors.conf),
+    # so the monitor pin uses DP-3 like the WC3 rules below.
+    #
+    # Applying the Battle.net hide rules will hide the currently visible
+    # launcher. Until headless launch is implemented, Lutris still starts
+    # Battle.net — the window will exist on special:bnet. Peek with:
+    #   hyprctl dispatch togglespecialworkspace bnet
+    # (no_focus is intentionally not set, so a peeked window stays clickable.)
+    windowrule = match:class ^(steam_app_default)$, match:title ^(Battle\.net), workspace special:bnet silent
+    windowrule = match:class ^(steam_app_default)$, match:title ^(Battle\.net), no_initial_focus on
     windowrule = match:class ^(steam_app_default)$, match:title ^(Battle\.net), force_rgbx on
+    windowrule = match:class ^(battle\.net\.exe)$, workspace special:bnet silent
+    windowrule = match:class ^(battle\.net\.exe)$, no_initial_focus on
     windowrule = match:class ^(battle\.net\.exe)$, force_rgbx on
     # explorer.exe /desktop: Proton's shell, empty title, size locked at 160x20.
     # Hyprland floats that in the corner. It is not a UI; do not close the process.
-    windowrule = match:class ^(steam_app_default)$, match:title ^$, workspace special:wine silent
-    windowrule = match:class ^(steam_app_default)$, match:title ^$, no_focus on
-    windowrule = match:class ^(steam_app_default)$, match:title ^$, border_size 0
-    windowrule = match:class ^(steam_app_default)$, match:title ^$, no_shadow on
+    # match:float 1 so a Forever window that maps with a transient empty title
+    # is not swallowed onto special:wine.
+    windowrule = match:class ^(steam_app_default)$, match:title ^$, match:float 1, workspace special:wine silent
+    windowrule = match:class ^(steam_app_default)$, match:title ^$, match:float 1, no_focus on
+    windowrule = match:class ^(steam_app_default)$, match:title ^$, match:float 1, no_initial_focus on
+    windowrule = match:class ^(steam_app_default)$, match:title ^$, match:float 1, border_size 0
+    windowrule = match:class ^(steam_app_default)$, match:title ^$, match:float 1, no_shadow on
+    # Wine IME helper (not observed on kiss today; harmless if absent).
+    windowrule = match:title ^(Default IME)$, workspace special:wine silent
+    windowrule = match:title ^(Default IME)$, no_focus on
+    windowrule = match:title ^(Default IME)$, no_initial_focus on
     # WoW Forever / Retail (class steam_app_default under umu/Proton; wow.exe under wine).
     # Config.wtf has GxMaximize=1: the client keeps requesting maximize/fullscreen while
     # Hyprland's default tile state never satisfies it → fullscreen↔tile loop several
     # times/sec until the user SUPER+F. Force compositor fullscreen at map and report
-    # fullscreen (2) to the client so the fight stops. Mirror WC3 chrome cleanup.
+    # fullscreen (2) to the client so the fight stops. Pin to workspace 2 silent so
+    # mapping does not switch or focus away from the TUI on workspace 4; suppress
+    # client activate/maximize events so follow_mouse=1 plus GxMaximize cannot yank
+    # the window onto the portrait monitor (1080x1920).
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), workspace 2 silent
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), monitor DP-3
     windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), fullscreen on
     windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), fullscreen_state 2 2
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), no_initial_focus on
+    windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), suppress_event maximize activate activatefocus
     windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), border_size 0
     windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), rounding 0
     windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), no_shadow on
     windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), opaque on
     windowrule = match:class ^(steam_app_default)$, match:title ^(World of Warcraft), immediate on
+    windowrule = match:class ^(wow\.exe)$, workspace 2 silent
+    windowrule = match:class ^(wow\.exe)$, monitor DP-3
     windowrule = match:class ^(wow\.exe)$, fullscreen on
     windowrule = match:class ^(wow\.exe)$, fullscreen_state 2 2
+    windowrule = match:class ^(wow\.exe)$, no_initial_focus on
+    windowrule = match:class ^(wow\.exe)$, suppress_event maximize activate activatefocus
     windowrule = match:class ^(wow\.exe)$, border_size 0
     windowrule = match:class ^(wow\.exe)$, rounding 0
     windowrule = match:class ^(wow\.exe)$, opaque on
