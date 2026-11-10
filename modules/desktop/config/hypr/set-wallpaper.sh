@@ -128,6 +128,9 @@ while read -r monitor; do
 
     if [[ "$MONITOR_DESC" == *"ZOWIE XL LCD LAG03858SL0"* ]]; then
         MPV_OPTS="$MPV_COMMON panscan=1.0 video-zoom=0.5 video-align-x=1 video-align-y=0"
+    elif [[ "$MONITOR_DESC" == *"XZ340CUR"* ]]; then
+        # 21:9 ultrawide: fill the width, crop top and bottom equally.
+        MPV_OPTS="$MPV_COMMON panscan=1.0"
     else
         MPV_OPTS="$MPV_COMMON"
     fi
