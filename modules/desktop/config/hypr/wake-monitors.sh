@@ -10,8 +10,8 @@
 # so the next modeset actually presents frames.
 
 VERT_DESC="desc:BNQ ZOWIE XL LCD LAG03858SL0"
-# Keep in sync with monitors-kiss.conf (60 Hz, transform 3, vrr off).
-VERT_SPEC="1920x1080@60, 4480x600, 1, transform, 3, vrr, 0"
+# Keep in sync with monitors-kiss.conf (120 Hz, transform 3, vrr off).
+VERT_SPEC="1920x1080@119.98, 4480x600, 1, transform, 3, vrr, 0"
 
 hyprctl dispatch dpms on
 
