@@ -167,6 +167,7 @@ in
     admin = "nicholai";
     elementWeb.enable = true; # chat.comfy.sh, waves theme
     gmessages.enable = true;
+    instagram.enable = true; # Instagram DMs (mautrix-instagram)
   };
 
   # Private F-Droid repo: https://ene.${tsDomain}/fdroid/repo (tailnet only).

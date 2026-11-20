@@ -32,6 +32,8 @@ in
   # and the mautrix-gmessages env file (pickle key + provisioning secret).
   "modules/servers/secrets/tuwunel_registration_token.age".publicKeys = [ ene nicho ];
   "modules/servers/secrets/mautrix_gmessages_env.age".publicKeys = [ ene nicho ];
+  # mautrix-instagram env file (pickle key + provisioning secret).
+  "modules/servers/secrets/mautrix_instagram_env.age".publicKeys = [ ene nicho ];
   # One line: raw session token for `hermes serve` (Hermes Desktop remote backend on ene).
   # Desktop (kiss) pastes the same value as the Remote gateway session token.
   # Include rook so agent host can decrypt SSH config (re-encrypt after changing recipients).

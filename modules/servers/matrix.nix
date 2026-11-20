@@ -15,6 +15,10 @@
 # - mautrix-gmessages is taken from nixpkgs-unstable but pinned to upstream
 #   v0.2611.0 (the flake lock is from 2026-05-31 and still has v0.2605.0).
 #   The pin is an overrideAttrs on the package only; the lock is not updated.
+# - mautrix-instagram (Instagram DMs) is built from the mautrix/meta repo
+#   (cmd/mautrix-instagram, v0.2611.0) on top of nixpkgs' mautrix-meta
+#   package. Since v26.08 mautrix-meta itself no longer does Instagram, so
+#   nixpkgs' services.mautrix-meta "instagram" mode doesn't apply.
 { config, pkgs, lib, pkgs-unstable, ... }:
 
 with lib;
@@ -30,6 +34,10 @@ let
   hasRegToken = builtins.pathExists regTokenFile;
   hasGmEnv = builtins.pathExists gmEnvFile;
   gmOn = cfg.gmessages.enable && hasGmEnv;
+  igEnvFile = secretsDir + "/mautrix_instagram_env.age";
+  hasIgEnv = builtins.pathExists igEnvFile;
+  igOn = cfg.instagram.enable && hasIgEnv;
+  anyBridge = gmOn || igOn;
 
   # ---------- mautrix-gmessages ----------
   gm = rec {
@@ -119,6 +127,70 @@ let
   };
   gmSettingsFile = (pkgs.formats.json { }).generate "mautrix-gmessages-config.json" gmSettings;
 
+  # ---------- mautrix-instagram ----------
+  ig = rec {
+    # mautrix/meta v0.2611.0 (2026-11-16), Instagram binary only. The flake's
+    # nixpkgs-unstable lock has mautrix-meta v0.2605.0. goolm as for gmessages.
+    pkg = (pkgs-unstable.mautrix-meta.override { withGoolm = true; }).overrideAttrs (o: rec {
+      pname = "mautrix-instagram";
+      version = "26.11";
+      tag = "v0.2611.0";
+      src = pkgs-unstable.fetchFromGitHub {
+        owner = "mautrix";
+        repo = "meta";
+        inherit tag;
+        hash = "sha256-cyA8zi+jrOC6SCRXSb2RNmqpZkpVzXShrHnCCoxPwJs=";
+      };
+      vendorHash = "sha256-sootqoQ0F6TjYnWYbXws2Nu6puCTA31oEtBN8F7lkQ8=";
+      subPackages = [ "cmd/mautrix-instagram" ];
+      ldflags = [
+        "-s"
+        "-w"
+        "-X"
+        "main.Tag=${tag}"
+      ];
+      meta = o.meta // { mainProgram = "mautrix-instagram"; };
+    });
+    dataDir = "/var/lib/mautrix-instagram";
+    port = 29319;
+    config = "${dataDir}/config.yaml";
+    registration = "${dataDir}/registration.yaml";
+  };
+  igSettings = {
+    homeserver = gmSettings.homeserver;
+    appservice = {
+      address = "http://127.0.0.1:${toString ig.port}";
+      hostname = "127.0.0.1";
+      port = ig.port;
+      id = "instagram";
+      bot = {
+        username = "instagrambot";
+        displayname = "Instagram";
+      };
+      username_template = "instagram_{{.}}";
+      as_token = ""; # copied from the generated registration in preStart
+      hs_token = "";
+    };
+    database = {
+      type = "sqlite3-fk-wal";
+      uri = "file:${ig.dataDir}/instagram.db?_txlock=immediate";
+    };
+    network = {
+      displayname_template = ''{{or .DisplayName .Username "Unknown user"}}'';
+    };
+    bridge = {
+      permissions = gmSettings.bridge.permissions;
+      personal_filtering_spaces = true; # one "Instagram" space
+    };
+    encryption = gmSettings.encryption // {
+      pickle_key = "$MAUTRIX_INSTAGRAM_PICKLE_KEY";
+    };
+    provisioning.shared_secret = "$MAUTRIX_INSTAGRAM_PROVISIONING_SECRET";
+    backfill.enabled = true;
+    logging = gmSettings.logging;
+  };
+  igSettingsFile = (pkgs.formats.json { }).generate "mautrix-instagram-config.json" igSettings;
+
   # ---------- Element Web ----------
   # Palette sampled from comfy.sh/assets/waves.mp4 (deep teal -> fog grey).
   # warning-color is a placeholder warm contrast; tune by eye.
@@ -185,6 +257,7 @@ in
       };
     };
     gmessages.enable = mkEnableOption "mautrix-gmessages (Google Messages SMS/RCS) bridge";
+    instagram.enable = mkEnableOption "mautrix-instagram (Instagram DMs) bridge";
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -194,7 +267,9 @@ in
         optional (!hasRegToken)
           "matrix: ${toString regTokenFile} is missing; Tuwunel registration stays closed."
         ++ optional (cfg.gmessages.enable && !hasGmEnv)
-          "matrix: ${toString gmEnvFile} is missing; mautrix-gmessages is not started.";
+          "matrix: ${toString gmEnvFile} is missing; mautrix-gmessages is not started."
+        ++ optional (cfg.instagram.enable && !hasIgEnv)
+          "matrix: ${toString igEnvFile} is missing; mautrix-instagram is not started.";
 
       services.matrix-tuwunel = {
         enable = true;
@@ -216,11 +291,12 @@ in
       };
 
       systemd.services.tuwunel = {
-        requires = optional gmOn "matrix-appservice-registrations.service";
-        after = optional gmOn "matrix-appservice-registrations.service";
+        requires = optional anyBridge "matrix-appservice-registrations.service";
+        after = optional anyBridge "matrix-appservice-registrations.service";
         serviceConfig.LoadCredential =
           optional hasRegToken "registration_token:${config.age.secrets.tuwunel_registration_token.path}"
-          ++ optional gmOn "gmessages.yaml:${gm.registration}";
+          ++ optional gmOn "gmessages.yaml:${gm.registration}"
+          ++ optional igOn "instagram.yaml:${ig.registration}";
       };
 
       services.caddy.virtualHosts.${cfg.publicHost}.extraConfig = ''
@@ -256,6 +332,38 @@ in
       '';
     })
 
+    # ---------------- appservice registrations ----------------
+    # Generates each bridge's registration once (as_token/hs_token). Runs
+    # before tuwunel so LoadCredential always finds the files.
+    (mkIf anyBridge {
+      systemd.services.matrix-appservice-registrations = {
+        description = "Generate Matrix appservice registrations (bridges)";
+        wantedBy = [ "multi-user.target" ];
+        before = [ "tuwunel.service" ];
+        after = [ "systemd-tmpfiles-setup.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          set -eu
+          gen() { # <binary> <settings.json> <registration> <user>
+            if [ ! -s "$3" ]; then
+              tmp=$(mktemp -d)
+              install -m 0600 "$2" "$tmp/config.yaml"
+              "$1" -g -c "$tmp/config.yaml" -r "$tmp/registration.yaml"
+              install -o "$4" -g "$4" -m 0600 "$tmp/registration.yaml" "$3"
+              rm -rf "$tmp"
+            fi
+          }
+        '' + optionalString gmOn ''
+          gen ${gm.pkg}/bin/mautrix-gmessages ${gmSettingsFile} ${gm.registration} mautrix-gmessages
+        '' + optionalString igOn ''
+          gen ${ig.pkg}/bin/mautrix-instagram ${igSettingsFile} ${ig.registration} mautrix-instagram
+        '';
+      };
+    })
+
     # ---------------- mautrix-gmessages ----------------
     (mkIf gmOn {
       users.users.mautrix-gmessages = {
@@ -273,31 +381,6 @@ in
       systemd.tmpfiles.rules = [
         "d ${gm.dataDir} 0700 mautrix-gmessages mautrix-gmessages - -"
       ];
-
-      # Generates the appservice registration once (as_token/hs_token). Runs
-      # before tuwunel so LoadCredential always finds the file.
-      systemd.services.matrix-appservice-registrations = {
-        description = "Generate Matrix appservice registrations (bridges)";
-        wantedBy = [ "multi-user.target" ];
-        before = [ "tuwunel.service" ];
-        after = [ "systemd-tmpfiles-setup.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          set -eu
-          if [ ! -s ${gm.registration} ]; then
-            tmp=$(mktemp -d)
-            install -m 0600 ${gmSettingsFile} "$tmp/config.yaml"
-            ${gm.pkg}/bin/mautrix-gmessages -g \
-              -c "$tmp/config.yaml" -r "$tmp/registration.yaml"
-            install -o mautrix-gmessages -g mautrix-gmessages -m 0600 \
-              "$tmp/registration.yaml" ${gm.registration}
-            rm -rf "$tmp"
-          fi
-        '';
-      };
 
       systemd.services.mautrix-gmessages = {
         description = "mautrix-gmessages (Google Messages SMS/RCS <-> Matrix)";
@@ -342,6 +425,65 @@ in
       # TODO(Nicholai): give grokbot-ene status/restart on tuwunel +
       # mautrix-gmessages? (modules.users.grokbot.agents.ene.sudoCommands in
       # hosts/ene.nix). Left out until he decides.
+    })
+
+    # ---------------- mautrix-instagram ----------------
+    (mkIf igOn {
+      users.users.mautrix-instagram = {
+        isSystemUser = true;
+        group = "mautrix-instagram";
+        home = ig.dataDir;
+      };
+      users.groups.mautrix-instagram = { };
+
+      age.secrets.mautrix_instagram_env = {
+        file = igEnvFile;
+        mode = "0400"; # root; read by systemd for EnvironmentFile
+      };
+
+      systemd.tmpfiles.rules = [
+        "d ${ig.dataDir} 0700 mautrix-instagram mautrix-instagram - -"
+      ];
+
+      systemd.services.mautrix-instagram = {
+        description = "mautrix-instagram (Instagram DMs <-> Matrix)";
+        wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
+        requires = [ "tuwunel.service" "matrix-appservice-registrations.service" ];
+        after = [ "network-online.target" "tuwunel.service" "matrix-appservice-registrations.service" ];
+        path = [ pkgs.ffmpeg-headless ];
+        preStart = ''
+          set -eu
+          umask 0177
+          ${pkgs.envsubst}/bin/envsubst -i ${igSettingsFile} -o ${ig.config}.subst
+          ${pkgs.yq}/bin/yq -s '.[0].appservice.as_token = .[1].as_token
+            | .[0].appservice.hs_token = .[1].hs_token | .[0]' \
+            ${ig.config}.subst ${ig.registration} > ${ig.config}
+          rm -f ${ig.config}.subst
+        '';
+        serviceConfig = {
+          User = "mautrix-instagram";
+          Group = "mautrix-instagram";
+          EnvironmentFile = config.age.secrets.mautrix_instagram_env.path;
+          StateDirectory = "mautrix-instagram";
+          StateDirectoryMode = "0700";
+          WorkingDirectory = ig.dataDir;
+          ExecStart = "${ig.pkg}/bin/mautrix-instagram -c ${ig.config} -r ${ig.registration}";
+          Restart = "on-failure";
+          RestartSec = "30s";
+          MemoryMax = "512M";
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          PrivateDevices = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectControlGroups = true;
+          RestrictSUIDSGID = true;
+          LockPersonality = true;
+        };
+      };
     })
 
     # TODO(Nicholai): nightly backup to rook/svalbard (restic over tailnet) of
