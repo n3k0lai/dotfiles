@@ -1,0 +1,47 @@
+# Waves theme for Komai. Palette from the canonical brand asset
+# https://comfy.sh/assets/waves.mp4 (sampled 2026-11-16; see
+# vault Projects/comfy.sh/2026-11-16-waves-brand.md).
+# Semantic accents (link, success, error) are the same hues lightened
+# just enough to meet WCAG AA on the window colour. Not set as default;
+# pick "Waves" in Komai Settings after launch.
+name: "Waves"
+author: "comfy.sh"
+variant: "dark"
+palette:
+  window: "#095251"
+  windowText: "#D9D5C9"
+  base: "#095251"
+  alternateBase: "#166760"
+  text: "#D9D5C9"
+  brightText: "#D9D5C9"
+  button: "#166760"
+  buttonText: "#D9D5C9"
+  light: "#417572"
+  mid: "#28756E"
+  dark: "#095251"
+  highlight: "#D9D5C9"
+  highlightedText: "#095251"
+  link: "#A7BEBC"
+  toolTipBase: "#166760"
+  toolTipText: "#D9D5C9"
+  attention: "#D9D5C9"
+  attentionText: "#095251"
+  success: "#A2C2BE"
+  warning: "#D9D5C9"
+  error: "#CAB4B4"
+userColors:
+  self:
+    background: "#166760"
+    text: "#D9D5C9"
+    secondaryText: "#D9D5C9"
+    link: "#A7BEBC"
+  others:
+    # Only the darker teals meet WCAG AA with foam body text.
+    - background: "#095251"
+      text: "#D9D5C9"
+      secondaryText: "#D9D5C9"
+      link: "#A7BEBC"
+    - background: "#166760"
+      text: "#D9D5C9"
+      secondaryText: "#D9D5C9"
+      link: "#A7BEBC"

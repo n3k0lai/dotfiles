@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Newer nixpkgs used only to wrap the Komai AppImage. The official
+    # 2026.10.25.0 build needs glibc >= 2.43; 26.05 and this flake's
+    # nixpkgs-unstable lock still have 2.42. Do not use this for kiss
+    # system packages, and do not bump nixpkgs-unstable just for Komai.
+    nixpkgs-komai.url = "github:NixOS/nixpkgs/0bb8272318b4ca41bf0edc6224df3e3e3046b70d";
     # Waves and droid stay on 25.05. nix-darwin is glitchy until Omarchy
     # runs on M4. nix-on-droid is still release-24.05 and must not ride
     # the fleet pin.
@@ -61,10 +66,11 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, nixpkgs-25_05, home-manager, home-manager-25_05, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, opencut-src, private, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, nixpkgs-komai, nixpkgs-25_05, home-manager, home-manager-25_05, agenix, emacs-overlay, hermes-agent, nix-on-droid, nix-darwin, nix-homebrew, opencut-src, private, ... }:
   let
     system = "x86_64-linux";
     pkgs-unstable = import nixpkgs-unstable { inherit system; config.allowUnfree = true; };
+    pkgs-komai = import nixpkgs-komai { inherit system; };
     privateHosts = nixpkgs.lib.recursiveUpdate
       (import ./modules/private/hosts.example.nix)
       (if builtins.pathExists "${private}/hosts.nix" then import "${private}/hosts.nix" else { });
@@ -72,12 +78,13 @@
     packages.x86_64-linux.opencut = pkgs-unstable.callPackage ./modules/editors/opencut/package.nix {
       src = opencut-src;
     };
+    packages.x86_64-linux.komai = pkgs-komai.callPackage ./modules/desktop/komai/package.nix { };
 
     nixosConfigurations = {
       # Desktop workstation
       kiss = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit pkgs-unstable opencut-src hermes-agent privateHosts; };
+        specialArgs = { inherit pkgs-unstable pkgs-komai opencut-src hermes-agent privateHosts; };
         modules = [
           ./hardware-configuration.nix
           ./configuration.nix

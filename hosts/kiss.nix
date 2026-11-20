@@ -19,6 +19,7 @@ in
     ../modules/hardware/ems64m.nix
     ../modules/hardware/chromatic.nix
     ../modules/desktop/fcitx5.nix
+    ../modules/desktop/komai.nix
     ../modules/editors/cad.nix
     ../modules/editors/cursor.nix
     ../modules/editors/grok-bot.nix
@@ -61,6 +62,10 @@ in
     # cargo run from ~/Code/OpenCut when present; else the Nix binary.
     modules.editors.opencut.dev.enable = true;
     modules.editors.opencut.dev.repoPath = "/home/nicho/Code/OpenCut";
+
+    # Komai Matrix desktop client (official AppImage wrap). User package
+    # plus a Waves theme in ~/.local/share/komai/themes/; not the default.
+    modules.desktop.komai.enable = true;
 
     # Agenix CLI for managing encrypted secrets
     environment.systemPackages = with pkgs; [
