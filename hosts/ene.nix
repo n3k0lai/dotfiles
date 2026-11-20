@@ -130,25 +130,8 @@ in
     };
   };
 
-  # Hermes Desktop (kiss) remote backend — `hermes serve` on the tailnet.
-  # Same session-token credential story as A2A: one age secret, tailnet-only
-  # firewall. Upstream hermes-backend unit runs as hermes with Ene's
-  # HERMES_HOME; session token is read from the file at start (never stored).
-  age.secrets.hermes-desktop-token = {
-    file = ../modules/servers/secrets/hermes_desktop_token.age;
-    owner = "hermes";
-    group = "hermes";
-    mode = "0600";
-  };
-  services.hermes-agent.backend = {
-    mode = "serve"; # headless: no web UI build, /api/ws + /api/pty for Desktop
-    host = "ene.${tsDomain}"; # bind name clients use (Host check)
-    waitFor = "hostname"; # MagicDNS may resolve after boot
-    port = 9119;
-    sessionTokenFile = "/run/agenix/hermes-desktop-token";
-  };
-  # Tailnet-only, like A2A :9900 (module opens a2a.port the same way).
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 9119 ];
+  # Hermes Desktop remote backend (`hermes serve`) is rook-only for now:
+  # hermes_desktop_token.age is encrypted for [ rook nicho ], not ene.
 
   # The leftover Ubuntu BOOT partition (vda16, ext4) gets auto-mounted on /boot
   # by systemd-gpt-auto as vfat, fails, and breaks sandboxed units (caddy 226).
