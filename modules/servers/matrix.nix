@@ -224,9 +224,17 @@ in
       };
 
       services.caddy.virtualHosts.${cfg.publicHost}.extraConfig = ''
-        reverse_proxy /_matrix/* 127.0.0.1:${toString twPort}
-        reverse_proxy /_tuwunel/* 127.0.0.1:${toString twPort}
-        respond 404
+        # handle blocks: a bare `respond` sorts before reverse_proxy in
+        # Caddy's directive order and would answer 404 for everything.
+        handle /_matrix/* {
+          reverse_proxy 127.0.0.1:${toString twPort}
+        }
+        handle /_tuwunel/* {
+          reverse_proxy 127.0.0.1:${toString twPort}
+        }
+        handle {
+          respond 404
+        }
       '';
     }
 
