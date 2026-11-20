@@ -97,7 +97,9 @@
       # DigitalOcean server
       ene = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = { inherit hermes-agent privateHosts; };
+        # pkgs-unstable: mautrix-gmessages follows Google's monthly changes
+        # (modules/servers/matrix.nix).
+        specialArgs = { inherit hermes-agent privateHosts pkgs-unstable; };
         modules = [
           ./hosts/ene-hardware.nix
           ./configuration-server.nix

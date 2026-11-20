@@ -57,6 +57,16 @@ in
 
       "comfy.sh" = {
         extraConfig = ''
+          # Matrix delegation: @user:comfy.sh lives on matrix.comfy.sh
+          # (modules/servers/matrix.nix). Federation is off, but the server
+          # file is harmless and saves a step if it is ever turned on.
+          handle /.well-known/matrix/* {
+            header Content-Type application/json
+            header Access-Control-Allow-Origin *
+            respond /.well-known/matrix/client `{"m.homeserver":{"base_url":"https://matrix.comfy.sh"}}`
+            respond /.well-known/matrix/server `{"m.server":"matrix.comfy.sh:443"}`
+            respond 404
+          }
           root * ${comfysh}
           file_server
         '';

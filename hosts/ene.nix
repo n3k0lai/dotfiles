@@ -19,6 +19,9 @@ in
     ../modules/servers/terra.nix
     # IRC server (Ergo) — Chatterino + Hermes agent mesh
     ../modules/servers/irc.nix
+    # Matrix: Tuwunel + mautrix-gmessages (SMS/RCS) + Element Web.
+    # Plan: vault Projects/matrix-bridge/PLAN.md
+    ../modules/servers/matrix.nix
     # Obsidian Headless Sync (for vault access + future MCP)
     ../modules/servers/obsidian-headless.nix
     ../modules/servers/even-g2.nix
@@ -170,6 +173,18 @@ in
   modules.servers.obsidian-headless.enable = true;
   modules.servers.terraria.enable = true;
   modules.servers.even-g2.enable = true;
+
+  # Matrix for texting. server_name is permanent; IDs are @user:comfy.sh and
+  # clients find matrix.comfy.sh via comfy.sh/.well-known (web.nix).
+  # Public client API, federation off, registration only with the token.
+  modules.servers.matrix = {
+    enable = true;
+    serverName = "comfy.sh";
+    publicHost = "matrix.comfy.sh";
+    admin = "nicholai";
+    elementWeb.enable = true; # chat.comfy.sh, waves theme
+    gmessages.enable = true;
+  };
 
   # Private F-Droid repo: https://ene.${tsDomain}/fdroid/repo (tailnet only).
   # Grok Bot uploads to /var/lib/fdroid-repo/inbox as grokbot-ene; the ingest re-checks
