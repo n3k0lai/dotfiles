@@ -36,8 +36,10 @@ in
   "modules/servers/secrets/mautrix_instagram_env.age".publicKeys = [ ene nicho ];
   # One line: raw session token for `hermes serve` (Hermes Desktop remote backend on ene).
   # Desktop (kiss) pastes the same value as the Remote gateway session token.
-  # Include rook so agent host can decrypt SSH config (re-encrypt after changing recipients).
-  "modules/servers/secrets/hermes_ssh_config.age".publicKeys = [ ene rook nicho ];
+  # The file is only encrypted for ene + nicho today. Listing rook here makes
+  # rook's agenix auto-map try (and fail) to decrypt it at activation, so add
+  # rook back in the same commit that re-encrypts it (`agenix -r`).
+  "modules/servers/secrets/hermes_ssh_config.age".publicKeys = [ ene nicho ];
 
   # ===========================================
   # ARTEMIS SECRETS (artemis VPS)
