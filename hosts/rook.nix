@@ -275,6 +275,7 @@ in
     enableMqtt = true;
     enableCyncLan = true;
     cyncLanInterface = "enp0s31f6"; # LAN NIC only
+    matterReportsInterface = "enp0s31f6"; # accept late Matter reports (LAN NIC only)
     enableMatter = true;
     enableBluetooth = true;
     matterBluetoothCommissioning = true;

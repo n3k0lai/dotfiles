@@ -43,6 +43,19 @@ in {
       description = "Enable python-matter-server + HA Matter integration (Wi‑Fi Matter; Thread needs a border router)";
     };
 
+    matterReportsInterface = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = ''
+        LAN interface on which to accept IPv6 link-local UDP from Matter
+        devices (source port 5540) to the matter-server controller. Devices
+        send subscription reports up to the max interval (60s) apart, longer
+        than the 30s UDP conntrack timeout, so late reports arrive as NEW and
+        get refused without this, causing a liveness timeout/resubscribe loop.
+        null = no rule.
+      '';
+    };
+
     matterPort = mkOption {
       type = types.port;
       default = 5580;
@@ -463,6 +476,13 @@ in {
     networking.firewall.interfaces = mkIf (cfg.enableCyncLan && cfg.cyncLanInterface != null) {
       ${cfg.cyncLanInterface}.allowedTCPPorts = [ 23779 ];
     };
+
+    # Matter subscription reports (see matterReportsInterface). Link-local only,
+    # from the device operational port, so the controller's ephemeral port
+    # can change without breaking this.
+    networking.firewall.extraCommands = mkIf (cfg.enableMatter && cfg.matterReportsInterface != null) ''
+      ip6tables -w -A nixos-fw -i ${cfg.matterReportsInterface} -s fe80::/10 -p udp --sport 5540 -j nixos-fw-accept
+    '';
 
     # Writable stubs for HA UI script/automation/scene editors (include targets).
     # Create only if missing so we never clobber user content.
