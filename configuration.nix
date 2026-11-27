@@ -43,6 +43,8 @@ in
       ./modules/core/tmux.nix
       ./modules/core/mpd.nix
       ./modules/core/ssh.nix
+      # Vault JSON/YAML backup (kiss-only; this file is the kiss flake entry)
+      ./modules/core/vault-state-backup.nix
       
       # Editors
       ./modules/editors/emacs.nix
@@ -124,6 +126,7 @@ in
   modules.core.zathura.enable = true;
   modules.core.tmux.enable = true;
   modules.core.ssh.enable = true;
+  modules.core.vaultStateBackup.enable = true;
   # modules.core.mpd.enable = true;  # Enable if you use MPD/ncmpcpp
   
   ##################################################################################
