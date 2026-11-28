@@ -90,7 +90,16 @@ in
     host = rookDns;
     waitFor = "hostname";
     port = 9121;
-    sessionTokenFile = "/run/agenix/hermes-desktop-token";
+    sessionTokenFile = config.age.secrets.hermes-desktop-token.path;
+  };
+
+  # The auto-mapped hermes_desktop_token is root-only; hermes-backend runs as
+  # hermes, so install a readable alias for it.
+  age.secrets.hermes-desktop-token = {
+    file = ../modules/servers/secrets/hermes_desktop_token.age;
+    owner = "hermes";
+    group = "hermes";
+    mode = "0400";
   };
 
   networking.firewall.interfaces.tailscale0.allowedTCPPorts =
@@ -277,6 +286,7 @@ in
     enableMqtt = true;
     enableCyncLan = true;
     cyncLanInterface = "enp0s31f6"; # LAN NIC only
+    matterReportsInterface = "enp0s31f6"; # accept late Matter reports (LAN NIC only)
     enableMatter = true;
     enableBluetooth = true;
     matterBluetoothCommissioning = true;
