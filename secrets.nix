@@ -92,4 +92,14 @@ in
   "modules/servers/secrets/attic_env.age".publicKeys = [ rook nicho ];
   # One line: push+pull JWT from `atticd-atticadm make-token` on rook (see docs/rook-build-server.md)
   "modules/servers/secrets/attic_push_token.age".publicKeys = [ rook nicho ];
+
+  # ===========================================
+  # PROTON MAIL BRIDGE (rook — IMAP/SMTP password)
+  # ===========================================
+  # Per-device Bridge password printed by `sudo proton-bridge-cli` then `info`.
+  # Create this file yourself on kiss, one line, no newline:
+  #   agenix -e modules/servers/secrets/proton_bridge_password.age
+  # Recipients should be rook + nicho. Do not commit a stub .age file.
+  # Uncomment when the file exists:
+  # "modules/servers/secrets/proton_bridge_password.age".publicKeys = [ rook nicho ];
 }
