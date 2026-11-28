@@ -46,6 +46,8 @@ in
     ../modules/servers/attic.nix
     ../modules/servers/git.nix
     ../modules/servers/build-server.nix
+    # Proton Mail Bridge (localhost IMAP/SMTP). See docs/rook-proton-bridge.md.
+    ../modules/servers/proton.nix
   ] ++ lib.optional (builtins.pathExists ./rook-local.nix) ./rook-local.nix;
 
   networking.hostName = "rook";
@@ -523,6 +525,12 @@ in
     # rook + ene nightly 02:30, kiss weekly Sun 04:00 (module defaults).
     fleetBuild.enable = true;
   };
+
+  # === PROTON MAIL BRIDGE ===
+  # Headless IMAP/SMTP on 127.0.0.1 only (1143 / 1025). No firewall ports.
+  # Service stays inactive until `sudo proton-bridge-setup` (and login).
+  # docs/rook-proton-bridge.md
+  modules.servers.protonmailBridge.enable = true;
 
   # === RESOURCE MANAGEMENT ===
   zramSwap = {

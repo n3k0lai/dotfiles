@@ -51,3 +51,11 @@ push-keys rook
 
 LAN IPs, Tailscale host IPs, MACs, and network labels: see
 `modules/private/README.md` and `n3k0lai/dotfiles-private`.
+
+## Proton Mail Bridge password
+
+The per-device Bridge IMAP/SMTP password is not created by this repo. After
+you run `sudo proton-bridge-cli` and `info` on rook, store it yourself with
+`agenix -e modules/servers/secrets/proton_bridge_password.age` (recipients
+rook + nicho) and uncomment the placeholder in `secrets.nix`. See
+`docs/rook-proton-bridge.md`.
